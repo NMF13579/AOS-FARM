@@ -7,7 +7,7 @@ document_type: project_constitution
 project: aos-farm
 related_project: AOS-1 / AgentOS Next
 status: DRAFT_HUMAN_REVIEW_REQUIRED
-owner: human
+owner: Muhammed 
 approval_authority: human_only
 agent_may_modify_without_explicit_permission: false
 canonical_aos_source_of_truth: false
