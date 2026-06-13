@@ -295,3 +295,44 @@ next_step_boundary:
 
 final_status: AOS_FARM_10_BASELINE_CLOSURE_COMPLETE_WITH_REPORT_ONLY_DEV_DELTA
 ```
+
+## AOS-FARM.11 Next Planning Intake and First Build Target Selection
+
+```yaml
+task_id: AOS-FARM.11
+task_name: Next Planning Intake and First Build Target Selection
+mode: read_only_planning_intake
+
+planning_intake_report: reports/aos-farm-next-planning-intake.md
+
+baseline_preconditions:
+  aos_farm_10_closure_present: true
+  docs_baseline_complete: true
+  dev_contains_main: true
+  dev_delta_classification: report_only
+
+planning_result:
+  candidates_reviewed: 5
+  recommended_candidate_id: 3
+  recommended_candidate_name: AOS-FARM.12 — AOS Source Pack Mapping Into Spec Kit Structure
+  recommendation_type: planning_only
+  ready_for_execution: false
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  approval_granted_by_agent: false
+  risk_profile_assigned_by_agent: false
+
+next_step_boundary:
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+
+final_status: AOS_FARM_11_NEXT_PLANNING_INTAKE_COMPLETE
+```
