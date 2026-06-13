@@ -160,3 +160,45 @@ speckit_implement_authorized: false
 merge_to_main_authorized: false
 release_authorized: false
 ```
+
+## AOS-FARM.7 Dev/Main Divergence Review and Merge Authorization Package
+
+```yaml
+task_id: AOS-FARM.7
+task_name: Dev/Main Divergence Review and Merge Authorization Package
+mode: divergence_review_and_merge_authorization_package
+source_branch: dev
+target_branch: main
+
+divergence_review:
+  report_artifact: reports/aos-farm-dev-main-divergence-review.md
+  origin_main_sha: 66171599af06bdb985fd40c915f5cd7e163eba9e
+  origin_dev_sha: 63be83360cdaeb29bcfd6dd2336a18bb188fddf9
+  merge_base_sha: 12988f1e48b4a0e22643e53d9e1b47dc06073953
+  dev_ahead_count: 5
+  dev_behind_count: 1
+  divergence_status: diverged
+
+human_merge_authorization:
+  approval_exists: true
+  approval_artifact: reports/human-checkpoints/aos-farm-dev-to-main-merge-approval.md
+  approved_by: NMF13579
+  approval_scope: dev_to_main_merge_for_documentation_sandbox_activation_only
+
+approval_boundaries:
+  merge_to_main_authorized: true
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+
+operations_not_performed:
+  merge_performed_by_agent: false
+  release_performed_by_agent: false
+  implementation_started: false
+  speckit_implement_run: false
+  workflow_created: false
+  ci_activated: false
+
+final_status: AOS_FARM_7_MERGE_AUTHORIZATION_RECORDED
+```
