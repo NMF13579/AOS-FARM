@@ -19,8 +19,8 @@ approval_claimed_by_agent: false
 lifecycle_mutation_claimed_by_agent: false
 constitution_active_path: .specify/memory/constitution.md
 root_constitution_status: reference_copy_restored
-constitution_status: APPROVED
-human_approved: true
+constitution_status: DRAFT_HUMAN_REVIEW_REQUIRED
+human_approved: false
 prior_remediation_status: INCOMPLETE_WITH_BLOCKERS
 prior_issue_constitution_append_instead_of_rewrite: true
 prior_issue_root_constitution_missing_or_deleted: true
@@ -60,14 +60,14 @@ Read-only greps and diffs.
 No CI validation run.
 
 ## 8. Remaining Warnings
-- human_approved: true
-- constitution_status: APPROVED
+- human_approved: false
+- constitution_status: DRAFT_HUMAN_REVIEW_REQUIRED
 
 ## 9. Human Review Required
-NO (Already Approved)
+YES
 
 ## 10. Final Status
-AOS_FARM_SETUP_APPROVED
+AOS_FARM_READY_FOR_HUMAN_REVIEW_WITH_WARNINGS
 
 ## AOS-FARM.3 Root Constitution Reference Copy Fix
 
@@ -89,7 +89,7 @@ merge_performed_by_agent: false
 release_performed_by_agent: false
 approval_claimed_by_agent: false
 lifecycle_mutation_claimed_by_agent: false
-human_approved: true
-human_review_required: false
-final_status: AOS_FARM_SETUP_APPROVED
+human_approved: false
+human_review_required: true
+final_status: AOS_FARM_READY_FOR_HUMAN_REVIEW_WITH_WARNINGS
 ```

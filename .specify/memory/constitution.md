@@ -4,17 +4,17 @@
 document_type: project_constitution
 project: aos-farm
 related_project: AOS-1 / AgentOS Next
-status: APPROVED
+status: DRAFT_HUMAN_REVIEW_REQUIRED
 owner: human
 approval_authority: human_only
 agent_may_modify_without_explicit_permission: false
 canonical_aos_source_of_truth: false
 created_for: isolated_spec_kit_sandbox
-human_approved: true
+human_approved: false
 implementation_authorized_by_this_document: false
 execution_authorized_by_this_document: false
 lifecycle_mutation_authorized_by_this_document: false
-constitution_status: APPROVED
+constitution_status: DRAFT_HUMAN_REVIEW_REQUIRED
 ```
 
 ## 1. Purpose
