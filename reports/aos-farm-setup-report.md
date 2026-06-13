@@ -336,3 +336,41 @@ next_step_boundary:
 
 final_status: AOS_FARM_11_NEXT_PLANNING_INTAKE_COMPLETE
 ```
+
+## AOS-FARM.12 AOS Source Pack Mapping Into Spec Kit Structure
+
+```yaml
+task_id: AOS-FARM.12
+task_name: AOS Source Pack Mapping Into Spec Kit Structure
+mode: planning_only_mapping_only_report_only
+
+mapping_report: reports/aos-farm-source-pack-mapping.md
+
+mapping_result:
+  required_sources_verified: true
+  spec_kit_structure_verified: true
+  matrix_generated: true
+  gaps_identified: 3
+  protected_boundaries_verified: true
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  protected_canonical_files_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+
+next_step_boundary:
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_12_SOURCE_MAPPING_COMPLETE
+```
