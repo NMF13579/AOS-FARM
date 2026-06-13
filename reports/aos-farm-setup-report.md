@@ -93,3 +93,58 @@ human_approved: false
 human_review_required: true
 final_status: AOS_FARM_READY_FOR_HUMAN_REVIEW_WITH_WARNINGS
 ```
+
+## AOS-FARM.5 Human Approval Evidence Activation
+
+```yaml
+task_id: AOS-FARM.5
+task_name: Activate Human Approval Evidence for Sandbox Documentation
+mode: human_approval_evidence_activation
+branch: dev
+
+human_approval_evidence:
+  approval_exists: true
+  approval_artifact: reports/human-checkpoints/aos-farm-docs-activation-approval.md
+  approved_by: NMF13579
+  approval_source: direct_human_confirmation_in_chat
+  approval_scope: documentation_activation_only
+
+activated_documents:
+  - .specify/memory/constitution.md
+  - constitution.md
+  - AGENTS.md
+  - docs/agent/
+  - docs/references/
+  - docs/target-state/
+  - docs/boundaries/
+  - specs/README.md
+  - reports/aos-farm-setup-report.md
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  merge_to_main_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  lifecycle_mutation_beyond_document_activation_authorized: false
+
+safety_invariants_preserved:
+  pass_is_approval: false
+  evidence_is_approval: false
+  ci_pass_is_approval: false
+  human_approval_can_be_simulated: false
+  unknown_is_ok: false
+  not_run_is_pass: false
+
+operations_not_performed:
+  implementation_started: false
+  speckit_implement_run: false
+  production_code_created: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  merge_performed_by_agent: false
+  release_performed_by_agent: false
+
+final_status: AOS_FARM_DOCS_ACTIVATED_WITH_HUMAN_APPROVAL_EVIDENCE
+```

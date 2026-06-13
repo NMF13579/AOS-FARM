@@ -5,6 +5,8 @@
 > If this file conflicts with `.specify/memory/constitution.md`, the active Spec Kit path wins inside AOS-FARM.
 >
 > This file is not approval and does not authorize execution.
+>
+> Human approval evidence artifact: `reports/human-checkpoints/aos-farm-docs-activation-approval.md`.
 
 # Constitution
 
@@ -12,17 +14,22 @@
 document_type: project_constitution
 project: aos-farm
 related_project: AOS-1 / AgentOS Next
-status: DRAFT_HUMAN_REVIEW_REQUIRED
+status: APPROVED
 owner: human
 approval_authority: human_only
 agent_may_modify_without_explicit_permission: false
 canonical_aos_source_of_truth: false
 created_for: isolated_spec_kit_sandbox
-human_approved: false
+human_approved: true
+constitution_status: APPROVED
+approval_evidence:
+  approval_exists: true
+  approval_artifact: reports/human-checkpoints/aos-farm-docs-activation-approval.md
+  approved_by: NMF13579
+  approval_scope: documentation_activation_only
 implementation_authorized_by_this_document: false
 execution_authorized_by_this_document: false
 lifecycle_mutation_authorized_by_this_document: false
-constitution_status: DRAFT_HUMAN_REVIEW_REQUIRED
 ```
 
 ## 1. Purpose
