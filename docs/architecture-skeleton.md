@@ -1,0 +1,246 @@
+> ⚠️ Этот файл является черновой заметкой. Skeleton ≠ implementation.
+
+# Скелет архитектуры AgentOS
+
+```yaml
+logical_document_id: agentos_target_skeleton
+canonical_file_name: "Скелет архитектуры.txt"
+language: ru
+version: "2.0-lean-skeleton"
+status: SKELETON_DEFINED_FOR_PLANNING
+role: physical_structure_guidance
+materialization_planning_allowed: true
+physical_materialization_allowed_now: false
+runtime_ready: false
+execution_ready: false
+validation_ready: false
+document_grants_approval: false
+approval_authority: human_only
+```
+
+## 1. Назначение
+
+Этот документ задаёт целевой физический скелет AgentOS на уровне структуры и границ.
+
+Он не является:
+
+- исполняемой реализацией;
+- installer-ready спецификацией;
+- runtime readiness;
+- validation PASS;
+- approval;
+- разрешением на физическое создания файлов.
+
+Физическая материализация skeleton допускается только отдельной задачей с human authorization.
+
+## 2. Неприкосновенное ядро
+
+Ядро AgentOS должно сохранять следующие границы:
+
+- PASS не является approval.
+- Evidence не является approval.
+- CI PASS не является approval.
+- UNKNOWN не является OK.
+- NOT_RUN не является PASS.
+- Human approval нельзя симулировать.
+- Markdown/YAML являются source of truth.
+- JSON, SQLite, generated indexes и cache являются производными артефактами.
+- Агент не должен автоматически менять lifecycle, approval, merge, release или protected state.
+- Любая автоматика должна быть видимой, ограниченной и fail-closed.
+
+## 3. Три репозитория
+
+AgentOS различает три контекста:
+
+1. Development repo — место разработки AgentOS/AOS.
+2. Clean template repo — будущий чистый шаблон для пользователей.
+3. User project repo — репозиторий пользователя после установки/создания проекта.
+
+Правило:
+
+```text
+development repo ≠ template repo ≠ user project repo
+```
+
+Смешивать эти роли нельзя.
+
+## 4. Root-level layout
+
+Минимальный root-level layout будущего clean template:
+
+```text
+project-root/
+  README.md
+  llms.txt
+  .gitignore
+  EMERGENCY.md
+  agentos/
+  user-project-files...
+```
+
+Local runtime после старта:
+
+```text
+project-root/
+  .agentos/
+    cache/
+    locks/
+```
+
+Правила для `.agentos/`:
+
+- `.agentos/` является local runtime/cache directory.
+- `.agentos/` должен быть gitignored.
+- `.agentos/` не должен быть tracked в clean template.
+- отсутствие `.agentos/` не означает approval, readiness или lifecycle state.
+- `.agentos/` может быть пересоздан runtime-компонентами после их реализации.
+
+## 5. AgentOS directory groups
+
+Целевая структура `agentos/` задаётся группами, а не жёстким списком всех будущих файлов.
+
+```text
+agentos/
+  architecture/
+  bootstrap/
+  governance/
+  contracts/
+  registry/
+  state/
+  pipelines/
+  scripts/
+  context/
+  schemas/
+  templates/
+  tutor/
+  features/
+  modules/
+  prompt-packs/
+  generated/
+  reports/
+  audit/
+  install/
+  approvals/
+```
+
+Группы могут наполняться постепенно через task briefs. Создание отсутствующего файла или подпапки требует явного scope в задаче.
+
+```text
+Bootstrap / registry / pipeline alignment for canonical routing:
+
+- bootstrap/ is the future home of startup orientation and preflight entry guidance only.
+- registry/ is the future home of declared navigation maps only.
+- pipelines/ is the future home of bounded route descriptions only.
+
+These three groups may work together to orient the agent toward one safe next step, but this remains conceptual alignment only until separately implemented and approved.
+
+This alignment does not authorize physical skeleton materialization.
+This alignment does not authorize file creation.
+This alignment does not authorize directory creation.
+This alignment does not authorize execution, approval, or implementation.
+```
+
+## 6. Роли групп
+
+§6.1 Human Approval Marker and Approval Boundary
+
+Required structural elements:
+
+- Human Approval Marker
+- Approval Boundary Check
+- Approval Evidence Reference
+- Approval Pending State
+- Approval Rejection / Deferral State
+- Non-Simulation Rule
+- Fail-Closed Missing Approval Rule
+- Fail-Closed Ambiguous Approval Rule
+- Forbidden Approval Claim Check
+
+The approval boundary structure must ensure:
+
+- agents cannot create human approval markers;
+- agents cannot modify human approval markers;
+- agents cannot infer human approval from PASS, evidence, CI, readiness, or completion review;
+- missing approval evidence blocks mutation or lifecycle advancement;
+- ambiguous approval evidence blocks mutation or lifecycle advancement.
+
+| Group | Role | Boundary |
+|---|---|---|
+| `architecture/` | Инварианты, authority, boundary model | Не runtime |
+| `bootstrap/` | Startup/preflight design | Не execution без реализации |
+| `governance/` | Approval/write/protection policies | Не human approval |
+| `contracts/` | Runtime and validation contracts | Не сам runtime |
+| `registry/` | Machine navigation registries | Не выше Markdown/YAML source |
+| `state/` | Task/run/approval snapshots | Не мутируется без правил |
+| `pipelines/` | Описания потоков | Не permission |
+| `scripts/` | Deterministic checks/builders | Не approval |
+| `context/` | Context selection and sanitization | Не memory authority |
+| `schemas/` | Machine schemas | Производные от contracts/docs |
+| `templates/` | User-facing templates | Не source of truth сами по себе |
+| `tutor/` | Guidance layer | Не override governance |
+| `features/` | Feature descriptions | Не admission by itself |
+| `modules/` | Optional extension model | Не включается автоматически |
+| `prompt-packs/` | IDE/agent adapters | Не override invariants |
+| `generated/` | Derived artifacts | Rebuildable, not source of truth |
+| `reports/` | Evidence artifacts | Evidence only |
+| `audit/` | Audit trail | Evidence only |
+| `install/` | Install/update/removal docs | Не permission без task |
+| `approvals/` | Human approval evidence | Human-owned boundary |
+
+## 7. Minimal root documents
+
+Root documents may be minimal at first:
+
+```text
+README.md
+llms.txt
+.gitignore
+EMERGENCY.md
+```
+
+`llms.txt` should point agents to the implemented AgentOS entrypoints and remind them of the hard invariants.
+
+`EMERGENCY.md` is human-readable recovery guidance only. It cannot authorize deletion, approval, merge, push, release, protected writes, or scope expansion.
+
+## 8. What is intentionally not fixed here
+
+This skeleton does not fix:
+
+- exact final file list;
+- exact report filenames;
+- exact schema fields;
+- exact validator commands;
+- exact generated index structure;
+- exact optional module contents;
+- exact prompt-pack content.
+
+These details belong to task briefs, templates, contracts, schemas, or validators when they are implemented.
+
+## 9. Materialization rule
+
+Allowed now:
+
+- planning from this skeleton;
+- deriving task briefs;
+- checking whether a proposed file belongs to an expected group.
+
+Forbidden now:
+
+- physical creation of the skeleton without task brief;
+- claiming runtime readiness from skeleton existence;
+- claiming validation readiness from skeleton existence;
+- claiming approval from skeleton existence;
+- starting implementation outside explicit scope.
+
+## 10. Final boundary
+
+```yaml
+SKELETON_DEFINED: true
+SKELETON_MATERIALIZATION_PLANNING_ALLOWED: true
+PHYSICAL_SKELETON_MATERIALIZATION_ALLOWED_NOW: false
+RUNTIME_READY: false
+EXECUTION_READY: false
+VALIDATION_READY: false
+DOCUMENT_GRANTS_APPROVAL: false
+APPROVAL_AUTHORITY: human_only
+```

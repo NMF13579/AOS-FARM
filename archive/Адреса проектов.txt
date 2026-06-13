@@ -101,6 +101,7 @@ pinned_legacy_source:
   project_transfer_permission: false
   implementation_permission: false
   document_grants_approval: false
+  approval_authority: human_only
 ```
 
 Смысл:

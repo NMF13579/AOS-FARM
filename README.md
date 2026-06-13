@@ -23,6 +23,18 @@ Use one of these options:
 
    python3 agentos/agentos.py start
 
+## Repository Structure
+
+| Файл / Папка | Роль |
+|---|---|
+| 00_AOS_Core_Control.md | Canonical: core control |
+| 01_AOS_Assembly_Pipelines_and_Build_Roadmap.md | Canonical: pipeline и roadmap |
+| 02_AOS_Governance_Control_Module_and_Safety_Rules.md | Canonical: governance и safety |
+| 03_AOS_Future_and_Legacy_Reference_OPTIONAL.md | Опциональный референс, не читать при первом запуске агента |
+| llms.txt | Машиночитаемый контекст для LLM-агентов |
+| docs/ | Нормализованные черновые заметки |
+| archive/ | Оригинальные .txt файлы (read-only) |
+
 ## Safety
 
 - AgentOS does not auto-execute tasks.
