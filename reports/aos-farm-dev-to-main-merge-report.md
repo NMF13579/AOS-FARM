@@ -28,7 +28,8 @@ merge_execution:
   merge_performed: true
   merge_method: no_ff_merge
   merge_commit_sha: 2baa94baa8829de09a7cf89b88be11933091acdd
-  pushed_to_origin_main: false
+  pushed_to_origin_main: true
+  origin_main_sha_after_push: d8d61e48206c2f676977ae7edf51049acf6f1ac2
 
 boundaries:
   implementation_authorized: false
@@ -39,5 +40,5 @@ boundaries:
   ci_activated: false
   branch_protection_changed: false
 
-final_status: AOS_FARM_8_MERGE_READY_TO_PUSH
+final_status: AOS_FARM_8_MERGE_PUSHED_TO_MAIN
 ```

@@ -227,5 +227,5 @@ approval_boundaries:
   release_authorized: false
   production_use_authorized: false
 
-final_status: AOS_FARM_8_MERGE_READY_TO_PUSH
+final_status: AOS_FARM_8_MERGE_PUSHED_TO_MAIN
 ```
