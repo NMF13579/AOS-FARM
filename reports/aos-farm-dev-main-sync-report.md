@@ -23,7 +23,8 @@ sync_execution:
 
 post_sync_state:
   local_dev_head_after_sync: 5e2ed9e7d9c8ae4937f54e292971847ee7dd6e51
-  expected_origin_dev_after_push: <pending_commit>
+  pushed_to_origin_dev: true
+  origin_dev_sha_after_push: 6ffe09978db824e205fb107943cbf4950db565af
 
 boundaries:
   implementation_authorized: false
@@ -34,5 +35,5 @@ boundaries:
   ci_activated: false
   branch_protection_changed: false
 
-final_status: AOS_FARM_9_DEV_SYNC_READY_TO_PUSH
+final_status: AOS_FARM_9_DEV_SYNCED_WITH_MAIN
 ```

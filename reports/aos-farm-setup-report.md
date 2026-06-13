@@ -254,5 +254,5 @@ approval_boundaries:
   release_authorized: false
   production_use_authorized: false
 
-final_status: AOS_FARM_9_DEV_SYNC_READY_TO_PUSH
+final_status: AOS_FARM_9_DEV_SYNCED_WITH_MAIN
 ```
