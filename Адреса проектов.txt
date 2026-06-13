@@ -1,0 +1,153 @@
+# Адреса проектов
+
+```yaml
+logical_document_id: project_repository_pointers
+canonical_file_name: "Адреса проектов.txt"
+language: ru
+version: "2.1-lean-repository-pointers-with-pinned-legacy-source"
+status: PROJECT_REPOSITORY_POINTERS_DEFINED
+role: repository_pointer_document
+implementation_permission: false
+merge_permission: false
+push_permission: false
+document_grants_approval: false
+approval_authority: human_only
+```
+
+## 1. Назначение
+
+Этот документ фиксирует только адреса репозиториев и их роли.
+
+Он не является:
+
+- source of truth поверх архитектуры;
+- evidence completion;
+- approval;
+- PASS;
+- execution permission;
+- merge/push/release permission;
+- разрешением на перенос проекта.
+
+## 2. Current development repository
+
+```yaml
+role: current_development_repository
+url: "https://github.com/NMF13579/AOS-1/tree/dev"
+branch: dev
+branch_type: moving_reference
+```
+
+Смысл:
+
+- это место текущей разработки нового AgentOS/AOS;
+- branch `dev` является moving reference;
+- moving branch не является стабильным evidence snapshot;
+- для evidence нужны commit SHA, tag, archive hash или recorded snapshot.
+
+## 3. Previous legacy repository
+
+```yaml
+role: previous_legacy_reference_repository
+url: "https://github.com/NMF13579/AgentOS/tree/dev"
+branch: dev
+branch_type: moving_reference
+legacy_role: reference_only
+```
+
+Смысл:
+
+- legacy repo используется только как reference source;
+- legacy repo не является active source of truth;
+- legacy repo не переопределяет новую архитектуру;
+- старые PASS/evidence/approval/status/lifecycle состояния не наследуются;
+- direct copy-paste из legacy запрещён по умолчанию;
+- перенос идеи из legacy требует admission review и re-expression под новую архитектуру.
+
+## 4. Verification expectations
+
+На Stage 1 нужно записать статус проверки repository pointers.
+
+Минимально нужно покрыть:
+
+- current repo pointer exists or is unreachable/unknown;
+- current repo branch is moving reference;
+- current commit SHA is recorded if available;
+- legacy repo pointer exists or is unreachable/unknown;
+- pinned legacy source is recorded or explicitly blocked;
+- extraction source must not silently use moving branch head as stable evidence.
+
+Если статус UNKNOWN, это можно записать как evidence, но нельзя считать clean readiness.
+
+Если pinned legacy source нельзя проверить во время Stage 1, Stage 1 completion/readiness блокируется. Это не блокирует подготовку Task 1.1 и не блокирует authorized Stage 1 intake task.
+
+Pinned legacy source may be recorded as human-supplied evidence.
+
+If the pinned legacy source is human-supplied and not agent-verified, that status must be stated explicitly.
+
+## 5. Pinned legacy source
+
+```yaml
+pinned_legacy_source:
+  role: stable_legacy_reference_snapshot
+  repository: "https://github.com/NMF13579/AgentOS"
+  branch_context: dev
+  source_type: commit_sha
+  commit_sha: "e3a60a92fbd5e78e583cddb519d39527583f3433"
+  source_status: RECORDED_HUMAN_SUPPLIED
+  verification_status: RECORDED_NOT_AGENT_VERIFIED
+  stable_reference_for_stage_1: true
+  legacy_role: reference_only
+  active_source_of_truth: false
+  project_transfer_permission: false
+  implementation_permission: false
+  document_grants_approval: false
+```
+
+Смысл:
+
+- pinned legacy source является stable reference snapshot для Stage 1;
+- pinned legacy source является human-supplied;
+- pinned legacy source не считается agent-verified без отдельной проверки;
+- pinned legacy source остаётся reference-only;
+- pinned legacy source не является project transfer;
+- pinned legacy source не является implementation permission;
+- pinned legacy source не является approval;
+- pinned legacy source не даёт право начинать Stage 2.
+
+## 6. Shared rules
+
+```text
+Repository address is not evidence by itself.
+Branch name is not evidence by itself.
+Moving branch head is not stable source.
+Stable reference requires commit hash, tag, archive hash, or recorded snapshot.
+Pinned legacy source is reference-only.
+Pinned legacy source is not project transfer.
+Pinned legacy source is not approval.
+Evidence is not approval.
+PASS is not approval.
+CI PASS is not approval.
+Human approval cannot be simulated.
+UNKNOWN is not OK.
+NOT_RUN is not PASS.
+```
+
+## 7. Final boundary
+
+```yaml
+CURRENT_REPOSITORY_POINTER_RECORDED: true
+LEGACY_REPOSITORY_POINTER_RECORDED: true
+PINNED_LEGACY_SOURCE_RECORDED: true
+PINNED_LEGACY_SOURCE_TYPE: commit_sha
+PINNED_LEGACY_SOURCE_STATUS: RECORDED_HUMAN_SUPPLIED
+PINNED_LEGACY_SOURCE_AGENT_VERIFIED: false
+REPOSITORY_POINTERS_ARE_EVIDENCE_ONLY: true
+PINNED_LEGACY_SOURCE_IS_REFERENCE_ONLY: true
+PROJECT_TRANSFER_ALLOWED: false
+IMPLEMENTATION_PERMISSION: false
+MERGE_PERMISSION: false
+PUSH_PERMISSION: false
+STAGE_2_START_ALLOWED: false
+DOCUMENT_GRANTS_APPROVAL: false
+APPROVAL_AUTHORITY: human_only
+```

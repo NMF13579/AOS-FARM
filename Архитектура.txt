@@ -1,0 +1,20 @@
+# Архитектура AgentOS (Legacy / Reference Only)
+
+Внимание: Этот документ больше не является высшим авторитетом.
+
+## Authority Pointers
+
+- `00_AOS_Core_Control.md` is the highest project control source.
+- `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md` is roadmap and pipeline authority.
+- `02_AOS_Governance_Control_Module_and_Safety_Rules.md` is safety and governance authority.
+- `03_AOS_Future_and_Legacy_Reference_OPTIONAL.md` is optional reference only.
+
+## AOS-1 Alignment
+
+- Documentation Assembly Pipeline comes before Code Assembly Pipeline.
+- Minimal Safety Floor is always-on.
+- Governance / Control Module is progressive.
+- Runtime Enforcement is later, not implemented now.
+- Skeleton ≠ implementation.
+- PASS ≠ approval.
+- Evidence ≠ approval.
