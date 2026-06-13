@@ -374,3 +374,326 @@ next_step_boundary:
 
 final_status: AOS_FARM_12_SOURCE_MAPPING_COMPLETE
 ```
+
+## AOS-FARM.13 Spec Kit Constitution Alignment Plan
+
+```yaml
+task_id: AOS-FARM.13
+task_name: Spec Kit Constitution Alignment Plan
+mode: planning_only_alignment_plan_only_report_only
+
+alignment_plan_report: reports/aos-farm-constitution-alignment-plan.md
+
+planning_result:
+  constitution_inspected: true
+  invariants_checked: true
+  gaps_identified: 4
+  changes_proposed: 3
+  human_checkpoint_defined: true
+
+approval_boundaries:
+  constitution_files_modified: false
+  proposed_changes_applied: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  protected_canonical_files_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  commit_created: false
+  push_performed: false
+
+next_step_boundary:
+  may_prepare_aos_farm_14: true
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_13_CONSTITUTION_ALIGNMENT_PLAN_COMPLETE
+```
+
+## AOS-FARM.14 Constitution Alignment Human Checkpoint Package Preparation
+
+```yaml
+task_id: AOS-FARM.14
+task_name: Constitution Alignment Human Checkpoint Package Preparation
+mode: planning_only_checkpoint_package_only_report_only
+
+checkpoint_package_report: reports/aos-farm-constitution-human-checkpoint-package.md
+
+planning_result:
+  checkpoint_package_created: true
+  draft_template_created: true
+  validity_rules_defined: true
+
+approval_boundaries:
+  human_approval_created: false
+  human_checkpoint_file_created: false
+  constitution_files_modified: false
+  proposed_changes_applied: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  protected_canonical_files_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  commit_created: false
+  push_performed: false
+
+next_step_boundary:
+  may_prepare_aos_farm_15: true
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_14_CHECKPOINT_PACKAGE_COMPLETE
+```
+
+## AOS-FARM.15 Human Constitution Alignment Checkpoint Intake
+
+```yaml
+task_id: AOS-FARM.15
+task_name: Human Constitution Alignment Checkpoint Intake
+mode: human_checkpoint_intake_validation_only_report_only
+
+checkpoint_intake_report: reports/aos-farm-constitution-human-checkpoint-intake.md
+
+validation_result:
+  human_checkpoint_found: false
+  human_checkpoint_valid: false
+  blockers_identified: 1
+
+approval_boundaries:
+  human_approval_created: false
+  human_checkpoint_file_created_by_this_task: false
+  human_checkpoint_file_edited_by_this_task: false
+  constitution_files_modified: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  protected_canonical_files_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  commit_created: false
+  push_performed: false
+
+next_step_boundary:
+  may_prepare_aos_farm_16: false
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_15_HUMAN_CHECKPOINT_REQUIRED
+```
+
+## AOS-FARM.16 Human Constitution Alignment Approval Checkpoint
+
+```yaml
+task_id: AOS-FARM.16
+task_name: Human Constitution Alignment Approval Checkpoint
+mode: human_only_checkpoint_creation
+
+checkpoint_file: reports/human-checkpoints/aos-farm-constitution-alignment-approval.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  explicit_approval_found: true
+
+approval_boundaries:
+  future_constitution_edit_authorized: true
+  future_constitution_edit_limited_to_authorized_files: true
+  future_constitution_edit_limited_to_authorized_change_ids: true
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  low_risk_fast_assigned_by_agent: false
+
+final_status: AOS_FARM_16_HUMAN_APPROVAL_CHECKPOINT_VALIDATED
+```
+
+## AOS-FARM.17 Constitution Alignment Edit Under Human Checkpoint
+
+```yaml
+task_id: AOS-FARM.17
+task_name: Constitution Alignment Edit Under Human Checkpoint
+mode: controlled_governance_document_edit_constitution_only_human_checkpoint_bounded
+
+edit_report: reports/aos-farm-constitution-alignment-edit-report.md
+
+edit_result:
+  human_checkpoint_validated: true
+  constitution_files_modified: true
+  authorized_change_ids_only: true
+  applied_change_ids:
+    - CHG-CONST-001
+    - CHG-CONST-002
+    - CHG-CONST-003
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  protected_canonical_files_changed_outside_authorized_scope: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  low_risk_fast_assigned_by_agent: false
+  commit_created: false
+  push_performed: false
+
+next_step_boundary:
+  may_prepare_aos_farm_18: true
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_17_CONSTITUTION_ALIGNMENT_EDIT_COMPLETE
+```
+
+## AOS-FARM.18 Post-Constitution Alignment Validation & Commit Authorization Package
+
+```yaml
+task_id: AOS-FARM.18
+task_name: Post-Constitution Alignment Validation & Commit Authorization Package
+mode: post_edit_validation_commit_package_only_report_only
+
+validation_report: reports/aos-farm-post-constitution-alignment-validation.md
+
+validation_result:
+  aos_farm_17_validated: true
+  human_checkpoint_revalidated: true
+  constitution_diff_authorized_only: true
+  unexpected_uncommitted_files: 0
+  draft_commit_package_created: true
+
+approval_boundaries:
+  commit_authorized_by_this_task: false
+  push_authorized_by_this_task: false
+  implementation_authorized: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+  risk_profile_assigned_by_agent: false
+  low_risk_fast_assigned_by_agent: false
+  commit_created: false
+  push_performed: false
+
+next_step_boundary:
+  may_prepare_aos_farm_19: true
+  next_task_requires_separate_human_authorization: true
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  specify_not_run: true
+  plan_not_run: true
+
+final_status: AOS_FARM_18_POST_EDIT_VALIDATION_COMPLETE
+```
+
+## AOS-FARM.19 Human Commit Authorization for Constitution Alignment Delta
+
+```yaml
+task_id: AOS-FARM.19
+task_name: Human Commit Authorization for Constitution Alignment Delta
+mode: human_only_commit_authorization_checkpoint
+
+checkpoint_file: reports/human-checkpoints/aos-farm-commit-authorization.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  explicit_commit_authorization_found: true
+  exact_commit_message_found: true
+  exact_file_scope_found: true
+
+approval_boundaries:
+  commit_authorized: true
+  push_authorized: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+
+final_status: AOS_FARM_19_HUMAN_COMMIT_AUTHORIZATION_VALIDATED
+```
+
+## AOS-FARM.19.1 Human Commit Authorization Scope Addendum
+
+```yaml
+task_id: AOS-FARM.19.1
+task_name: Human Commit Authorization Scope Addendum
+mode: human_only_commit_authorization_checkpoint_addendum
+
+checkpoint_file: reports/human-checkpoints/aos-farm-commit-authorization-addendum.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  explicit_commit_authorization_found: true
+  exact_commit_message_found: true
+  exact_file_scope_found: true
+
+approval_boundaries:
+  commit_authorized: true
+  push_authorized: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+
+final_status: AOS_FARM_19_1_HUMAN_COMMIT_AUTHORIZATION_ADDENDUM_VALIDATED
+```
