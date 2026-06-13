@@ -202,3 +202,30 @@ operations_not_performed:
 
 final_status: AOS_FARM_7_MERGE_AUTHORIZATION_RECORDED
 ```
+
+## AOS-FARM.8 Execute Authorized Dev-to-Main Documentation Merge
+
+```yaml
+task_id: AOS-FARM.8
+task_name: Execute Authorized Dev-to-Main Documentation Merge
+mode: authorized_documentation_merge_execution
+source_branch: dev
+target_branch: main
+
+merge_authorization:
+  approval_artifact: reports/human-checkpoints/aos-farm-dev-to-main-merge-approval.md
+  authorization_commit_sha: a1dcb6a23eef9d22f1d18ee8f936d0a0e189e8ad
+
+merge_execution:
+  merge_performed: true
+  merge_method: no_ff_merge
+  merge_report_artifact: reports/aos-farm-dev-to-main-merge-report.md
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+
+final_status: AOS_FARM_8_MERGE_READY_TO_PUSH
+```
