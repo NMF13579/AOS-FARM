@@ -256,3 +256,42 @@ approval_boundaries:
 
 final_status: AOS_FARM_9_DEV_SYNCED_WITH_MAIN
 ```
+
+## AOS-FARM.10 Main/Dev Baseline Closure Review
+
+```yaml
+task_id: AOS-FARM.10
+task_name: Main/Dev Baseline Closure Review
+mode: read_only_baseline_closure_review
+
+baseline_closure_report: reports/aos-farm-baseline-closure-review.md
+
+branch_state:
+  origin_main_sha: 5e2ed9e7d9c8ae4937f54e292971847ee7dd6e51
+  origin_dev_sha: 2ff7b7c3ff20d6b2fdae5e045338eb98ca2e5f26
+  merge_base_sha: 5e2ed9e7d9c8ae4937f54e292971847ee7dd6e51
+  dev_contains_main: true
+  main_contains_dev: false
+  dev_delta_against_main: report_only
+
+baseline_result:
+  documentation_activation_complete_on_main: true
+  dev_synced_with_main: true
+  remaining_delta_classification: report_only
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+
+next_step_boundary:
+  implementation_not_started: true
+  speckit_implement_not_run: true
+  next_task_requires_separate_authorization: true
+
+final_status: AOS_FARM_10_BASELINE_CLOSURE_COMPLETE_WITH_REPORT_ONLY_DEV_DELTA
+```
