@@ -148,3 +148,15 @@ operations_not_performed:
 
 final_status: AOS_FARM_DOCS_ACTIVATED_WITH_HUMAN_APPROVAL_EVIDENCE
 ```
+
+## AOS-FARM.6 Fix Constitution Status Drift
+
+```yaml
+task_id: AOS-FARM.6
+task_name: Fix Constitution Status Drift After Documentation Activation
+final_status: AOS_FARM_6_STATUS_DRIFT_FIXED_WITH_WARNINGS
+implementation_allowed: false
+speckit_implement_authorized: false
+merge_to_main_authorized: false
+release_authorized: false
+```

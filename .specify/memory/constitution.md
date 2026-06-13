@@ -109,7 +109,22 @@ No unauthorized external mutations.
 Modifications require human action.
 
 ## 27. Current Constitutional Status
-DRAFT_HUMAN_REVIEW_REQUIRED.
+
+APPROVED for AOS-FARM sandbox documentation activation only.
+
+Approval evidence artifact:
+
+`reports/human-checkpoints/aos-farm-docs-activation-approval.md`
+
+This approval does not authorize implementation.
+
+This approval does not authorize `/speckit.implement`.
+
+This approval does not authorize merge to main.
+
+This approval does not authorize release.
+
+This approval does not authorize production use.
 
 ## 28. Final Constitutional Rule
 Reiteration of limits: This constitution does not authorize execution.
