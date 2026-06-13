@@ -229,3 +229,30 @@ approval_boundaries:
 
 final_status: AOS_FARM_8_MERGE_PUSHED_TO_MAIN
 ```
+
+## AOS-FARM.9 Sync Dev Branch With Main After Documentation Merge
+
+```yaml
+task_id: AOS-FARM.9
+task_name: Sync Dev Branch With Main After Documentation Merge
+mode: controlled_branch_synchronization
+source_branch: main
+target_branch: dev
+
+sync_report_artifact: reports/aos-farm-dev-main-sync-report.md
+
+sync_execution:
+  sync_performed: true
+  sync_method: fast_forward_only
+  force_push_used: false
+  rebase_used: false
+  merge_commit_created: false
+
+approval_boundaries:
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+
+final_status: AOS_FARM_9_DEV_SYNC_READY_TO_PUSH
+```
