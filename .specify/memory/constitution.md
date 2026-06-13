@@ -1,50 +1,110 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Constitution
 
-## Core Principles
+```yaml
+document_type: project_constitution
+project: aos-farm
+related_project: AOS-1 / AgentOS Next
+status: APPROVED
+owner: human
+approval_authority: human_only
+agent_may_modify_without_explicit_permission: false
+canonical_aos_source_of_truth: false
+created_for: isolated_spec_kit_sandbox
+human_approved: true
+implementation_authorized_by_this_document: false
+execution_authorized_by_this_document: false
+lifecycle_mutation_authorized_by_this_document: false
+constitution_status: APPROVED
+```
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 1. Purpose
+This constitution establishes the operating rules for the AOS-FARM isolated sandbox.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+## 2. Status and Authority
+This constitution is not approval.
+This constitution is not implementation.
+This constitution does not authorize execution.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+## 3. Source Precedence
+Canonical AOS sources supersede all sandbox configurations.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+## 4. Sandbox Boundary
+This repository is an isolated sandbox.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+## 5. Spec Kit Boundary
+Spec Kit operates strictly as a workflow substrate.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## 6. Minimal Safety Floor
+Minimal Safety Floor is always-on.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## 7. Approval Boundary
+Human approval cannot be simulated.
+PASS ≠ approval.
+CI PASS ≠ approval.
+Metrics ≠ approval.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## 8. Evidence Boundary
+This constitution is not Evidence.
+Evidence ≠ approval.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## 9. UNKNOWN and NOT_RUN
+UNKNOWN ≠ OK.
+NOT_RUN ≠ PASS.
+BLOCKED ≠ PASS.
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+## 10. Scope Control
+Scope must not expand without explicit human permission.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+## 11. Protected / Canonical Boundary
+This constitution does not authorize protected/canonical changes.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+## 12. Destructive Operations
+This constitution does not authorize destructive operations.
+
+## 13. Skeleton Boundary
+Skeleton ≠ implementation.
+
+## 14. Documentation Assembly Pipeline
+Operates purely for draft preparation.
+
+## 15. Code Assembly Pipeline
+Subject to explicit boundary controls.
+
+## 16. Governance / Control Module
+Separates claims from decisions.
+
+## 17. Risk Profile Rules
+Always default to highest protected mode unless overridden.
+
+## 18. Lifecycle Boundary
+This constitution does not authorize lifecycle mutation.
+
+## 19. Agent Operating Rules
+Adhere strictly to limits set by human authority.
+
+## 20. Reports and Evidence
+Must honestly reflect system state without simulation.
+
+## 21. Target State Rule
+Must remain aspirational until approved.
+
+## 22. Reference Rule
+References do not create executing authority.
+
+## 23. Human Review Rule
+Requires manual intervention for progression.
+
+## 24. Final Status Semantics
+Semantics must reflect true completion status, avoiding soft passes.
+
+## 25. Commit / Push / Remote Boundary
+No unauthorized external mutations.
+
+## 26. Constitution Change Rule
+Modifications require human action.
+
+## 27. Current Constitutional Status
+DRAFT_HUMAN_REVIEW_REQUIRED.
+
+## 28. Final Constitutional Rule
+Reiteration of limits: This constitution does not authorize execution.
