@@ -1,0 +1,23 @@
+# AOS-FARM.135 — Build Step 6 Controller Review Report
+
+- **reviewed_task_id:** AOS-FARM.135
+- **reviewed_environment:** Antigravity
+- **branch:** dev
+- **HEAD:** fff7bc9874aba5de96ea1562bb732bfa6d6cd93b
+- **origin/dev:** fff7bc9874aba5de96ea1562bb732bfa6d6cd93b
+- **required_sources_available:** true
+- **authorization_verified:** true
+- **risk_profile_verified:** true
+- **scope_match:** true
+- **unauthorized_operations_detected:** false
+- **protected_canonical_drift_detected:** false
+- **runtime_validator_ci_expansion_detected:** false
+- **commit_push_boundary_preserved:** true
+- **release_production_boundary_preserved:** true
+- **model_tier_used:** High (Gemini 3.1 Pro)
+- **routing_decision_used:** reports/aos-farm-135-build-step-6-model-routing-decision.md
+- **verdict:** Executed within exact authorized boundaries
+- **next_safe_task:** Post-execution verification for AOS-FARM.135
+- **human_action_required:** true
+- **controller_review_is_not_approval:** true
+- **recommended_escalation_if_any:** None

@@ -1,0 +1,23 @@
+checkpoint_status: APPROVED_FOR_EXECUTION
+human_decision: APPROVED
+
+execution_authorized: true
+aos_farm_186_execution_authorized: true
+
+risk_profile_assigned_by_human: HIGH_RISK_PROTECTED
+
+authorized_task: AOS-FARM.186
+authorized_scope_exact: true
+authorized_file_count: 7
+
+commit_authorized: false
+push_authorized: false
+release_authorized: false
+production_use_authorized: false
+
+spec_kit_commands_authorized: false
+runtime_implementation_authorized: false
+validator_implementation_authorized: false
+ci_workflow_changes_authorized: false
+protected_canonical_changes_authorized: false
+destructive_operations_authorized: false

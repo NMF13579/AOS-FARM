@@ -90,6 +90,9 @@ Separates claims from decisions.
 
 ## 17. Risk Profile Rules
 Always default to highest protected mode unless overridden.
+Agent may propose Risk Profile.
+Agent must not assign LOW_RISK_FAST.
+Human Risk Profile assignment is required where governance rules require it.
 
 ## 18. Lifecycle Boundary
 This constitution does not authorize lifecycle mutation.
@@ -108,6 +111,10 @@ References do not create executing authority.
 
 ## 23. Human Review Rule
 Requires manual intervention for progression.
+If human review, approval, checkpoint, or Risk Profile assignment is required but unavailable, the correct state is BLOCKED or HUMAN_REVIEW_REQUIRED.
+The agent must not proceed by inference.
+The agent must not convert missing human approval into approval.
+The agent must not treat silence, absence, or unavailable reviewer as permission.
 
 ## 24. Final Status Semantics
 Semantics must reflect true completion status, avoiding soft passes.
@@ -136,5 +143,14 @@ This approval does not authorize release.
 
 This approval does not authorize production use.
 
-## 28. Final Constitutional Rule
+## 28. Spec Kit Command Limits
+These commands require explicit human authorization before use:
+- /speckit.implement
+- /specify
+- /plan
+
+The constitution must not imply that these commands may be run automatically by the agent.
+These commands are not authorized by PASS, Evidence, CI PASS, readiness, or report completion.
+
+## 29. Final Constitutional Rule
 Reiteration of limits: This constitution does not authorize execution.

@@ -1,0 +1,53 @@
+```yaml
+task_id: AOS-FARM.147
+mode: final_step_7_verification_and_commit_authorization_preparation
+preconditions: passed
+current_branch: dev
+head: 5664a74f767fb9fc0b0653113ca607c74f8cf5bb
+origin_dev: 5664a74f767fb9fc0b0653113ca607c74f8cf5bb
+remote_baseline_closed: true
+required_sources_available: true
+
+aos_farm_146_report_available: true
+aos_farm_146_final_status_verified: true
+aos_farm_146_warning_count: 0
+aos_farm_146_blocking_issue_count: 0
+
+step_7_contract_verified: true
+step_7_template_verified: true
+step_7_gate_matrix_verified: true
+step_7_controller_loop_trial_verified: true
+
+future_commit_candidate_count: 17
+future_commit_candidate_set_exact: true
+proposed_commit_message: docs: add governance control module contract
+
+unauthorized_files_in_candidate_set: 0
+protected_canonical_files_modified: 0
+runtime_enforcement_created: false
+validator_implementation_created: false
+ci_workflow_created: false
+branch_protection_changed: false
+spec_kit_commands_run: false
+destructive_operations_performed: false
+staging_performed: false
+commit_performed: false
+push_performed: false
+release_performed: false
+production_use_performed: false
+approval_simulated: false
+risk_profile_self_assigned_by_agent: false
+
+execution_authorized_now: false
+commit_authorized_now: false
+push_authorized_now: false
+release_authorized_now: false
+production_use_authorized_now: false
+
+may_proceed_to_human_commit_authorization: true
+
+blocking_issue_count: 0
+warning_count: 0
+
+final_status: AOS_FARM_147_FINAL_STEP_7_VERIFICATION_AND_COMMIT_AUTHORIZATION_PREPARED
+```
