@@ -1,0 +1,22 @@
+# AOS-FARM.135 — Build Step 6 Dogfood Session Start
+
+- **task_id:** AOS-FARM.135
+- **environment used:** Antigravity
+- **current branch:** dev
+- **HEAD:** fff7bc9874aba5de96ea1562bb732bfa6d6cd93b
+- **origin/dev:** fff7bc9874aba5de96ea1562bb732bfa6d6cd93b
+- **local_ahead_origin_dev_by:** 0
+- **origin_dev_ahead_local_by:** 0
+- **left_right_ahead_behind_summary:** 0 0
+- **working_tree_status_before_execution:** Dirty (untracked files present)
+- **required_sources_available:** true
+- **AGENTS.md available:** true
+- **multi-environment workflow available:** true
+- **active authorization checkpoint path:** reports/human-checkpoints/aos-farm-134-step-6-batch-1-execution-authorization.md
+- **human_assigned_risk_profile:** MEDIUM_RISK_GUIDED
+- **execution_authorized:** true
+- **commit_authorized:** false
+- **push_authorized:** false
+- **release_authorized:** false
+- **production_use_authorized:** false
+- **next_safe_task_after_execution:** Post-execution verification for AOS-FARM.135
