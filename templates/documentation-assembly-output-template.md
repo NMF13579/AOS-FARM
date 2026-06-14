@@ -1,34 +1,26 @@
-# Documentation Assembly Output Template (Skeleton)
+# Documentation Assembly Output Template
 
-## 1. Output Metadata
-- ID: [ID]
-- Generated At: [Timestamp]
+## 1. Context
+```yaml
+document_type: documentation_assembly_output
+project: ""
+task_id: ""
+prepared_from_input: ""
+```
 
-## 2. Assembled Artifact Summary
-- [Summary]
+## 2. Bounded Scope
+[Explicitly define the scope generated from the input]
 
-## 3. Source Traceability
-- [Traceability Links]
+## 3. Validation Requirements
+[Explicitly define how this output must be validated]
 
-## 4. Evidence Summary
-- [Evidence List]
+## 4. Evidence Traceability
+[Link to evidence reports]
 
-## 5. Gate Results
-- [Gate Outcomes]
-
-## 6. Unknowns and Blockers
-- [Blockers]
-
-## 7. Non-Approval Statement
-This document is assembled but not approved.
-
-## 8. Human Review Requirement
-Explicit human review and authorization are mandatory.
-
-## 9. Forbidden Claims Check
-Checked that no forbidden claims are present.
-
-## 10. Final Status
+## 5. Constraints and Invariants
+```text
+This output is not approval.
 PASS ≠ approval.
-Evidence ≠ approval.
-CI PASS ≠ approval.
+UNKNOWN ≠ OK.
+NOT_RUN ≠ PASS.
+```

@@ -1,33 +1,25 @@
-# Documentation Assembly Input Template (Skeleton)
+# Documentation Assembly Input Template
 
-## 1. Input Metadata
-- ID: [ID]
-- Author: [Author]
+## 1. Context
+```yaml
+document_type: documentation_assembly_input
+project: ""
+task_id: ""
+```
 
-## 2. Source Files
-- [List Source Paths]
+## 2. Raw Input
+[Describe the raw idea, user request, or problem statement here]
 
-## 3. Required Context
-- [Context Description]
+## 3. Traceability
+```yaml
+source_reference: ""
+```
 
-## 4. Assembly Target
-- [Target Path]
+## 4. Unknowns / Blockers
+[List any missing information here]
 
-## 5. Scope Boundary
-- Scope restricted to documentation only.
-
-## 6. Risk Profile Reference
-- [Risk Profile]
-
-## 7. Human Checkpoint Reference
-- [Checkpoint Authorization Path]
-
-## 8. Unknowns
-- [List Unknowns]
-
-## 9. Forbidden Inputs
-- Protected/canonical modifications are forbidden.
-
-## 10. Final Rule
+## 5. Required Invariants
+```text
 UNKNOWN ≠ OK.
 NOT_RUN ≠ PASS.
+```
