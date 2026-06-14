@@ -800,3 +800,114 @@ approval_boundaries:
 
 final_status: AOS_FARM_25_HUMAN_COMMIT_AUTHORIZATION_VALIDATED
 ```
+
+## AOS-FARM.27 Human Push Authorization for Push Evidence Commit
+
+```yaml
+task_id: AOS-FARM.27
+task_name: Human Push Authorization for Push Evidence Commit
+mode: human_only_push_authorization_checkpoint
+
+checkpoint_file: reports/human-checkpoints/aos-farm-push-evidence-push-authorization.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  explicit_push_authorization_found: true
+  exact_commit_sha_found: true
+  push_target_verified: origin/dev
+  working_tree_clean_requirement_exception_authorized: true
+
+approval_boundaries:
+  push_authorized: true
+  push_target_authorized: origin/dev
+  stage_allowed: false
+  commit_allowed: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+
+final_status: AOS_FARM_27_HUMAN_PUSH_AUTHORIZATION_VALIDATED
+```
+
+## AOS-FARM.27.1 Push Evidence Working Tree Addendum
+
+```yaml
+task_id: AOS-FARM.27.1
+task_name: Push Evidence Working Tree Addendum
+mode: human_only_push_authorization_working_tree_addendum
+
+checkpoint_file: reports/human-checkpoints/aos-farm-push-evidence-working-tree-addendum.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  explicit_push_authorization_found: true
+  exact_commit_sha_found: true
+  working_tree_clean_requirement_exception_authorized: true
+
+approval_boundaries:
+  push_authorized: true
+  stage_allowed: false
+  commit_allowed: false
+  implementation_allowed: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  human_approval_simulated: false
+
+final_status: AOS_FARM_27_1_HUMAN_PUSH_WORKING_TREE_ADDENDUM_VALIDATED
+```
+
+## AOS-FARM.33 Human Implementation Readiness Authorization Checkpoint
+
+```yaml
+task_id: AOS-FARM.33
+task_name: Human Implementation Readiness Authorization Checkpoint
+mode: human_only_implementation_readiness_authorization_checkpoint
+
+checkpoint_file: reports/human-checkpoints/aos-farm-implementation-readiness-authorization.md
+
+validation_result:
+  human_checkpoint_found: true
+  human_checkpoint_valid: true
+  human_identity_evidence_found: true
+  aos_farm_34_preparation_authorized: true
+  implementation_execution_authorized_now: false
+  speckit_implement_authorized_now: false
+  specify_authorized_now: false
+  plan_authorized_now: false
+
+approval_boundaries:
+  implementation_authorized: false
+  speckit_implement_authorized: false
+  specify_authorized: false
+  plan_authorized: false
+  release_authorized: false
+  production_use_authorized: false
+  workflow_created: false
+  ci_activated: false
+  branch_protection_changed: false
+  commit_authorized: false
+  push_authorized: false
+  merge_authorized: false
+  force_push_authorized: false
+  push_to_main_authorized: false
+  human_approval_simulated: false
+
+final_status: AOS_FARM_33_HUMAN_IMPLEMENTATION_READINESS_AUTHORIZATION_VALIDATED
+```
