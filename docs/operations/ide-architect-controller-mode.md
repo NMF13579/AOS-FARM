@@ -40,3 +40,13 @@ The Controller should escalate to ChatGPT via `HUMAN_REVIEW_REQUIRED` when encou
 - Risk Profile ambiguity.
 - Validator/Runtime/CI safety design complexities.
 - Uncertainty around `UNKNOWN`/`NOT_RUN`/`PASS` semantic boundaries.
+
+## Architect/Auditor Mode Integration
+- Fits into IDE Controller mode as the mandatory final self-verification pass before task finalization.
+- Runs before writing the final execution report.
+- Interacts with task execution by allowing bounded self-correction strictly within the exact allowed files and authorized scope.
+- In read-only verification, self-correction is forbidden; it only detects and reports.
+- In human checkpoints, it verifies the checkpoint formatting but does not simulate human decisions.
+- In commit/push tasks, self-correction is restricted to file staging boundaries and report consistency, without amending commits or overriding push safety mechanically without explicit human directives.
+- Prevents prompt-only omission by establishing this process as a canonical repository operating policy rather than relying solely on user prompt reminders.
+- It is still not deterministic enforcement until a formal CI validator/runtime exists to actively block operations, meaning it relies on agent compliance with `AGENTS.md` and related operation docs.

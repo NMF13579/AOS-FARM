@@ -1,0 +1,55 @@
+```yaml
+task_id: AOS-FARM.155
+mode: read_only_post_execution_verification
+preconditions: passed
+current_branch: dev
+head: 2a1c6c9d7a681d3f6f2f7abfe06d029ff5d4b151
+origin_dev: 2a1c6c9d7a681d3f6f2f7abfe06d029ff5d4b151
+remote_baseline_closed: true
+required_sources_available: true
+
+aos_farm_154_report_available: true
+aos_farm_154_final_status_verified: true
+
+file_scope_verified: true
+AGENTS_md_architect_auditor_rules_verified: true
+operating_mode_doc_verified: true
+ide_controller_integration_verified: true
+self_verification_template_verified: true
+
+architect_logic_mandatory_verified: true
+response_mode_adaptive_verified: true
+bounded_self_correction_verified: true
+read_only_exception_verified: true
+human_checkpoint_exception_verified: true
+commit_push_exception_verified: true
+fail_closed_boundary_verified: true
+
+PASS_not_approval_preserved: true
+Evidence_not_approval_preserved: true
+CI_PASS_not_approval_preserved: true
+UNKNOWN_not_OK_preserved: true
+NOT_RUN_not_PASS_preserved: true
+human_approval_not_simulated: true
+Risk_Profile_not_self_assigned: true
+
+unauthorized_files_created_or_modified: 0
+protected_canonical_files_modified_without_checkpoint: 0
+runtime_enforcement_created: false
+validator_implementation_created: false
+ci_workflow_created: false
+staging_performed: false
+commit_performed: false
+push_performed: false
+release_performed: false
+production_use_performed: false
+approval_simulated: false
+risk_profile_self_assigned_by_agent: false
+
+may_prepare_commit_authorization: true
+
+blocking_issue_count: 0
+warning_count: 0
+
+final_status: AOS_FARM_155_ARCHITECT_AUDITOR_MODE_POST_EXECUTION_VERIFICATION_PASS
+```

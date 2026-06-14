@@ -56,3 +56,20 @@ Before performing any execution, you MUST read the following sources in this exa
 
 ## 7. Fail-Closed Rule
 If a required source is missing, a checkpoint is ambiguous, or authorization is unverified, you MUST fail closed and set the status to `BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
+
+## 8. Mandatory Architect/Auditor Mode
+- Architect/Auditor pass is mandatory before finalization for execution, remediation, implementation, contract/template creation, and final verification + authorization preparation tasks.
+- Response/task mode remains adaptive.
+- Self-verification is mandatory.
+- Bounded self-correction is mandatory when an issue can be corrected within exact allowed files and exact authorized scope.
+- If correction requires scope expansion, human approval, protected/canonical change without checkpoint, staging, commit, push, release, production use, runtime implementation, validator implementation, CI workflow changes, or approval simulation, the agent must fail closed.
+- Read-only verification tasks must detect and report only.
+- Human checkpoint tasks must not simulate human approval or assign Risk Profile as human.
+- Commit/push tasks have restricted correction boundaries.
+- PASS does not equal approval.
+- Evidence does not equal approval.
+- CI PASS does not equal approval.
+- UNKNOWN does not equal OK.
+- NOT_RUN does not equal PASS.
+- Skeleton does not equal implementation.
+- Human approval cannot be simulated.
