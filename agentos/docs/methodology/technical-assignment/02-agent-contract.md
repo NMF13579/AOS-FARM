@@ -373,7 +373,222 @@ final_status_required_fields:
 
 ---
 
-## 16. Final Rule
+## 16. Session Entry Contract
+
+```yaml
+session_start_contract:
+  any_non_empty_user_message_starts_session: true
+  explicit_start_word_required: false
+  supported_start_words:
+    - старт
+    - start
+    - iniciar
+    - starten
+
+  agent_must_detect_language: true
+  if_language_unclear:
+    ask_language_selection_first: true
+
+  first_agent_action:
+    - detect_or_ask_language
+    - greet_user
+    - explain_purpose
+    - present_two_route_selection
+    - wait_for_route_selection
+
+  initial_routes:
+    - INTERVIEW
+    - EXISTING_SPEC_REVIEW
+
+  removed_user_facing_routes:
+    - EXPRESS
+    - FULL
+
+  user_facing_express_mode: false
+  internal_depth_scaling: true
+
+  agent_must_not_before_route_selected:
+    - start_problem_interview
+    - start_data_discovery
+    - generate_project_spec_draft
+    - generate_requirements_draft
+    - infer_final_requirements
+    - select_stack
+    - create_tasks
+```
+
+```yaml
+entry_routes:
+  INTERVIEW:
+    first_step: offer_problem_interview
+    problem_interview_recommended: true
+    user_may_skip_problem_interview: true
+    skip_must_be_recorded: true
+    user_may_return_later: true
+    depth_scaling: automatic
+
+  EXISTING_SPEC_REVIEW:
+    first_step: request_existing_spec_or_brief
+    problem_interview_required: false
+    existing_spec_is_approval: false
+    gaps_must_be_recorded: true
+    depth_scaling: automatic
+```
+
+```yaml
+problem_interview_offer_contract:
+  must_explain_importance_before_choice: true
+  options:
+    - START_PROBLEM_INTERVIEW
+    - SKIP_AND_RETURN_LATER
+
+  if_user_selects_START_PROBLEM_INTERVIEW:
+    problem_interview_status: SELECTED_BY_USER
+    next_step: START_PROBLEM_INTERVIEW
+
+  if_user_selects_SKIP_AND_RETURN_LATER:
+    problem_interview_status: SKIPPED_BY_USER
+    can_return_later: true
+    problem_evidence_level_may_not_be_HIGH: true
+    requirements_confidence_must_be_lowered: true
+    assumptions_must_be_recorded: true
+    ready_for_execution: false
+```
+
+```yaml
+adaptive_depth_scaling_contract:
+  user_does_not_choose_depth: true
+  agent_scales_depth_by_project_signals: true
+
+  scale_up_triggers:
+    - entity_count_greater_than_2
+    - role_count_greater_than_2
+    - sensitive_data_present
+    - external_users_present
+    - multi_tenant_present
+    - ai_or_rag_present
+    - medical_or_legal_or_financial_context
+    - high_impact_actions_present
+    - integrations_present
+    - lifecycle_complexity_present
+    - unclear_problem_or_vision
+
+  if_scale_unclear:
+    minimum_depth: MEDIUM
+
+  if_high_risk_signal_present:
+    minimum_depth: HIGH_RISK
+```
+
+```yaml
+adaptive_method_selection_contract:
+  source: "09-adaptive-elicitation-method-selector.md"
+
+  method_selection_is_advisory: true
+  method_selection_is_pass: false
+  method_selection_is_approval: false
+  runbook_completion_is_pass: false
+  runbook_completion_is_approval: false
+
+  agent_may_propose_method: true
+  agent_must_explain_reason: true
+  user_may_accept_method: true
+  user_may_skip_method: true
+  user_may_return_later: true
+
+  if_multiple_high_confidence_methods:
+    agent_must_explain_detected_signals: true
+    agent_must_recommend_order: true
+    user_confirmation_required: true
+
+  if_signal_is_ambiguous:
+    record_as_parking_lot_candidate: true
+    continue_base_intake: true
+```
+
+```yaml
+one_question_at_a_time_contract:
+  one_primary_question_per_turn: true
+  wait_for_user_answer_before_next_question: true
+  long_questionnaire_dump_forbidden: true
+  multiple_independent_questions_per_turn_forbidden: true
+```
+
+```yaml
+interview_depth_contract:
+  source: "08-interview-depth-loop-and-entity-process-traversal.md"
+  applies_to:
+    - INTERVIEW
+    - PROBLEM_INTERVIEW
+    - DATA_DISCOVERY
+    - ACCESS_PERMISSIONS
+    - INFORMATION_FLOW
+    - EXISTING_SPEC_REVIEW
+
+interview_runbooks:
+  selector: "09-adaptive-elicitation-method-selector.md"
+  directory: "runbooks/"
+```
+
+---
+
+## 17. Skip / Return Protocol Contract
+
+```yaml
+skip_return_protocol:
+  user_may_skip_any_section: true
+  agent_must_record_skip: true
+  skipped_section_is_completed: false
+  skipped_section_is_pass: false
+  skipped_section_is_approval: false
+  user_may_return_later: true
+
+  allowed_skip_statuses:
+    - SKIPPED_BY_USER
+    - DEFERRED_BY_USER
+    - NOT_APPLICABLE
+    - BLOCKED_BY_USER_DECISION
+
+  return_statuses:
+    - RETURNED_TO_SECTION
+    - COMPLETED_LATER
+    - UPDATED_AFTER_SKIP
+
+  if_user_returns_to_skipped_section:
+    agent_must_resume_section: true
+    agent_must_preserve_previous_answers: true
+    agent_must_update_section_status: true
+    agent_must_recalculate_confidence: true
+    agent_must_update_unknowns_and_risks: true
+    agent_must_update_human_decisions_required: true
+```
+
+```yaml
+section_status_transition_rules:
+  SKIPPED_BY_USER:
+    may_transition_to:
+      - RETURNED_TO_SECTION
+      - COMPLETED_LATER
+      - UPDATED_AFTER_SKIP
+    may_not_transition_directly_to:
+      - PASS
+      - APPROVED
+      - READY_FOR_EXECUTION
+
+  DEFERRED_BY_USER:
+    may_transition_to:
+      - RETURNED_TO_SECTION
+      - COMPLETED_LATER
+      - UPDATED_AFTER_SKIP
+    may_not_transition_directly_to:
+      - PASS
+      - APPROVED
+      - READY_FOR_EXECUTION
+```
+
+---
+
+## 18. Final Rule
 
 ```yaml
 final_rule:

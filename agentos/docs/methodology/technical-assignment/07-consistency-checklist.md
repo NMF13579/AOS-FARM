@@ -79,7 +79,87 @@ execution_authorized: false
 
 ---
 
-## 5. Final Checklist Status
+## 5. Session Entry Checklist
+
+- Any non-empty user message starts the session.
+- Explicit start word is not required.
+- Agent detects language or asks for it.
+- Agent greets user before intake.
+- Agent presents only two initial routes: Interview and Existing Spec Review.
+- User-facing EXPRESS route is not presented.
+- User-facing FULL route is not presented.
+- If Interview is selected, agent offers Problem Interview first.
+- Problem Interview offer explains why it matters.
+- Problem Interview offer has exactly two options: start or skip and return later.
+- Skipped Problem Interview is recorded as SKIPPED_BY_USER.
+- Skipped Problem Interview is not marked completed.
+- Skipped Problem Interview cannot produce HIGH problem evidence.
+- User can return to skipped sections later.
+
+---
+
+## 6. Skip / Return Checklist
+
+- User may skip any intake section.
+- Every skip must be recorded.
+- Skipped sections are not completed.
+- Skipped sections are not PASS.
+- Skipped sections are visible in PROJECT_SPEC.draft.md.
+- User may return to skipped sections later.
+- Return updates section status.
+- Return triggers confidence recalculation.
+- Blocking skip in FULL blocks FULL continuation.
+- Blocking skip in FULL blocks PROJECT_SPEC.draft.md.
+- EXPRESS may continue with warnings after skip.
+- EXISTING_SPEC_REVIEW may record missing sections as gaps.
+
+---
+
+## 7. Interview Depth and Method Checklist
+
+- Agent asks one primary question per turn.
+- Agent does not dump long questionnaires.
+- Interview depth scales automatically.
+- Adaptive Elicitation Method Selector exists.
+- Each interview method has a separate runbook file.
+- Method selection is not PASS.
+- Method selection is not approval.
+- Runbook completion is not PASS.
+- Runbook completion is not approval.
+- Entity-Process Traversal is used for data/process depth.
+- Traversal coverage is not PASS.
+- Traversal coverage is not approval.
+- PROJECT_SPEC.draft.md exposes Interview Entry Status.
+- PROJECT_SPEC.draft.md exposes Method Selection Status.
+- PROJECT_SPEC.draft.md exposes Interview Depth Status.
+- PROJECT_SPEC.draft.md exposes Entity-Process Traversal Summary.
+- PROJECT_SPEC.draft.md exposes Skipped / Deferred Sections.
+- PROJECT_SPEC.draft.md exposes Return Points.
+- Interview includes mini-summary after every 5–7 questions.
+- Mini-summary includes collected facts, assumptions, UNKNOWN, next block, and user confirmation/correction.
+- Fatigue signals are tracked.
+- If fatigue is detected, agent offers pause or summary.
+- Entity-Process Traversal distinguishes CORE_ENTITY from REFERENCE_ENTITY.
+- Full traversal is not run on every minor/reference entity.
+- Core/risk entities receive full traversal.
+- Reference entities may receive lightweight traversal.
+- User-mentioned solution anchors are recorded as USER_MENTIONED_HINT.
+- User-mentioned numbers are not treated as acceptance criteria.
+- User-mentioned technologies are not treated as architecture decisions.
+- Five Whys contains anti-anchor prompts.
+- Method switch includes what user said, why route changes, and what next method collects.
+- PROJECT_SPEC.draft.md exposes Mini-Summary Log.
+- PROJECT_SPEC.draft.md exposes Entity Classification.
+- PROJECT_SPEC.draft.md exposes Anchor Register.
+- PROJECT_SPEC.draft.md exposes Not Discussed But Possibly Relevant.
+- PROJECT_SPEC.draft.md exposes Developer Warnings.
+- Structural UNKNOWN is visible.
+- Method completion is not treated as execution readiness.
+- All runbooks completed is not treated as approval.
+
+---
+
+## 8. Final Checklist Status
 
 Allowed outcomes:
 

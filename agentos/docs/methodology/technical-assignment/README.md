@@ -18,6 +18,12 @@ agentos/docs/methodology/technical-assignment/
 - `05-safety-gates-and-statuses.md` — safety gates, статусы и fail-closed правила.
 - `06-domain-extension-interface.md` — интерфейс отраслевых extensions.
 - `07-consistency-checklist.md` — ручная проверка согласованности до появления validator.
+- `08-interview-depth-loop-and-entity-process-traversal.md` — правила глубины интервью и Entity-Process Traversal.
+- `09-adaptive-elicitation-method-selector.md` — логика выбора метода интервью на основе ответов.
+
+## Runbooks
+
+- `runbooks/` — модульные методики интервью (Five Whys, JTBD, Scenario Walkthrough и др.). Эти runbooks являются вспомогательными инструментами для интервью и не дают разрешения на реализацию.
 
 ## Domain extensions
 

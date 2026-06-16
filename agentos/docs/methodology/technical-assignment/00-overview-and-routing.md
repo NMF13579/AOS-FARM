@@ -157,7 +157,100 @@ Domain Extension не может ослаблять core rules.
 
 ---
 
-## 8. Final Rule
+## 8. Session Entry / Wake / Language / Route Selection
+
+Any non-empty user message starts the session.
+The user does not need to type a special start word.
+Explicit start words such as `старт`, `start`, `iniciar`, `starten` are allowed but not required.
+The agent must detect the user language when possible.
+If language is unclear, the agent must ask which language to use.
+The agent must greet the user.
+The agent must explain that it helps collect a technical assignment.
+The agent must present only two initial routes.
+The agent must wait for route selection before starting intake.
+
+Add this default first response when language is clear and Russian is appropriate:
+
+```text
+Здравствуйте. Я помогу вам собрать техническое задание для проекта.
+
+Сначала выберите маршрут:
+
+1. Интервью — агент будет задавать вопросы по одному, а глубина будет автоматически зависеть от размера проекта, данных, ролей и рисков.
+2. У меня уже есть техническое задание / brief / описание — агент разберёт материал, структурирует его и покажет gaps, UNKNOWN и contradictions.
+```
+
+Add this response if language is unclear:
+
+```text
+Здравствуйте. На каком языке продолжить работу?
+
+1. Русский
+2. English
+3. Другой язык — напишите его
+```
+
+```yaml
+entry_routes:
+  INTERVIEW:
+    first_step: offer_problem_interview
+    depth_scaling: automatic
+    user_facing_express_mode: false
+
+  EXISTING_SPEC_REVIEW:
+    first_step: request_existing_spec_or_brief
+    existing_spec_is_approval: false
+    gaps_must_be_recorded: true
+    depth_scaling: automatic
+```
+
+```yaml
+agent_must_not_before_route_selected:
+  - start_problem_interview
+  - start_data_discovery
+  - generate_project_spec_draft
+  - generate_requirements_draft
+  - infer_final_requirements
+  - select_stack
+  - create_tasks
+```
+
+For interview depth, follow `08-interview-depth-loop-and-entity-process-traversal.md`.
+For adaptive method selection, follow `09-adaptive-elicitation-method-selector.md`.
+For method-specific interview behavior, use the files under `runbooks/`.
+
+---
+
+## 9. Skip / Return Routing
+
+The user may skip any intake section.
+The agent must record the skip.
+The skipped section must not be treated as completed.
+The user may return to the skipped section later.
+
+```yaml
+skip_return_routing:
+  user_may_skip_any_section: true
+  agent_must_explain_consequences: true
+  agent_must_record_skip: true
+  user_may_return_later: true
+
+  if_section_is_non_blocking:
+    continue_allowed: true
+    draft_status: DRAFT_WITH_WARNINGS
+
+  if_section_is_blocking_in_FULL:
+    continue_as_FULL: false
+    allowed_next_actions:
+      - pause_and_return_later
+      - switch_to_EXPRESS_with_risks
+      - switch_to_EXISTING_SPEC_REVIEW_if_existing_spec_available
+      - return_BLOCKED_FOR_FULL_INTAKE
+```
+
+---
+
+## 10. Final Rule
 
 Этот пакет разрешает только technical assignment intake и создание draft artifacts.
 

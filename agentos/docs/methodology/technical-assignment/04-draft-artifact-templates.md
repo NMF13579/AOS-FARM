@@ -42,6 +42,80 @@ execution_authorized: false
 implementation_authorized: false
 ---
 
+# Interview Entry Status
+
+| Field | Value |
+|---|---|
+| Entry Route | INTERVIEW / EXISTING_SPEC_REVIEW |
+| Problem Interview Status | SELECTED_BY_USER / SKIPPED_BY_USER / COMPLETED / NOT_REQUIRED |
+| Depth Scale | LIGHT / MEDIUM / DEEP / HIGH_RISK |
+| Ready For Execution | false |
+| Approval Status | NOT_APPROVED |
+
+# Method Selection Status
+
+| Signal | Proposed Method | Runbook | Confidence | User Decision | Status |
+|---|---|---|---|---|---|
+| unclear problem | Five Whys | runbooks/five-whys-runbook.md | HIGH | accepted / skipped / pending | SELECTED_BY_USER |
+
+# Interview Depth Status
+
+| Section | Status | Missing Items | Blocking? | Follow-up Required |
+|---|---|---|---|---|
+| Data Discovery | NEEDS_FOLLOW_UP | lifecycle, audit | yes | yes |
+
+# Entity-Process Traversal Summary
+
+| Entity | CRUD Covered | Lifecycle Covered | Events Covered | Failure Modes Covered | Access Covered |
+|---|---|---|---|---|---|
+| [entity] | partial | partial | missing | partial | partial |
+
+# Intake Progress and Calibration
+
+| Field | Value |
+|---|---|
+| Questions Since Last Summary | 0 |
+| Last Mini-Summary Completed | yes / no |
+| Fatigue Signals Detected | yes / no |
+| Pause Offered | yes / no |
+| Current Interview Block | [method / section] |
+
+# Mini-Summary Log
+
+| Step | Collected Facts | Assumptions | UNKNOWN | Next Block | User Confirmed? |
+|---|---|---|---|---|---|
+| 1 |  |  |  |  |  |
+
+# Entity Classification
+
+| Entity | Class | Reason | Traversal Depth | Blocking UNKNOWN |
+|---|---|---|---|---|
+| Patient Record | CORE_ENTITY | sensitive medical data | full | no |
+| City Dictionary | REFERENCE_ENTITY | static lookup | lightweight | no |
+
+# Anchor Register
+
+| Anchor | Type | Source | Status | Reframing Question | Result |
+|---|---|---|---|---|---|
+| 100 fields | number | user first answer | USER_MENTIONED_HINT | what happens without this data? | pending |
+
+# Not Discussed But Possibly Relevant
+
+| Area | Why It May Matter | Status | Required Before Execution |
+|---|---|---|---|
+| Multi-tenancy | External users may imply tenant isolation | UNKNOWN | yes |
+| Data retention | Medical data may require retention rules | UNKNOWN | yes |
+| Admin revocation | Access model may break when staff leaves | UNKNOWN | yes |
+
+# Developer Warnings
+
+- Do not implement access model yet if admin revocation is UNKNOWN.
+- Do not build final database schema from Data Discovery alone.
+- Do not treat skipped Negative Requirements as safety clearance.
+- Do not treat method completion as approval.
+- Do not treat user-mentioned technology or feature anchors as approved requirements.
+
+
 # 1. Source Status
 - intake_depth: EXPRESS / FULL / EXISTING_SPEC_REVIEW
 - source_input_type: interview / existing_spec / user_vision_only / mixed
@@ -92,7 +166,23 @@ implementation_authorized: false
 # 15. Human Decisions Required
 [решения, требующие Human review]
 
-# 16. Final Status
+# 16. Skipped / Deferred Sections
+
+| Section | Status | Reason | Blocking? | Can Return Later | Impact |
+|---|---|---|---|---|---|
+| Problem Interview | SKIPPED_BY_USER | user declined now | yes / no | yes | confidence lowered |
+| [section] | SKIPPED_BY_USER / DEFERRED_BY_USER | [reason] | yes / no | yes / no | [impact] |
+
+# 17. Return Points
+
+- RET-001: Вернуться к [section].
+- RET-002: Уточнить [section].
+- RET-003: Дозаполнить [section].
+
+Skipped / Deferred Sections must be visible in the final draft.
+They must not be hidden in notes.
+
+# 18. Final Status
 ready_for_requirements_review: true / true_with_risks / false
 ready_for_execution: false
 approval_status: NOT_APPROVED
@@ -205,4 +295,8 @@ final_status:
   push_authorized: false
   deploy_authorized: false
   production_use_authorized: false
+  skipped_sections_count: [number]
+  deferred_sections_count: [number]
+  blocking_skipped_sections_count: [number]
+  return_points_count: [number]
 ```
