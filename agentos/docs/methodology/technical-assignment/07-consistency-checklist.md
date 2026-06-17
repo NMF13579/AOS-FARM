@@ -156,6 +156,26 @@ execution_authorized: false
 - Structural UNKNOWN is visible.
 - Method completion is not treated as execution readiness.
 - All runbooks completed is not treated as approval.
+- Edge Case Elicitation section exists.
+- Exception / Anomaly questions are present.
+- Hardest case question is present.
+- End-of-period / peak-load questions are present.
+- Hidden approval flow questions are present.
+- Contradiction Probing Protocol exists.
+- Contradictions affecting scope/safety/access/data trigger Human review.
+- Contradiction is not treated as user error by default.
+- Scenario Walkthrough includes exception/anomaly flow.
+- Negative Requirements includes never-do questions.
+- Five Whys includes grey-zone usage rule.
+- Observation Evidence Boundary exists.
+- Observation evidence is not treated as approval.
+- Screenshot or walkthrough is not treated as production data authorization.
+- PROJECT_SPEC.draft.md exposes Exception and Anomaly Register.
+- PROJECT_SPEC.draft.md exposes Contradiction Register.
+- PROJECT_SPEC.draft.md exposes Observation Evidence Register.
+- PROJECT_SPEC.draft.md exposes Hidden Approval Flow Register.
+- LOW_CONFIDENCE_ANSWER is not promoted to requirement.
+- DEPTH_PROBING_REQUIRED is not treated as PASS.
 
 ---
 

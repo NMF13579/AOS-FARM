@@ -103,6 +103,14 @@ critical_failures:
   - method_switch_without_explanation
   - long_interview_without_mini_summary
   - fatigue_signals_detected_but_no_pause_or_summary_offered
+  - contradiction_affecting_scope_safety_access_or_data_hidden
+  - unresolved_contradiction_treated_as_ready_for_execution
+  - exception_case_treated_as_approved_requirement
+  - observation_evidence_treated_as_approval
+  - unredacted_sensitive_observation_requested
+  - hidden_approval_flow_treated_as_approved_access_model
+  - low_confidence_answer_promoted_to_requirement
+  - five_whys_forced_mechanically_despite_fatigue_signal
 ```
 
 Policy:
@@ -175,6 +183,21 @@ AUDIT_ENTITY
 EXTERNAL_ENTITY
 LIGHTWEIGHT_TRAVERSAL
 FULL_TRAVERSAL
+EXCEPTION_CASE_FOUND
+ANOMALY_FOUND
+HARDEST_CASE_CAPTURED
+END_OF_PERIOD_CASE_FOUND
+PEAK_LOAD_CASE_FOUND
+CONTRADICTION_FOUND
+CONTRADICTION_UNRESOLVED
+CONTRADICTION_RESOLVED
+CONTRADICTION_SCOPE_BLOCKING
+CONTRADICTION_SAFETY_BLOCKING
+OBSERVATION_EVIDENCE_RECORDED
+OBSERVATION_REDACTION_REQUIRED
+HIDDEN_APPROVAL_FLOW_FOUND
+LOW_CONFIDENCE_ANSWER
+DEPTH_PROBING_REQUIRED
 ```
 
 ```text
@@ -205,6 +228,17 @@ MINI_SUMMARY_REQUIRED ≠ completion.
 CORE_ENTITY classification ≠ database schema.
 LIGHTWEIGHT_TRAVERSAL ≠ omission.
 FULL_TRAVERSAL ≠ implementation authorization.
+EXCEPTION_CASE_FOUND ≠ approved requirement.
+ANOMALY_FOUND ≠ implementation instruction.
+HARDEST_CASE_CAPTURED ≠ execution readiness.
+CONTRADICTION_FOUND ≠ user error.
+CONTRADICTION_UNRESOLVED ≠ ready for execution.
+CONTRADICTION_RESOLVED ≠ approval.
+OBSERVATION_EVIDENCE_RECORDED ≠ approval.
+OBSERVATION_REDACTION_REQUIRED ≠ OK.
+HIDDEN_APPROVAL_FLOW_FOUND ≠ approved access model.
+LOW_CONFIDENCE_ANSWER ≠ requirement.
+DEPTH_PROBING_REQUIRED ≠ PASS.
 ```
 
 If a blocking section is skipped in FULL mode, the agent must not continue as FULL and must not generate PROJECT_SPEC.draft.md until the section is completed or mode is changed.

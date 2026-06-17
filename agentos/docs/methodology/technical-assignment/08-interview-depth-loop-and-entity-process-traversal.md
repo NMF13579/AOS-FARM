@@ -244,7 +244,79 @@ Method coverage ≠ requirements completeness.
 Interview completion ≠ implementation authorization.
 ```
 
-## 14. Final Rule
+## 14. Contradiction Probing Protocol
+
+```yaml
+contradiction_probing_protocol:
+  trigger:
+    - user_statement_conflicts_with_previous_statement
+    - role_or_access_rule_conflicts_with_later_exception
+    - workflow_step_conflicts_with_actual_example
+    - user_mentions_exception_after_stating_general_rule
+    - existing_spec_conflicts_with_interview_answer
+
+  agent_must:
+    - surface_the_contradiction_neutrally
+    - ask_for_clarification
+    - record_both_statements
+    - mark_unresolved_conflict_as_CONTRADICTION_UNRESOLVED
+    - escalate_to_HUMAN_REVIEW_REQUIRED_if_scope_safety_access_or_data_handling_is_affected
+
+  agent_must_not:
+    - assume_the_user_is_wrong
+    - silently_choose_one_statement
+    - convert_contradiction_to_requirement
+    - mark_section_complete_if_blocking_contradiction_remains
+```
+
+Пример для пользователя:
+```text
+Ранее вы сказали, что доступ к записи закрыт для всех врачей, кроме лечащего. Сейчас вы сказали, что дежурный врач тоже может открыть запись ночью. Это исключение, отдельная роль или emergency-доступ?
+```
+
+Invariants:
+```text
+Contradiction ≠ user error.
+Contradiction may reveal a real business rule.
+Unresolved contradiction affecting scope/safety/access ≠ ready for execution.
+Resolved contradiction ≠ approval.
+```
+
+## 15. Observation / Walkthrough Evidence Boundary
+
+```yaml
+observation_evidence_boundary:
+  allowed:
+    - user_describes_screen_or_workflow
+    - user_pastes_redacted_example
+    - user_uploads_safe_redacted_screenshot_if_available
+    - user_walks_through_current_workflow
+    - agent_records_observed_steps_as_evidence
+
+  forbidden:
+    - require_sensitive_screen_share
+    - request_unredacted_patient_data
+    - request_unredacted_financial_or_legal_data
+    - treat_observation_as_approval
+    - treat_observed_workflow_as_final_requirement
+    - treat_screenshot_as_permission_to_store_sensitive_data
+
+  required:
+    - mark_observation_source
+    - mark_redaction_status
+    - mark_sensitive_data_risk
+    - preserve_UNKNOWN_if_observation_is_partial
+```
+
+Invariants:
+```text
+Observed workflow ≠ approved requirement.
+Screenshot ≠ permission to store sensitive data.
+Observation Evidence ≠ execution authorization.
+Redacted example ≠ production data authorization.
+```
+
+## 16. Final Rule
 
 This document does not authorize code implementation, runtime implementation, validators, CI workflows, execution, commit, push, deploy, release, production use, stack selection, Risk Profile assignment, final database schema, lifecycle promotion, or approval simulation.
 

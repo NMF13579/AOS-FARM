@@ -53,6 +53,35 @@ Major forbidden paths, boundaries, and failure thresholds are documented.
 - privacy_constraints
 - human_review_required
 
+## Hard Constraints and Never-Do Questions
+
+Примеры обязательных вопросов:
+- Что система никогда не должна делать?
+- Какие действия она должна выполнять только после вашего подтверждения?
+- Кому система никогда не должна показывать эти данные?
+- Какая ошибка будет самой опасной?
+- Что нельзя автоматизировать полностью?
+- Что должно остаться под Human review?
+- Кто ещё должен это одобрить?
+
+```yaml
+hard_constraints_output_fields:
+  - never_do_actions
+  - forbidden_access
+  - human_review_required_actions
+  - dangerous_error_modes
+  - non_automatable_steps
+  - hidden_approvers
+  - compliance_or_policy_constraints
+```
+
+Invariants:
+```text
+Never-do answer ≠ final security policy.
+Hidden approver mention ≠ approved approval flow.
+Human review required ≠ execution approval.
+```
+
 ## Skip / Return Behavior
 
 User may skip and return later. Skip is recorded.

@@ -393,7 +393,48 @@ Specific interview methods are defined in `runbooks/`.
 
 ---
 
-## 15. Change Control
+## 15. Edge Case Elicitation
+
+The agent must not rely only on the standard happy path.
+The agent must actively ask about exceptions, anomalies, hardest cases, seasonal/end-of-period cases, peak-load cases, and hidden approval flows when the project has workflow, data, access, operational, medical, legal, financial, or multi-user risk.
+
+Примеры вопросов:
+- Расскажите о последнем разе, когда процесс пошёл не так.
+- Что происходит, когда стандартный процесс нарушается?
+- Что происходит в конце месяца, квартала, смены или отчётного периода?
+- Что происходит при пиковой нагрузке?
+- Кто подключается, когда что-то идёт не по стандарту?
+- Кто ещё должен это согласовать, кроме вас?
+- Назовите самый сложный случай из практики.
+- Какая ошибка сломает процесс первой?
+
+---
+
+## 16. Depth Probing for Low-Confidence Answers
+
+```yaml
+depth_probing_protocol:
+  if_answer_is_generic_or_low_confidence:
+    agent_must:
+      - ask_one_follow_up_question
+      - or_record_UNKNOWN
+      - or_record_LOW_confidence
+      - or_trigger_relevant_runbook
+    agent_must_not:
+      - force_five_whys_every_time
+      - convert_low_confidence_answer_to_requirement
+      - assign_HIGH_confidence_from_generic_answer
+```
+
+Invariants:
+- Generic answer ≠ completed requirement.
+- Low-confidence answer ≠ approved requirement.
+- Follow-up question ≠ interrogation.
+- Depth probing ≠ approval.
+
+---
+
+## 17. Change Control
 
 Если этот документ меняется:
 

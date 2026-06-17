@@ -114,6 +114,10 @@ implementation_authorized: false
 - Do not treat skipped Negative Requirements as safety clearance.
 - Do not treat method completion as approval.
 - Do not treat user-mentioned technology or feature anchors as approved requirements.
+- Exception captured ≠ approved requirement.
+- Contradiction resolved ≠ approval.
+- Observation evidence ≠ implementation authorization.
+- Hidden approval flow ≠ approved access model.
 
 
 # 1. Source Status
@@ -181,6 +185,30 @@ implementation_authorized: false
 
 Skipped / Deferred Sections must be visible in the final draft.
 They must not be hidden in notes.
+
+# Exception and Anomaly Register
+
+| ID | Scenario | What Broke | Trigger | Actors Involved | Workaround | Impact | Frequency | Status |
+|---|---|---|---|---|---|---|---|---|
+| EX-001 |  |  |  |  |  |  |  | EXCEPTION_CASE_FOUND / UNKNOWN |
+
+# Contradiction Register
+
+| ID | Statement A | Statement B | Source Turns | Affected Area | Status | Human Review Required |
+|---|---|---|---|---|---|---|
+| C-001 |  |  |  | scope / safety / access / data / workflow | CONTRADICTION_FOUND / CONTRADICTION_UNRESOLVED / CONTRADICTION_RESOLVED | yes / no |
+
+# Observation Evidence Register
+
+| ID | Observation Type | Source | Redacted? | Sensitive Data Risk | Observed Step | Evidence Status |
+|---|---|---|---|---|---|---|
+| O-001 | walkthrough / screenshot / redacted example / user description |  | yes / no / not_applicable | yes / no / UNKNOWN |  | OBSERVATION_EVIDENCE_RECORDED |
+
+# Hidden Approval Flow Register
+
+| ID | Action | Approver / Role | When Approval Is Needed | Formal or Informal | Status |
+|---|---|---|---|---|---|
+| HA-001 |  |  |  | formal / informal / UNKNOWN | UNKNOWN |
 
 # 18. Final Status
 ready_for_requirements_review: true / true_with_risks / false

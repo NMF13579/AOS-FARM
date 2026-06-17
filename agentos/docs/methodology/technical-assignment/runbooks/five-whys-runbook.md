@@ -92,6 +92,41 @@ Root problem candidate ≠ approval.
 Anchor reframing ≠ rejection of user idea.
 ```
 
+## Five Whys for Grey Zones
+
+Five Whys may be used for grey zones, manual workarounds, vague constraints, and unclear root causes.
+The agent must not force exactly five why-questions.
+The agent must stop earlier if sufficient evidence appears.
+
+```yaml
+five_whys_grey_zone_rule:
+  use_when:
+    - root_cause_unclear
+    - manual_workaround_mentioned
+    - generic_constraint_given
+    - contradiction_requires_cause_clarification
+    - exception_case_has_unclear_trigger
+
+  stop_when:
+    - root_cause_candidate_is_clear
+    - user_fatigue_signal_detected
+    - answer_quality_declines
+    - user_requests_skip
+    - sufficient_evidence_recorded
+
+  must_not:
+    - ask_why_mechanically
+    - convert_root_cause_candidate_to_approved_requirement
+    - assign_HIGH_confidence_without_evidence
+```
+
+Invariants:
+```text
+Root cause candidate ≠ approved requirement.
+Five Whys completion ≠ PASS.
+Grey zone explanation ≠ implementation authorization.
+```
+
 ## Final Rule
 
 This runbook does not authorize execution or approval.

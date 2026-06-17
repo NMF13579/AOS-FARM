@@ -50,6 +50,39 @@ Scenario is fully mapped from start to result including error states.
 - edge_cases
 - acceptance_candidates
 
+## Exception and Anomaly Walkthrough
+
+Примеры обязательных вопросов:
+- Пройдите меня через последний случай, когда процесс пошёл не так.
+- На каком шаге всё отклонилось от обычного сценария?
+- Кто вмешался?
+- Какие ручные проверки появились?
+- Какие неформальные согласования были нужны?
+- Что произошло в конце месяца / квартала / смены?
+- Что происходит при пиковой нагрузке?
+- Назовите самый сложный случай из практики.
+
+```yaml
+exception_walkthrough_output_fields:
+  - exception_case
+  - broken_step
+  - trigger
+  - actors_involved
+  - manual_checks
+  - informal_approvals
+  - workaround
+  - impact
+  - frequency
+  - end_of_period_or_peak_load_relevance
+  - unresolved_UNKNOWN
+```
+
+Invariants:
+```text
+Exception walkthrough output ≠ approved requirement.
+Hardest case captured ≠ execution readiness.
+```
+
 ## Skip / Return Behavior
 
 User may skip and return later. Skip is recorded.

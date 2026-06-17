@@ -60,6 +60,59 @@ method_selection_confidence:
 | MVP, tight deadline, prioritization pressure | Kano Prioritization | runbooks/kano-prioritization-runbook.md |
 | many entities, roles, permissions, lifecycle states, or data flows | Entity-Process Traversal | runbooks/entity-process-traversal-runbook.md |
 
+```yaml
+additional_selector_signals:
+  contradiction_found:
+    route_to:
+      - Contradiction Probing Protocol
+      - Scenario Walkthrough
+    priority: HIGH
+
+  exception_case_detected:
+    route_to:
+      - Scenario Walkthrough
+      - Negative Requirements
+    priority: HIGH
+
+  standard_process_breaks:
+    route_to:
+      - Scenario Walkthrough
+    priority: HIGH
+
+  end_of_period_case:
+    route_to:
+      - Scenario Walkthrough
+      - Negative Requirements
+    priority: MEDIUM_HIGH
+
+  user_mentions_manual_workaround:
+    route_to:
+      - Scenario Walkthrough
+      - Five Whys
+    priority: MEDIUM_HIGH
+
+  hidden_approval_flow_signal:
+    route_to:
+      - Negative Requirements
+      - Entity-Process Traversal
+    priority: HIGH
+
+  low_confidence_generic_answer:
+    route_to:
+      - Depth Probing
+      - Five Whys
+    priority: MEDIUM
+```
+
+Invariants:
+```text
+Selector signal ≠ approval.
+Contradiction signal ≠ failure by itself.
+Exception signal ≠ implementation requirement.
+Manual workaround ≠ approved feature.
+Hidden approval flow signal ≠ approved access model.
+```
+
 ## 5. Conflict Handling
 
 ```yaml
