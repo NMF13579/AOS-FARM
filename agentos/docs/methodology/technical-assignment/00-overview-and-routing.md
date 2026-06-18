@@ -32,12 +32,13 @@ Workflow переводит живое описание пользователя
 |---|---|
 | `00-overview-and-routing.md` | точка входа в пакет и routing режима сбора ТЗ |
 | `01-human-methodology.md` | человекочитаемая методология |
-| `02-agent-contract.yaml` | machine-readable контракт агента |
+| `02-agent-contract.md` | machine-readable контракт агента в Markdown |
 | `03-data-discovery-and-access.md` | данные, Information Flow, Access / Permissions |
 | `04-draft-artifact-templates.md` | шаблоны выходных draft artifacts |
 | `05-safety-gates-and-statuses.md` | safety statuses и fail-closed gates |
 | `06-domain-extension-interface.md` | правила отраслевых extensions |
 | `07-consistency-checklist.md` | ручной consistency check до появления validator |
+| `10-ta-intake-to-documentation-assembly-bridge.md` | bridge contract к Documentation Assembly candidate inputs |
 | `extensions/*.md` | отраслевые extensions для серых зон |
 
 ---
@@ -145,7 +146,7 @@ Domain Extension не может ослаблять core rules.
 
 ## 7. Связка документов 01 и 02
 
-`01-human-methodology.md` и `02-agent-contract.yaml` — controlled pair.
+`01-human-methodology.md` и `02-agent-contract.md` — controlled pair.
 
 - `01` задаёт human-readable методологию и смысл.
 - `02` является machine-readable projection документа `01`.
@@ -154,6 +155,21 @@ Domain Extension не может ослаблять core rules.
 - Если `01` и `02` конфликтуют, статус становится `HUMAN_REVIEW_REQUIRED`.
 
 Пока validator не создан, consistency проверяется через `07-consistency-checklist.md`.
+
+---
+
+## 8. Documentation Assembly bridge boundary
+
+TA intake draft artifacts can be mapped into Documentation Assembly candidate inputs only through `10-ta-intake-to-documentation-assembly-bridge.md`.
+
+The bridge preserves these boundaries:
+
+- bridge output is candidate input only;
+- bridge output does not authorize implementation or execution;
+- bridge output does not create a final Task Brief;
+- Task Brief material remains candidate-only until a separate scoped Task Brief and required human decisions exist;
+- open questions remain `UNKNOWN` / `HUMAN_REVIEW_REQUIRED`;
+- missing human decisions remain visible in the Human Review Package.
 
 ---
 

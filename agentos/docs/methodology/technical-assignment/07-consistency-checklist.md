@@ -13,7 +13,7 @@
 
 Он проверяет, что:
 
-- `01-human-methodology.md` и `02-agent-contract.yaml` не разошлись;
+- `01-human-methodology.md` и `02-agent-contract.md` не разошлись;
 - Domain Extensions не ослабляют core;
 - draft artifacts не заявляют approval;
 - execution authorization не создаётся.
@@ -54,6 +54,9 @@ execution_authorized: false
 | Implementation Hints не становятся architecture decisions | PASS / FAIL / UNKNOWN |
 | User Vision не становится approved requirement | PASS / FAIL / UNKNOWN |
 | Current Workflow optional, а не mandatory | PASS / FAIL / UNKNOWN |
+| Bridge output остаётся candidate input only | PASS / FAIL / UNKNOWN |
+| Task Brief material from bridge remains candidate-only | PASS / FAIL / UNKNOWN |
+| Open questions remain UNKNOWN / HUMAN_REVIEW_REQUIRED | PASS / FAIL / UNKNOWN |
 | Critical failures работают fail-closed | PASS / FAIL / UNKNOWN |
 
 ---

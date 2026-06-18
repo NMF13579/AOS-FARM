@@ -96,6 +96,7 @@ agentos/docs/methodology/technical-assignment/06-domain-extension-interface.md
 agentos/docs/methodology/technical-assignment/07-consistency-checklist.md
 agentos/docs/methodology/technical-assignment/08-interview-depth-loop-and-entity-process-traversal.md
 agentos/docs/methodology/technical-assignment/09-adaptive-elicitation-method-selector.md
+agentos/docs/methodology/technical-assignment/10-ta-intake-to-documentation-assembly-bridge.md
 agentos/docs/methodology/technical-assignment/runbooks/
 ```
 

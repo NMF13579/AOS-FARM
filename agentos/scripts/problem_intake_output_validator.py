@@ -3,209 +3,335 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
+from typing import Optional
+
 
 REQUIRED_FILES = {
     "PROJECT_SPEC.draft.md",
     "REQUIREMENTS.draft.md",
     "problem-interview-report.md",
     "requirements-checklist-draft.md",
-    "problem-intake-run-report.md"
+    "problem-intake-run-report.md",
 }
 
-REQUIRED_FIELDS_ALL = {
-    "artifact_status: DRAFT",
-    "approval_status: NOT_APPROVED",
-    "automation_status: MVP_RUNNER_ONLY",
-    "production_status: NOT_PRODUCTION"
+PROJECT_SPEC_REQUIRED_SECTIONS = {
+    "source status": "source_status",
+    "user vision": "user_vision",
+    "data discovery": "data_discovery",
+    "information flow": "information_flow",
+    "access / permissions": "access_permissions",
+    "problem evidence": "problem_evidence_if_applicable",
+    "optional current workflow": "optional_current_workflow_if_applicable",
+    "requirements draft": "requirements_draft",
+    "implementation hints": "implementation_hints",
+    "negative constraints": "negative_constraints",
+    "acceptance criteria": "acceptance_criteria",
+    "mvp": "mvp",
+    "unknown / open questions": "unknown_open_questions",
+    "contradictions": "contradictions",
+    "human decisions required": "human_decisions_required",
+    "final status": "final_status",
 }
 
-# The run report has some dynamic fields that need regex matching for the valid permutations
-RUN_REPORT_FIELDS_REGEX = [
-    r"run_status:\s*(DRAFT_CREATED|INCOMPLETE|FAILED)",
-    r"draft_status:\s*(DRAFT_ONLY|INCOMPLETE)",
-    r"validation_status:\s*(BASIC_STRUCTURE_CHECKED|NEEDS_HUMAN_REVIEW|NOT_VALIDATED)",
-    r"approval_status:\s*NOT_APPROVED"
-]
+REQUIREMENTS_REQUIRED_SECTIONS = {
+    "functional requirements",
+    "data requirements",
+    "access requirements",
+    "non-functional requirements",
+    "constraints",
+    "security / privacy",
+    "acceptance criteria",
+    "out of scope",
+    "unknown / open questions",
+    "human decisions required",
+    "final status",
+}
 
-UNSAFE_CLAIMS = [
-    "PASS",
+SAFETY_FIELD_PATTERNS = {
+    "approval_status_not_approved": r"(?m)^\s*approval_status:\s*NOT_APPROVED\s*$",
+    "ready_for_execution_false": r"(?m)^\s*ready_for_execution:\s*false\s*$",
+    "execution_authorized_false": r"(?m)^\s*execution_authorized:\s*false\s*$",
+    "implementation_authorized_false": r"(?m)^\s*implementation_authorized:\s*false\s*$",
+    "final_status_present": r"(?m)^\s*final_status:\s*(DRAFT|NEEDS_HUMAN_REVIEW|UNKNOWN_BLOCKED|READY_FOR_HUMAN_REVIEW|STRUCTURAL_MVP_ONLY)\s*$",
+}
+
+FORBIDDEN_STATUS_VALUES = {
     "APPROVED",
-    "PRODUCTION_READY",
+    "READY_FOR_EXECUTION",
     "IMPLEMENTATION_AUTHORIZED",
+    "PRODUCTION_READY",
     "EXECUTION_AUTHORIZED",
     "HUMAN_APPROVED",
-    "READY_FOR_RELEASE"
-]
+}
 
-SAFE_PREFIXES = [
-    "NOT_APPROVED",
-    "NOT_PRODUCTION",
-    "NOT_VALIDATED",
-    "NOT_RUN"
-]
+AUTHORIZED_TRUE_FIELDS = {
+    "ready_for_execution",
+    "execution_authorized",
+    "implementation_authorized",
+    "commit_authorized",
+    "push_authorized",
+    "deploy_authorized",
+    "release_authorized",
+    "production_use_authorized",
+}
 
-def check_false_claims(content: str) -> list:
-    # Replace safe prefixes with placeholders to avoid matching safe negative forms
-    safe_content = content
-    for safe in SAFE_PREFIXES:
-        safe_content = safe_content.replace(safe, "SAFE_PLACEHOLDER")
-    
-    found_claims = []
-    # Using word boundaries for safe isolation
-    for claim in UNSAFE_CLAIMS:
-        pattern = r'\b' + re.escape(claim) + r'\b'
-        if re.search(pattern, safe_content):
-            found_claims.append(claim)
-            
-    return found_claims
+SUCCESS_STATUSES = {"STRUCTURAL_CONTRACT_VALIDATED", "NEEDS_HUMAN_REVIEW"}
 
-def generate_report(args, results: dict, report_path: str):
-    content = "# Problem Intake Output Validator Report\n\n"
-    content += "## 1. Task Metadata\n"
-    content += f"- **Run Directory**: `{args.run_dir}`\n"
-    
-    content += "\n## 2. Run Directory\n"
-    content += f"- Analyzed Path: `{os.path.abspath(args.run_dir)}`\n"
-    
-    content += "\n## 3. Required File Inventory\n"
-    for f in REQUIRED_FILES:
-        status = "Found" if f in results['found_files'] else "Missing"
-        content += f"- {f}: {status}\n"
-        
-    content += "\n## 4. Unexpected File Inventory\n"
-    if results['unexpected_files']:
-        for f in results['unexpected_files']:
-            content += f"- {f}\n"
+
+def normalize_heading(line: str) -> str:
+    text = line.strip().lower()
+    text = re.sub(r"^#+\s*", "", text)
+    text = re.sub(r"^\d+[\.)]\s*", "", text)
+    return text.strip()
+
+
+def headings(content: str) -> set[str]:
+    return {normalize_heading(line) for line in content.splitlines() if line.lstrip().startswith("#")}
+
+
+def has_section(content: str, expected: str) -> bool:
+    normalized_headings = headings(content)
+    return any(expected in heading for heading in normalized_headings)
+
+
+def check_required_sections(filename: str, content: str) -> list[str]:
+    errors: list[str] = []
+    if filename == "PROJECT_SPEC.draft.md":
+        for heading_text, section_id in PROJECT_SPEC_REQUIRED_SECTIONS.items():
+            if not has_section(content, heading_text):
+                errors.append(f"{filename} missing required section from 02-agent-contract.md: {section_id}")
+    elif filename == "REQUIREMENTS.draft.md":
+        for heading_text in REQUIREMENTS_REQUIRED_SECTIONS:
+            if not has_section(content, heading_text):
+                errors.append(f"{filename} missing required requirements section: {heading_text}")
+    return errors
+
+
+def check_safety_fields(filename: str, content: str) -> list[str]:
+    errors: list[str] = []
+    for field_name, pattern in SAFETY_FIELD_PATTERNS.items():
+        if not re.search(pattern, content):
+            errors.append(f"{filename} missing or invalid safety field: {field_name}")
+    return errors
+
+
+def status_value(line: str) -> Optional[tuple[str, str]]:
+    match = re.match(r"^\s*([A-Za-z0-9_ -]+)\s*:\s*['\"]?([^'\"#\n]+)", line)
+    if not match:
+        return None
+    key = match.group(1).strip().lower().replace(" ", "_").replace("-", "_")
+    value = match.group(2).strip().strip(",")
+    return key, value
+
+
+def table_status_value(line: str) -> Optional[tuple[str, str]]:
+    stripped = line.strip()
+    if not (stripped.startswith("|") and stripped.endswith("|")):
+        return None
+    cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+    if len(cells) < 2:
+        return None
+    key = cells[0].lower().replace(" ", "_").replace("-", "_")
+    value = cells[1].strip()
+    return key, value
+
+
+def is_actual_status_key(key: str) -> bool:
+    return any(
+        marker in key
+        for marker in (
+            "status",
+            "authorized",
+            "authorization",
+            "ready_for_execution",
+            "decision",
+            "approval",
+            "production",
+        )
+    )
+
+
+def check_forbidden_promotions(filename: str, content: str) -> list[str]:
+    errors: list[str] = []
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        parsed = status_value(line) or table_status_value(line)
+        if not parsed:
+            continue
+        key, value = parsed
+        normalized_value = value.strip().strip("`").upper()
+        normalized_key = key.lower()
+
+        if normalized_key in AUTHORIZED_TRUE_FIELDS and normalized_value == "TRUE":
+            errors.append(f"{filename}:{line_number} forbidden authorization value: {key}: {value}")
+            continue
+
+        if is_actual_status_key(normalized_key) and normalized_value in FORBIDDEN_STATUS_VALUES:
+            errors.append(f"{filename}:{line_number} forbidden status promotion: {key}: {value}")
+    return errors
+
+
+def read_required_files(run_dir: Path) -> tuple[dict[str, str], list[str], list[str]]:
+    actual_files = {path.name for path in run_dir.iterdir() if path.is_file()}
+    missing = sorted(REQUIRED_FILES - actual_files)
+    unexpected = sorted(actual_files - REQUIRED_FILES)
+    contents: dict[str, str] = {}
+
+    for filename in sorted(REQUIRED_FILES & actual_files):
+        file_path = run_dir / filename
+        try:
+            contents[filename] = file_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise OSError(f"Error reading {filename}: {exc}") from exc
+
+    return contents, missing, unexpected
+
+
+def analyze(run_dir: Path) -> dict:
+    contents, missing_files, unexpected_files = read_required_files(run_dir)
+    section_errors: list[str] = []
+    safety_errors: list[str] = []
+    forbidden_promotions: list[str] = []
+
+    for filename, content in contents.items():
+        section_errors.extend(check_required_sections(filename, content))
+        safety_errors.extend(check_safety_fields(filename, content))
+        forbidden_promotions.extend(check_forbidden_promotions(filename, content))
+
+    combined_content = "\n".join(contents.values())
+    unknown_visible = bool(re.search(r"\bUNKNOWN\b|NEEDS_HUMAN_REVIEW|UNKNOWN_BLOCKED", combined_content))
+    human_decisions_visible = "Human Decisions Required" in combined_content
+    approval_simulation_detected = bool(forbidden_promotions)
+
+    if forbidden_promotions:
+        validator_status = "FORBIDDEN_PROMOTION_DETECTED"
+    elif missing_files or unexpected_files or section_errors or safety_errors:
+        validator_status = "CONTRACT_VIOLATION"
+    elif not unknown_visible:
+        validator_status = "UNKNOWN_BLOCKED"
+    elif not human_decisions_visible:
+        validator_status = "NEEDS_HUMAN_REVIEW"
     else:
-        content += "- None\n"
-        
-    content += "\n## 5. Status Field Check Results\n"
-    if results['field_errors']:
-        for err in results['field_errors']:
-            content += f"- {err}\n"
-    else:
-        content += "- All required status fields present in all files.\n"
-        
-    content += "\n## 6. False Claim Scan Results\n"
-    if results['false_claims']:
-        for f, claims in results['false_claims'].items():
-            content += f"- {f}: Found unsafe claims: {', '.join(claims)}\n"
-    else:
-        content += "- No unsafe claims found.\n"
-        
-    content += "\n## 7. Final Validator Status\n"
-    content += "```yaml\n"
-    content += f"validator_status: {results['validator_status']}\n"
-    content += f"structure_status: {results['structure_status']}\n"
-    content += f"status_field_status: {results['status_field_status']}\n"
-    content += f"false_claim_status: {results['false_claim_status']}\n"
-    content += "approval_status: NOT_APPROVED\n"
-    content += "production_status: NOT_PRODUCTION\n"
-    content += "```\n"
-    
-    content += "\n## 8. Limitations\n"
-    content += "- The validator does not verify semantic quality, business correctness, product-market fit, human approval, production readiness, completeness of requirements, or implementation readiness.\n"
-    
-    content += "\n## 9. Recommended Next Task\n"
-    content += "AOS-FARM.TA-17 — Problem Intake Output Validator Evidence Review\n"
-    
+        validator_status = "NEEDS_HUMAN_REVIEW"
+
+    return {
+        "validator_status": validator_status,
+        "found_files": sorted(contents),
+        "missing_files": missing_files,
+        "unexpected_files": unexpected_files,
+        "section_errors": section_errors,
+        "safety_errors": safety_errors,
+        "forbidden_promotions": forbidden_promotions,
+        "unknown_visible": unknown_visible,
+        "human_decisions_visible": human_decisions_visible,
+        "approval_simulation_detected": approval_simulation_detected,
+        "ready_for_execution_authorized": False,
+        "execution_authorized": False,
+        "implementation_authorized": False,
+    }
+
+
+def generate_report(args, results: dict, report_path: Path) -> None:
+    lines = [
+        "# Problem Intake Output Validator v2 Report",
+        "",
+        "## 1. Task Metadata",
+        f"- run_directory: `{args.run_dir}`",
+        "- validator_scope: structural_contract_only",
+        "- semantic_product_quality_validated: false",
+        "- approval_declared: false",
+        "- execution_authorized: false",
+        "- implementation_authorized: false",
+        "",
+        "## 2. Required File Inventory",
+    ]
+    for filename in sorted(REQUIRED_FILES):
+        status = "found" if filename in results["found_files"] else "missing"
+        lines.append(f"- {filename}: {status}")
+
+    lines.extend(["", "## 3. Unexpected File Inventory"])
+    lines.extend([f"- {name}" for name in results["unexpected_files"]] or ["- none"])
+
+    lines.extend(["", "## 4. Contract Checks"])
+    for key in ("section_errors", "safety_errors", "forbidden_promotions"):
+        lines.append(f"### {key}")
+        lines.extend([f"- {item}" for item in results[key]] or ["- none"])
+
+    lines.extend(
+        [
+            "",
+            "## 5. Visibility Checks",
+            f"- unknown_visible: {str(results['unknown_visible']).lower()}",
+            f"- human_decisions_visible: {str(results['human_decisions_visible']).lower()}",
+            "",
+            "## 6. Final Validator Status",
+            "```yaml",
+            f"validator_status: {results['validator_status']}",
+            "approval_status: NOT_APPROVED",
+            "ready_for_execution: false",
+            "execution_authorized: false",
+            "implementation_authorized: false",
+            "semantic_product_quality_validated: false",
+            "```",
+        ]
+    )
+
     try:
-        os.makedirs(os.path.dirname(os.path.abspath(report_path)), exist_ok=True)
-        with open(report_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-    except Exception as e:
-        print(f"Error writing report: {e}")
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    except OSError as exc:
+        print(f"Error writing report: {exc}")
         sys.exit(2)
 
-def main():
-    parser = argparse.ArgumentParser(description="Problem Intake Output Validator")
+
+def print_results(results: dict) -> None:
+    print(f"validator_status: {results['validator_status']}")
+    print(f"required_files_found: {len(results['found_files'])}/{len(REQUIRED_FILES)}")
+    print(f"missing_required_files: {len(results['missing_files'])}")
+    print(f"section_errors: {len(results['section_errors'])}")
+    print(f"safety_errors: {len(results['safety_errors'])}")
+    print(f"forbidden_promotions: {len(results['forbidden_promotions'])}")
+    print(f"unknown_visible: {str(results['unknown_visible']).lower()}")
+    print(f"human_decisions_visible: {str(results['human_decisions_visible']).lower()}")
+    print("approval_status: NOT_APPROVED")
+    print("ready_for_execution: false")
+    print("execution_authorized: false")
+    print("implementation_authorized: false")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Problem Intake Output Validator v2")
     parser.add_argument("--run-dir", required=True, help="Path to the problem intake run directory")
     parser.add_argument("--report", help="Path to output markdown report")
     args = parser.parse_args()
 
-    run_dir = args.run_dir
-    
-    if not os.path.exists(run_dir):
-        print(f"Error: Run directory '{run_dir}' does not exist.")
-        sys.exit(2)
-    if not os.path.isdir(run_dir):
-        print(f"Error: Run directory '{run_dir}' is not a directory.")
-        sys.exit(2)
-        
+    run_dir = Path(args.run_dir)
+    if not run_dir.exists():
+        print(f"validator_status: TOOL_ERROR")
+        print(f"error: Run directory '{run_dir}' does not exist.")
+        return 2
+    if not run_dir.is_dir():
+        print("validator_status: TOOL_ERROR")
+        print(f"error: Run directory '{run_dir}' is not a directory.")
+        return 2
+
     try:
-        actual_files = set(os.listdir(run_dir))
-    except Exception as e:
-        print(f"Error reading directory '{run_dir}': {e}")
-        sys.exit(2)
+        results = analyze(run_dir)
+    except OSError as exc:
+        print("validator_status: TOOL_ERROR")
+        print(f"error: {exc}")
+        return 2
+    except Exception as exc:
+        print("validator_status: VALIDATOR_ERROR")
+        print(f"error: {exc}")
+        return 2
 
-    found_required = actual_files.intersection(REQUIRED_FILES)
-    missing_required = REQUIRED_FILES - actual_files
-    unexpected_files = actual_files - REQUIRED_FILES
-
-    structure_valid = not bool(missing_required or unexpected_files)
-    
-    field_errors = []
-    false_claims = {}
-    
-    for filename in found_required:
-        filepath = os.path.join(run_dir, filename)
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            field_errors.append(f"Error reading {filename}: {e}")
-            continue
-            
-        # Check globally required fields for every artifact
-        for field in REQUIRED_FIELDS_ALL:
-            if field not in content:
-                field_errors.append(f"{filename} missing required field: {field}")
-                
-        # Check run-report specific fields
-        if filename == "problem-intake-run-report.md":
-            for pattern in RUN_REPORT_FIELDS_REGEX:
-                if not re.search(pattern, content):
-                    field_errors.append(f"{filename} missing or invalid field matching: {pattern}")
-                    
-        # Check for false positive claims (e.g., APPROVED vs NOT_APPROVED)
-        claims = check_false_claims(content)
-        if claims:
-            false_claims[filename] = claims
-
-    status_fields_valid = len(field_errors) == 0
-    false_claims_valid = len(false_claims) == 0
-    
-    structure_status = "STRUCTURE_CHECKED" if structure_valid else "STRUCTURE_INVALID"
-    status_field_status = "STATUS_FIELDS_CHECKED" if status_fields_valid else "STATUS_FIELDS_INVALID"
-    false_claim_status = "NO_UNSAFE_CLAIMS_FOUND" if false_claims_valid else "UNSAFE_CLAIMS_FOUND"
-    
-    validation_passed = structure_valid and status_fields_valid and false_claims_valid
-    validator_status = "VALIDATION_COMPLETE" if validation_passed else "VALIDATION_FAILED"
-    
-    results = {
-        "found_files": found_required,
-        "missing_files": missing_required,
-        "unexpected_files": unexpected_files,
-        "field_errors": field_errors,
-        "false_claims": false_claims,
-        "structure_status": structure_status,
-        "status_field_status": status_field_status,
-        "false_claim_status": false_claim_status,
-        "validator_status": validator_status
-    }
-    
     if args.report:
-        generate_report(args, results, args.report)
-        
-    print(f"validator_status: {validator_status}")
-    print(f"structure_status: {structure_status}")
-    print(f"status_field_status: {status_field_status}")
-    print(f"false_claim_status: {false_claim_status}")
-    
-    if validation_passed:
-        sys.exit(0)
-    else:
-        sys.exit(1)
+        generate_report(args, results, Path(args.report))
+
+    print_results(results)
+    return 0 if results["validator_status"] in SUCCESS_STATUSES else 1
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

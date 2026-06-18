@@ -12,7 +12,7 @@ agentos/docs/methodology/technical-assignment/
 
 - `00-overview-and-routing.md` — обзор пакета и стартовый routing.
 - `01-human-methodology.md` — человекочитаемая методология.
-- `02-agent-contract.yaml` — machine-readable контракт агента.
+- `02-agent-contract.md` — machine-readable контракт агента в Markdown.
 - `03-data-discovery-and-access.md` — сбор данных, потоки информации, роли и доступы.
 - `04-draft-artifact-templates.md` — шаблоны draft artifacts.
 - `05-safety-gates-and-statuses.md` — safety gates, статусы и fail-closed правила.
@@ -20,6 +20,7 @@ agentos/docs/methodology/technical-assignment/
 - `07-consistency-checklist.md` — ручная проверка согласованности до появления validator.
 - `08-interview-depth-loop-and-entity-process-traversal.md` — правила глубины интервью и Entity-Process Traversal.
 - `09-adaptive-elicitation-method-selector.md` — логика выбора метода интервью на основе ответов.
+- `10-ta-intake-to-documentation-assembly-bridge.md` — bridge contract от TA intake drafts к Documentation Assembly candidate inputs.
 
 ## Runbooks
 
@@ -37,3 +38,5 @@ agentos/docs/methodology/technical-assignment/
 Пакет разрешает только сбор входных данных и создание draft-документов.
 
 Он не разрешает implementation, execution, commit, push, deploy, release, production use, stack selection, Risk Profile assignment, final database schema или lifecycle promotion.
+
+Bridge output из этого пакета является только candidate input для Documentation Assembly Pipeline. Он не является approval, execution authorization, final Task Brief или lifecycle promotion.

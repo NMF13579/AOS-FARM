@@ -3,7 +3,7 @@
 **Document status:** ACTIVE_OPERATIONAL_METHOD  
 **Methodology ID:** TECHNICAL_ASSIGNMENT_AGENT_WORKFLOW  
 **Methodology version:** 1.0  
-**Paired machine contract:** `02-agent-contract.yaml`  
+**Paired machine contract:** `02-agent-contract.md`
 **Implementation authorized:** false  
 **Execution authorized:** false  
 
@@ -438,6 +438,6 @@ Invariants:
 
 Если этот документ меняется:
 
-- нужно проверить `02-agent-contract.yaml`;
+- нужно проверить `02-agent-contract.md`;
 - нужно вручную пройти `07-consistency-checklist.md`;
 - независимые изменения `01` или `02` без consistency review не допускаются.
