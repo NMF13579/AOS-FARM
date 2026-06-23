@@ -11,7 +11,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
+import os
+
+from agentos.pipelines.document_manifest import DocumentManifest
 
 
 TEXT_EXTENSIONS = {".txt", ".md"}
@@ -128,3 +131,31 @@ def _to_bytes(content: bytes | str) -> bytes:
     if isinstance(content, bytes):
         return content
     return content.encode("utf-8")
+
+
+def ingest_batch(paths: Sequence[str | Path]) -> DocumentManifest:
+    """Read a batch of local files and return a deduplicated manifest."""
+    records = {}
+    for path in paths:
+        if not Path(path).is_file():
+            continue
+        record = ingest_path(path)
+        if record.document_id not in records:
+            records[record.document_id] = record
+    return DocumentManifest(records_by_id=records)
+
+
+def ingest_directory(directory: str | Path, recursive: bool = False) -> DocumentManifest:
+    """Read all files in a directory and return a manifest."""
+    dir_path = Path(directory)
+    paths = []
+    if recursive:
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                paths.append(Path(root) / file)
+    else:
+        if dir_path.is_dir():
+            for p in dir_path.iterdir():
+                if p.is_file():
+                    paths.append(p)
+    return ingest_batch(paths)
