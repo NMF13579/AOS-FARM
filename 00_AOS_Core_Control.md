@@ -413,15 +413,9 @@ Skeleton is not approval.
 Эти зоны могут быть relevant для первичной сборки, если они есть в репозитории:
 
 ```text
-agentos/architecture/
-agentos/governance/
-agentos/templates/
-agentos/schemas/
-agentos/pipelines/
-agentos/state/
-agentos/reports/
-agentos/approvals/
-agentos/scripts/
+docs/
+templates/
+reports/
 ```
 
 Active-now не означает, что они полностью реализованы.
