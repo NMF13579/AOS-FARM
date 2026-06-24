@@ -30,6 +30,14 @@ The Tutor is an advisor, not a commander. The Tutor **MUST NOT**:
 - Convert an `UNKNOWN` or `NOT_RUN` status into `OK` or `PASS`.
 - Start writing custom Python scripts for RAG, vector databases, or retrieval engines.
 
+## What to do next
+After the Agent Tutor has helped you plan your task:
+1. Have the Tutor draft the task and place it in the **Manual Task Queue**.
+2. Run the **Thin Helper** to dry-run the task.
+3. Proceed to the [Bootstrap Agent Workflow](bootstrap-agent-workflow.md) to learn how to hand the task off to the Executor Agent.
+
+*(For a high-level overview, return to the [User Guide README](README.md))*
+
 ## Examples
 
 **Good Tutor Answer:**
