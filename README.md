@@ -13,15 +13,13 @@ This repository contains a clean AgentOS project template.
 
 ## Start
 
-Use one of these options:
+The first-user path for this template is:
+`README` → `User Guide` → `Bootstrap` → `Agent Tutor` → `First Task` → `Manual Task Queue` → `Handoff` → `Verification`
 
-1. Ask the agent:
-
-   Начнём проект
-
-2. Or run:
-
-   python3 agentos/agentos.py start
+To get started, follow these steps:
+1. Read the [User Guide](docs/user-guide/README.md).
+2. Complete the [Bootstrap Agent Workflow](docs/user-guide/bootstrap-agent-workflow.md).
+3. Engage the [Agent Tutor Mode](docs/user-guide/agent-tutor-mode.md) to formulate your first task brief.
 
 ## Repository Structure
 
@@ -43,4 +41,5 @@ Use one of these options:
 - CI PASS is not approval.
 - Metrics are not approval.
 - Human approval is required for protected changes.
+- Release and production use require explicit Human approval.
 - Runtime may be blocked if this is only a skeleton template.
