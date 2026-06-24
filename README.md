@@ -11,15 +11,24 @@ This repository contains a clean AgentOS project template.
 - Old Stage documents are not demoted by this task.
 - This task does not approve, merge, release, or start Build Step 1.
 
-## Start
+## Start / Quickstart
 
 The first-user path for this template is:
-`README` → `User Guide` → `Bootstrap` → `Agent Tutor` → `First Task` → `Manual Task Queue` → `Handoff` → `Verification`
+`README` → `Quickstart` → `First Task`
 
-To get started, follow these steps:
-1. Read the [User Guide](docs/user-guide/README.md).
-2. Complete the [Bootstrap Agent Workflow](docs/user-guide/bootstrap-agent-workflow.md).
-3. Engage the [Agent Tutor Mode](docs/user-guide/agent-tutor-mode.md) to formulate your first task brief.
+**Start here**: [Quickstart](docs/user-guide/quickstart.md)
+
+Essential references:
+- [Project Map](docs/user-guide/project-map.md)
+- [Glossary](docs/user-guide/glossary.md)
+- [First Consumer Workflow](docs/user-guide/first-consumer-workflow.md)
+
+### Safety Notice
+- Quickstart is an entrypoint, not approval.
+- PASS, Evidence, and CI PASS are not approval.
+- Commit, push, release, and production use require explicit Human Authorization.
+- Canonical sources 00/01/02 remain authoritative (if README or Quickstart conflicts with 00/01/02, canonical sources win).
+- Runner/autonomous execution is not part of the current safe path.
 
 ## Repository Structure
 
