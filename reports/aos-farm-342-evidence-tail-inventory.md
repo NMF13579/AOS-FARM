@@ -1,0 +1,215 @@
+---
+status: evidence_tail_inventory_report
+---
+
+# AOS-FARM.342 Отчет об инвентаризации (Evidence Tail Inventory)
+
+## Итоги (Summary)
+- **baseline result**: Подтвержден (`HEAD == origin/dev == ae8059e921fa5be767c9637186b4b4e8a0cc8312`, `ahead/behind: 0 0`)
+- **required sources checked**: Проверены и прочитаны (`00_AOS_Core_Control.md`, `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md`, `02_AOS_Governance_Control_Module_and_Safety_Rules.md`)
+- **warning count**: 42 (исключенные файлы)
+- **blocking issue count**: 0
+- **confirmation that no commit/push was performed**: Подтверждаю, коммит и пуш не выполнялись.
+
+## Рекомендованные файлы (Recommended Candidates - 154)
+- `reports/aos-farm-104-step-3-commit-push-authorization-package.md`
+- `reports/aos-farm-108-step-3-post-push-remote-baseline-closure.md`
+- `reports/aos-farm-115-step-4-commit-push-authorization-package.md`
+- `reports/aos-farm-117-step-4-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-125-step-5-commit-push-authorization-package.md`
+- `reports/aos-farm-127-3-closure-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-131-multi-environment-controller-commit-push-authorization-package.md`
+- `reports/aos-farm-139-build-step-6-dogfood-commit-push-authorization-package.md`
+- `reports/aos-farm-167-controller-loop-handoff-commit-push-authorization-package.md`
+- `reports/aos-farm-172-controller-loop-handoff-closure-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-174-controller-loop-handoff-final-remote-baseline-closure.md`
+- `reports/aos-farm-174-working-branch-final-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-177-final-working-branch-readiness-audit.md`
+- `reports/aos-farm-178-dev-integration-authorization-package.md`
+- `reports/aos-farm-181-final-dev-remote-baseline-closure.md`
+- `reports/aos-farm-181-step-8-commit-push-authorization-package.md`
+- `reports/aos-farm-183-step-8-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-186-scoped-task-brief-commit-push-authorization-package.md`
+- `reports/aos-farm-188-scoped-task-brief-final-closure.md`
+- `reports/aos-farm-190-step-9-commit-push-authorization-package.md`
+- `reports/aos-farm-192-step-9-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-193-document-pipeline-slice-1-commit-push-authorization-package.md`
+- `reports/aos-farm-195-document-pipeline-slice-1-push-and-remote-closure.md`
+- `reports/aos-farm-199-step-10-commit-push-authorization-package.md`
+- `reports/aos-farm-200-document-pipeline-slice-2-commit-push-authorization-package.md`
+- `reports/aos-farm-201-step-10-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-202-1-document-pipeline-slice-2-closure-boundary-check.md`
+- `reports/aos-farm-202-document-pipeline-slice-2-push-and-remote-closure.md`
+- `reports/aos-farm-208-step-11-commit-push-authorization-package.md`
+- `reports/aos-farm-209-core-feature-documentation-registry-commit-push-authorization-package.md`
+- `reports/aos-farm-209-core-feature-documentation-registry-push-and-remote-closure.md`
+- `reports/aos-farm-210-step-11-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-217-core-stage-feature-status-registry-commit-push-authorization-package.md`
+- `reports/aos-farm-217-step-12-commit-push-authorization-package.md`
+- `reports/aos-farm-218-core-stage-feature-status-registry-push-and-remote-closure.md`
+- `reports/aos-farm-219-step-12-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-220-merge-authorization-package.md`
+- `reports/aos-farm-220-merge-readiness-verification.md`
+- `reports/aos-farm-222-merge-execution-report.md`
+- `reports/aos-farm-223-merge-push-authorization-package.md`
+- `reports/aos-farm-224-merge-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-225-core-user-workflow-agent-tutor-commit-push-authorization-package.md`
+- `reports/aos-farm-226-core-user-workflow-agent-tutor-push-and-remote-closure.md`
+- `reports/aos-farm-233-core-project-bootstrap-commit-push-authorization-package.md`
+- `reports/aos-farm-234-core-project-bootstrap-push-and-remote-closure.md`
+- `reports/aos-farm-241-manual-task-queue-handoff-verification-commit-push-authorization-package.md`
+- `reports/aos-farm-242-manual-task-queue-handoff-verification-push-and-remote-closure.md`
+- `reports/aos-farm-249-thin-task-queue-helper-commit-push-authorization-package.md`
+- `reports/aos-farm-250-thin-task-queue-helper-push-and-remote-closure.md`
+- `reports/aos-farm-257-thin-task-queue-helper-dogfood-commit-push-authorization-package.md`
+- `reports/aos-farm-258-thin-task-queue-helper-dogfood-push-and-remote-closure.md`
+- `reports/aos-farm-265-core-working-version-readiness-commit-push-authorization-package.md`
+- `reports/aos-farm-266-core-working-version-readiness-push-and-remote-closure.md`
+- `reports/aos-farm-267-deep-audit-push-authorization-package.md`
+- `reports/aos-farm-279-batch-2-protected-canonical-update-commit-push-authorization-package.md`
+- `reports/aos-farm-294-post-dogfood-batch-3-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-311-first-consumer-workflow-commit-push-authorization-package.md`
+- `reports/aos-farm-313-first-consumer-workflow-push-and-remote-closure.md`
+- `reports/aos-farm-315-first-consumer-workflow-dogfood-commit-push-authorization-package.md`
+- `reports/aos-farm-317-first-consumer-workflow-dogfood-push-and-remote-closure.md`
+- `reports/aos-farm-319-glossary-page-commit-push-authorization-package.md`
+- `reports/aos-farm-321-glossary-page-push-and-remote-closure.md`
+- `reports/aos-farm-323-quickstart-commit-push-authorization-package.md`
+- `reports/aos-farm-325-quickstart-push-and-remote-closure.md`
+- `reports/aos-farm-327-readme-quickstart-entrypoint-commit-push-authorization-package.md`
+- `reports/aos-farm-329-readme-quickstart-entrypoint-push-and-remote-closure.md`
+- `reports/aos-farm-331-public-onboarding-final-audit-commit-push-authorization-package.md`
+- `reports/aos-farm-333-1-unexpected-head-mismatch-audit.md`
+- `reports/aos-farm-333-3-public-onboarding-final-audit-actual-head-push-and-remote-closure.md`
+- `reports/aos-farm-333-public-onboarding-final-audit-push-and-remote-closure.md`
+- `reports/aos-farm-335-public-example-walkthrough-commit-push-authorization-package.md`
+- `reports/aos-farm-336-1-public-example-walkthrough-head-mismatch-audit.md`
+- `reports/aos-farm-337-public-example-walkthrough-push-and-remote-closure.md`
+- `reports/aos-farm-339-template-usability-commit-push-authorization-package.md`
+- `reports/aos-farm-340-1-template-usability-head-mismatch-audit.md`
+- `reports/aos-farm-341-template-usability-push-and-remote-closure.md`
+- `reports/aos-farm-84-commit-post-push-remote-baseline-closure.md`
+- `reports/aos-farm-84-commit-push-authorization-package.md`
+- `reports/aos-farm-85-88-evidence-artifacts-commit-authorization-package.md`
+- `reports/aos-farm-96-14-final-build-step-2-push-authorization-package.md`
+- `reports/aos-farm-96-17-build-step-2-post-push-remote-baseline-closure.md`
+- `reports/aos-farm-build-step-2-planning-artifacts-push-authorization-package.md`
+- `reports/aos-farm-post-skeleton-push-authorization-package.md`
+- `reports/aos-farm-ta-06-commit-push-authorization-package.md`
+- `reports/aos-farm-ta-08-2-ta-06-ta-07-push-authorization-package.md`
+- `reports/aos-farm-ta-08-3-ta-06-ta-07-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-ta-09-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-ta-09-push-authorization-package.md`
+- `reports/aos-farm-ta-10-push-and-remote-baseline-closure.md`
+- `reports/aos-farm-ta-10-push-authorization-package.md`
+- `reports/aos-farm-ta-20-problem-intake-mvp-commit-push-authorization-package.md`
+- `reports/human-checkpoints/aos-farm-104-step-3-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-115-step-4-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-125-step-5-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-127-3-closure-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-131-multi-environment-controller-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-139-build-step-6-dogfood-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-167-controller-loop-handoff-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-172-controller-loop-handoff-closure-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-174-working-branch-final-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-178-dev-integration-authorization.md`
+- `reports/human-checkpoints/aos-farm-181-step-8-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-186-scoped-task-brief-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-190-step-9-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-193-document-pipeline-slice-1-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-199-step-10-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-200-document-pipeline-slice-2-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-208-step-11-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-209-core-feature-documentation-registry-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-217-core-stage-feature-status-registry-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-217-step-12-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-220-merge-authorization.md`
+- `reports/human-checkpoints/aos-farm-223-merge-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-225-core-user-workflow-agent-tutor-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-233-core-project-bootstrap-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-241-manual-task-queue-handoff-verification-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-249-thin-task-queue-helper-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-257-thin-task-queue-helper-dogfood-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-265-core-working-version-readiness-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-267-deep-audit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-279-batch-2-protected-canonical-update-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-294-post-dogfood-batch-3-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-311-first-consumer-workflow-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-315-first-consumer-workflow-dogfood-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-319-glossary-page-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-323-quickstart-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-327-readme-quickstart-entrypoint-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-331-public-onboarding-final-audit-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-335-public-example-walkthrough-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-339-template-usability-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-84-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-85-88-evidence-artifacts-commit-authorization.md`
+- `reports/human-checkpoints/aos-farm-96-14-final-build-step-2-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-build-step-2-planning-artifacts-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-post-skeleton-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-push-evidence-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-push-evidence-working-tree-addendum.md`
+- `reports/human-checkpoints/aos-farm-ta-06-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-ta-08-2-ta-06-ta-07-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-ta-09-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-ta-10-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-ta-20-problem-intake-mvp-commit-push-authorization.md`
+- `reports/human-checkpoints/ta-21-technical-assignment-execution-authorization.md`
+- `reports/human-checkpoints/ta-31-evidence-tail-commit-push-authorization.md`
+- `reports/human-checkpoints/ta-34-dev-integration-push-authorization.md`
+- `reports/ta-21-technical-assignment-execution-authorization-package.md`
+- `reports/ta-21-technical-assignment-working-pipeline-scope-risk-gap-plan.md`
+- `reports/ta-31-evidence-tail-commit-push-authorization-package.md`
+- `reports/ta-32-evidence-tail-push-and-working-branch-closure.md`
+- `reports/ta-34-dev-integration-push-authorization-package.md`
+- `reports/ta-35-dev-push-and-remote-baseline-closure.md`
+
+## Включенные артефакты авторизации AOS-FARM.342 (Included AOS-FARM.342 authorization artifacts)
+- `reports/aos-farm-342-evidence-tail-commit-authorization-package.md`
+- `reports/aos-farm-342-evidence-tail-inventory.md`
+- `reports/human-checkpoints/aos-farm-342-evidence-tail-commit-authorization.md`
+
+## Исключенные файлы (Excluded Files - 42)
+- `reports/aos-farm-100-step-3-batch-1-post-execution-verification 2.md`
+- `reports/aos-farm-101-final-step-3-verification 2.md`
+- `reports/aos-farm-102-final-step-3-commit-authorization-package 2.md`
+- `reports/aos-farm-109-build-step-4-scope-risk-batch-plan 2.md`
+- `reports/aos-farm-109-step-4-batch-1-execution-authorization-package 2.md`
+- `reports/aos-farm-112-step-4-batch-and-final-verification 2.md`
+- `reports/aos-farm-113-final-step-4-commit-authorization-package 2.md`
+- `reports/aos-farm-118-build-step-5-scope-risk-batch-plan 2.md`
+- `reports/aos-farm-118-step-5-batch-1-execution-authorization-package 2.md`
+- `reports/aos-farm-121-step-5-batch-and-final-verification 2.md`
+- `reports/aos-farm-122-deep-step-5-audit 2.md`
+- `reports/aos-farm-123-final-step-5-commit-authorization-package 2.md`
+- `reports/aos-farm-127-closure-evidence-recovery-commit-authorization-package 2.md`
+- `reports/aos-farm-127-step-5-push-and-remote-baseline-closure 2.md`
+- `reports/aos-farm-128-multi-environment-ide-controller-token-routing-implementation-report 2.md`
+- `reports/aos-farm-129-multi-environment-controller-commit-authorization-package 2.md`
+- `reports/aos-farm-134-build-step-6-dogfood-scope-risk-batch-plan 2.md`
+- `reports/aos-farm-134-step-6-batch-1-execution-authorization-package 2.md`
+- `reports/aos-farm-135-build-step-6-controller-review-report 2.md`
+- `reports/aos-farm-135-build-step-6-dogfood-evidence-report 2.md`
+- `reports/aos-farm-135-build-step-6-dogfood-session-start 2.md`
+- `reports/aos-farm-135-build-step-6-model-routing-decision 2.md`
+- `reports/aos-farm-136-build-step-6-dogfood-batch-1-post-execution-verification 2.md`
+- `reports/aos-farm-137-build-step-6-commit-authorization-package 2.md`
+- `reports/aos-farm-137-final-build-step-6-dogfood-verification 2.md`
+- `reports/aos-farm-142-1-task-verification-checker-contract-report 2.md`
+- `reports/aos-farm-142-build-step-7-controller-loop-scope-risk-batch-plan 2.md`
+- `reports/aos-farm-299-minimal-public-release-preparation-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-307-post-release-evidence-commit-push-authorization-package.md`
+- `reports/aos-farm-309-final-minimal-public-release-remote-closure.md`
+- `reports/human-checkpoints/aos-farm-102-final-step-3-commit-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-299-minimal-public-release-preparation-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-307-post-release-evidence-commit-push-authorization.md`
+- `reports/human-checkpoints/aos-farm-commit-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-constitution-alignment-approval 2.md`
+- `reports/human-checkpoints/aos-farm-documentation-assembly-mvp-execution-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-first-controlled-implementation-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-implementation-readiness-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-post-skeleton-commit-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-push-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-push-evidence-commit-authorization 2.md`
+- `reports/human-checkpoints/aos-farm-push-working-tree-addendum 2.md`
+
