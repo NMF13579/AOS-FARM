@@ -21,8 +21,7 @@ AOS is distributed as a self-contained consumer kit located in the `aos/` direct
 To adopt AOS in your project:
 1. Copy the `aos/` folder into your project root.
 2. Copy `aos/root/AGENTS.md` to your project root.
-3. Instruct your AI agent to read `aos/START_HERE.md` and `aos/AGENT_CONTEXT.md`.
-4. Create your first task brief from `aos/templates/task-briefs/controlled-task-brief-template.md`.
+3. Instruct your AI agent to read `aos/START_HERE.md`. This is the single mandatory starting point that will guide you through Problem Intake and Technical Assignment before any code is written.
 
 ## No Magic Allowed
 AOS requires no active Python runners, continuous integration scripts, databases, or RAG components to function. It relies entirely on the AI agent's adherence to clear, markdown-defined systemic rules.
