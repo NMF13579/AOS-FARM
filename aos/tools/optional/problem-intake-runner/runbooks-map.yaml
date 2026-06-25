@@ -1,0 +1,5 @@
+runbooks:
+  five_whys: "aos/docs/methodology/problem-intake/runbooks/five-whys-runbook.md"
+  jtbd: "aos/docs/methodology/problem-intake/runbooks/jtbd-runbook.md"
+  scenario_walkthrough: "aos/docs/methodology/problem-intake/runbooks/scenario-walkthrough-runbook.md"
+  entity_process_traversal: "aos/docs/methodology/problem-intake/runbooks/entity-process-traversal-runbook.md"
