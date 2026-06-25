@@ -16,15 +16,15 @@ Your very first step is to explain your idea. Do not write any code.
 ### 2. Capture the Problem Intake Summary
 Once the interview is complete, the agent will produce a structured summary.
 - **Save the output:** Copy the agent's final summary.
-- **Format it:** Ensure it matches the structure found in `aos/templates/task-briefs/problem-intake-template.md`. Save this locally (e.g., `problem-intake-summary.md`).
+- **Format it:** Ensure it matches the structure found in `aos/templates/task-briefs/problem-intake-template.md`. Save this locally (e.g., `aos/reports/problem-intake/<project-or-feature-name>.md`).
 - **Safety Note:** This document is just evidence. It is **not** an approval to begin writing code.
 
-### 3. Build the Technical Assignment
+### 3. Build the Technical Assignment (The Handoff)
 Now that the problem is defined, you must translate it into technical boundaries.
-- **Copy this prompt:** Open `aos/prompts/technical-assignment-builder.md` and copy its contents.
-- **Paste it with context:** Paste the prompt into your agent, along with the `problem-intake-summary.md` you saved in Step 2.
-- **What happens:** The agent will define strict boundaries. It will explicitly list what is **in-scope**, what is **out-of-scope**, and exactly which files will be modified.
-- **Save the output:** Capture this output into a document based on `aos/templates/task-briefs/technical-assignment-template.md`.
+- **Open Builder:** Open `aos/prompts/technical-assignment-builder.md` and copy its contents.
+- **Paste Intake Output:** Paste the prompt into your agent, along with the full contents of the Problem Intake document you just saved.
+- **Save TA Output:** The agent will define strict boundaries. Capture this output and save it locally (e.g., `aos/reports/technical-assignments/<project-or-feature-name>.md`).
+- **Safety Note:** Do not start implementation until you pass a human review and approval checkpoint.
 
 ### 4. Proceed to Execution
 With a bounded Technical Assignment in hand, you are now ready to create a `controlled-task-brief` and authorize the agent to begin actual implementation.

@@ -23,6 +23,7 @@ Convert the problem definition into strict technical boundaries.
 ### Step 3: Controlled Execution
 Only after the Technical Assignment is ready can you begin execution.
 - **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md`. 
+- **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries. 
 
 ---
 

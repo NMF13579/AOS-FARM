@@ -18,6 +18,14 @@ The Problem Intake workflow is the crucial "Top-of-Funnel" step in the AOS Consu
 This workflow relies on the deep rules established in `aos/docs/methodology/problem-intake-methodology.md`. 
 No Python runners are used; the logic is entirely embedded in the interaction between the user and the prompt.
 
+## Handoff & Saving Output
+After completing the Problem Intake:
+- **Where to save:** `aos/reports/problem-intake/`
+- **Recommended filename:** `<project-or-feature-name>.md`
+- **Required fields to preserve:** Problem statement, target user, desired outcome, scope, non-goals, constraints, UNKNOWN items, risks, assumptions, success criteria, pending human decisions.
+- **Next steps:** Copy this saved output into the Technical Assignment prompt.
+- **Critical:** `UNKNOWN` must remain explicit. Problem Intake output is **not approval**.
+
 ## Safety Semantics
 - Problem Intake is an exploratory phase. Completing it does not authorize implementation.
 - **PASS ≠ approval**. A complete Problem Intake document is just raw material for the next phase.

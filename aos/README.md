@@ -4,6 +4,13 @@ Welcome to AOS. To ensure safe and controlled AI development, you must follow th
 
 **Do not write code or create a task brief yet.**
 
+## Key Navigation
+- [Start Here](START_HERE.md)
+- [First Session Guide](docs/workflow/first-session-guide.md)
+- [Problem Intake Workflow](docs/workflow/problem-intake-workflow.md)
+- [Technical Assignment Workflow](docs/workflow/technical-assignment-workflow.md)
+- [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md)
+
 ## The AOS Happy Path
 
 Before your agent can write any code, you must define the problem and establish technical boundaries. Follow this exact sequence:
