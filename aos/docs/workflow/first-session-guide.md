@@ -26,8 +26,22 @@ Now that the problem is defined, you must translate it into technical boundaries
 - **Save TA Output:** The agent will define strict boundaries. Capture this output and save it locally (e.g., `aos/reports/technical-assignments/<project-or-feature-name>.md`).
 - **Safety Note:** Do not start implementation until you pass a human review and approval checkpoint.
 
-### 4. Proceed to Execution
-With a bounded Technical Assignment in hand, you are now ready to create a `controlled-task-brief` and authorize the agent to begin actual implementation.
+### 4. Build the Task Breakdown and Queue
+A Technical Assignment is too broad for an AI to implement all at once. You must break it down.
+- **Which prompt do I copy next?** Open `aos/prompts/task-brief-builder.md` and copy its contents.
+- **What input do I paste with it?** Paste the prompt and the full `Technical Assignment` document from Step 3.
+- **What output should I expect?** The agent will generate a `Task Breakdown` and a manual `Task Queue`. The agent will explicitly tell you it will not write code yet.
+
+### 5. Human Task Review
+You must manually review the generated task queue.
+- **What do I need to review manually?** Ensure every task draft traces directly back to your Technical Assignment. The agent is not authorized to invent new features. Check the proposed priorities and dependencies.
+- **What does approval mean here?** Moving a task to `READY_FOR_EXECUTION_AUTHORIZATION` means it's a good plan, but it is **still not authorized** for implementation.
+- **How do I know which task is next?** Select a task (or a batch of tasks) from the queue that has no blocked dependencies.
+
+### 6. Proceed to Controlled Execution
+Now you can create a specific, execution-ready brief for your chosen task.
+- **Create the brief:** Use `aos/templates/task-briefs/controlled-task-brief-template.md` to define the exact constraints for the selected task.
+- **When can the agent start writing code?** Only after you have explicitly given the agent the filled-out `controlled-task-brief` and explicitly granted **Execution Authorization**.
 
 ---
 

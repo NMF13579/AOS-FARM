@@ -1,15 +1,37 @@
 # Task Brief: [Task Name]
 
-## Context
-Provide background on what needs to be done.
+## Source Metadata
+- **Source Technical Assignment:** [Link or SHA]
+- **Source Task Breakdown:** [Link or SHA]
+- **Source Task Queue Entry:** [Task ID / Link]
 
-## Goal
-Explicitly state the exact outcome required.
+## Execution Context
+- **Mode:** [e.g. code generation, audit, execution]
+- **Repository:** [Repo Name]
+- **Branch:** [Branch Name]
+- **Risk Profile Assignment:** [e.g. MEDIUM_RISK_GUIDED - MUST be assigned by human, not proposed by agent]
+
+## Context & Goal
+- **Context:** Provide background on why this task is being executed.
+- **Goal:** Explicitly state the exact outcome required.
 
 ## Scope & Boundaries
-- Allowed areas: [directories or files]
-- Forbidden areas: [directories or files]
-- Required lifecycle limits (e.g. no commit/push).
+- **Scope:** Broad definition of the task area.
+- **Allowed Changes:** [Directories, files, or components allowed to change]
+- **Forbidden Changes:** [Directories, files, or components NOT allowed to change]
 
-## Expected Output
-Describe the exact artifacts or code changes expected.
+## Implementation Details
+- **Required Behavior / Content:** Detailed functional expectations.
+- **Non-Goals:** What explicitly NOT to do.
+- **UNKNOWN/BLOCKED Handling:** How the agent should respond if something is missing or unclear (default: STOP and ask human).
+
+## Verification & Output
+- **Validation:** Specific commands, tests, or checks to run to prove it works. (Validation plan ≠ validation PASS).
+- **Evidence Requirements:** Artifacts, diffs, or logs to provide. (Evidence requirements ≠ collected Evidence).
+- **Expected Final Report:** What the final agent response should contain.
+
+## Final Boundary Rule
+- **Execution readiness ≠ execution authorization.**
+- **proposed Risk Profile ≠ human-assigned Risk Profile.**
+- **Human execution authorization is required before starting this task.**
+- Required lifecycle limits (e.g. no commit/push, no destructive operations).

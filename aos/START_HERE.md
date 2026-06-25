@@ -20,10 +20,21 @@ Convert the problem definition into strict technical boundaries.
 - **What it does:** The agent will bound the scope, define what NOT to do, and identify target files.
 - **Output:** A `Technical Assignment` document.
 
-### Step 3: Controlled Execution
-Only after the Technical Assignment is ready can you begin execution.
-- **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md`. 
-- **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries. 
+### Step 3: Task Brief Builder / Task Breakdown
+Decompose the Technical Assignment into granular, traceable tasks.
+- **What to do:** Give your agent the completed `Technical Assignment` and the prompt `aos/prompts/task-brief-builder.md`.
+- **What it does:** The agent extracts task drafts, traces them back to the Technical Assignment, proposes priorities, and creates a manual task queue. It **does not write code**.
+- **Output:** A `Task Breakdown` and a `Task Queue`.
+
+### Step 4: Human Task Review
+Review the proposed tasks before authorizing any work.
+- **What to do:** Manually review the `Task Queue` generated in Step 3.
+- **What it does:** Ensures no tasks were invented by the agent and that everything aligns with the Technical Assignment. Task drafts require human review!
+
+### Step 5: Controlled Execution
+Only after a task is reviewed and selected from the queue can you begin execution.
+- **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task. 
+- **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries. Remember that controlled execution requires explicit authorization.
 
 ---
 
