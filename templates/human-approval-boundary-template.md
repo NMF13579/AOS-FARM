@@ -1,5 +1,10 @@
 # Human Approval Boundary Template
 
+> **Внимание для пользователя (Attention):** 
+> Этот шаблон — ЧЕРНОВИК (DRAFT). Наличие этого файла **не означает одобрения** (Evidence ≠ approval).
+> Агент обязан остановиться (Stop here) и ждать вашего явного решения.
+> Human Authorization required.
+
 This template records a checkpoint boundary. It does not create human approval by itself.
 
 ## 1. Checkpoint Identity

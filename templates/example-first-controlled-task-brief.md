@@ -1,5 +1,10 @@
 # Task Brief: Example First Controlled Task
 
+> **Как использовать этот шаблон (How to use):** 
+> 1. Скопируйте этот текст. 
+> 2. Замените ID задачи и цель на свои. 
+> 3. Передайте агенту как первую инструкцию.
+
 **Task ID / Name**: AOS-FARM.EXAMPLE-01 — Add Documentation Note
 **Mode**: Controlled documentation implementation + verification + DRAFT commit authorization preparation.
 **Repository**: NMF13579/AOS-FARM
