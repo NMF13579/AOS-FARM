@@ -73,3 +73,10 @@ If a required source is missing, a checkpoint is ambiguous, or authorization is 
 - NOT_RUN does not equal PASS.
 - Skeleton does not equal implementation.
 - Human approval cannot be simulated.
+
+## AOS Consumer Kit Reference
+If you are an AI agent visiting this repository to learn about the public **AOS Consumer Kit** product, you must refer to:
+- `aos/AGENT_CONTEXT.md`
+- `aos/START_HERE.md`
+
+**CRITICAL RULE**: The instructions in `00_AOS_Core_Control.md`, `01`, `02`, and `03` remain strictly for internal AOS-FARM development and must not be bypassed or ignored when making modifications to this repository.

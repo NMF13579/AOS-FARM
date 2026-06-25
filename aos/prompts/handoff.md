@@ -1,0 +1,1 @@
+We are near the session limit. Please write a `session-handoff.md` report summarizing our context and wait for me to start a new session.

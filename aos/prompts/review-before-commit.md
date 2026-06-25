@@ -1,0 +1,1 @@
+Prepare a Commit Authorization Package and a Human Checkpoint for the current worktree changes. Do NOT execute `git commit` until I approve the checkpoint.

@@ -1,0 +1,1 @@
+Read the `AGENTS.md` file and perform a read-only audit of the repository. Do not modify any files.
