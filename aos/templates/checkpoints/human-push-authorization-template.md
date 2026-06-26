@@ -1,7 +1,7 @@
 # Human Checkpoint: Push Authorization
 
 ## Target
-Push commits to remote repository (`origin/main`).
+Push commits to remote repository (`origin/<target_branch>`).
 
 ## Verification
 - [ ] Commits are clean and follow project history standards.

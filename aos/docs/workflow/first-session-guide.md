@@ -42,6 +42,7 @@ You must manually review the generated task queue.
 Now you can create a specific, execution-ready brief for your chosen task.
 - **Create the brief:** Use `aos/templates/task-briefs/controlled-task-brief-template.md` to define the exact constraints for the selected task.
 - **When can the agent start writing code?** Only after you have explicitly given the agent the filled-out `controlled-task-brief` and explicitly granted **Execution Authorization**.
+- **What should I read next?** Open `aos/docs/workflow/first-controlled-execution.md`. It explains the first safe bridge from `Controlled Task Brief` to `Human Execution Authorization`, `Controlled Execution`, and `Evidence Review`.
 
 ---
 

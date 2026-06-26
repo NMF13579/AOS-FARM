@@ -35,6 +35,19 @@ The Technical Assignment artifact serves as the direct input for creating a cont
 - It establishes the technical boundaries.
 - **Critical:** Technical Assignment output is **readiness/planning evidence**, not an approval to execute.
 
+## Controlled Task Brief to Controlled Execution Boundary
+The `Controlled Task Brief` defines exact execution scope, but it is still not execution approval by itself.
+
+Before execution begins, the user still needs:
+- a human-assigned Risk Profile;
+- Human Execution Authorization for that exact brief;
+- the controlled execution prompt handoff;
+- later, separate Evidence Review and separate commit/push authorization.
+
+Reference:
+- `aos/docs/workflow/first-controlled-execution.md`
+- `aos/prompts/controlled-execution.md`
+
 ## Optional Role of Document Pipeline
 `agentos/pipelines/document_pipeline.py` is an **optional local document ingestion helper**.
 - It is **not** approval authority.
