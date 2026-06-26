@@ -1,0 +1,31 @@
+task_id: AOS-FARM.438
+human_execution_authorization:
+  authorized: true
+  authorized_by: human
+  authorization_artifact: aos/reports/human-checkpoints/examples/aos-farm-438-controlled-execution-authorization-example.md
+risk_profile:
+  value: HIGH_RISK_PROTECTED
+  assigned_by: human
+branch:
+  authorized_branch: build/controlled-execution-guard-mvp
+  base_branch: origin/dev
+scope:
+  authorized_files:
+    - aos/tools/optional/controlled_execution_guard.py
+  forbidden_files:
+    - 00_AOS_Core_Control.md
+  allowed_changes:
+    - create guard
+  forbidden_changes:
+    - commit
+validation_plan:
+  - run unittest
+expected_evidence:
+  - evidence report
+execution_boundaries:
+  commit_allowed: true
+  push_allowed: false
+  merge_allowed: false
+  release_allowed: false
+  next_task_allowed: false
+  approval_claim_allowed: false

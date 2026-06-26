@@ -1,0 +1,6 @@
+task_id: AOS-FARM.438
+report_kind: postcheck_negative_fixture
+missing_fields:
+  - changed_files
+  - diff_summary
+  - commands_run
