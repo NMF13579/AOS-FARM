@@ -35,8 +35,9 @@ Review the proposed tasks before authorizing any work.
 Only after a task is reviewed and selected from the queue can you begin execution.
 - **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task. 
 - **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries.
-- **Next step guide:** See [First Controlled Execution](docs/workflow/first-controlled-execution.md) for the safe path from `Controlled Task Brief` to Human Execution Authorization, Controlled Execution, and Evidence Review.
+- **Next step guide:** See [First Controlled Execution](docs/workflow/first-controlled-execution.md) for the safe path from `Controlled Task Brief` to Human Execution Authorization, Controlled Execution Guard `precheck`, controlled execution, `scopecheck`, `postcheck`, and Evidence Review.
 - **Important:** Controlled execution still requires explicit human authorization. The brief alone is not approval.
+- **Important:** Guard PASS is not approval. Guard PASS does not authorize commit or push.
 
 ---
 

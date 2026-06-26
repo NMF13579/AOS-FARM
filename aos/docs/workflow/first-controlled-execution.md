@@ -1,7 +1,7 @@
 # First Controlled Execution
 
 ## Purpose
-This guide explains the first safe path from a finished `Controlled Task Brief` to `Human Execution Authorization`, then to `Controlled Execution`, then to `Evidence Review`.
+This guide explains the first safe path from a finished `Controlled Task Brief` to `Human Execution Authorization`, then to Controlled Execution Guard `precheck`, then to `Controlled Execution`, then to `scopecheck`, `postcheck`, and `Evidence Review`.
 
 It is written for a non-programmer or vibe-coder user.
 
@@ -167,12 +167,38 @@ Do not push.
 Return an Execution Report with Evidence.
 ```
 
-### Step 6: Agent Performs Controlled Execution
+### Step 6: Run Controlled Execution Guard Precheck
+Before execution starts, run the guard against the execution package or equivalent artifact set.
+
+Example:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos precheck --package <package.yaml>
+```
+
+Current step:
+- Guard precheck
+
+Expected output:
+- `PASS`, `BLOCKED`, `UNKNOWN_BLOCKED`, or `HUMAN_REVIEW_REQUIRED`
+
+Important:
+- Guard PASS is not approval.
+- Guard PASS does not authorize commit.
+- Guard PASS does not authorize push.
+
+Stop if:
+- precheck returns `BLOCKED`;
+- precheck returns `UNKNOWN_BLOCKED`;
+- precheck returns `HUMAN_REVIEW_REQUIRED`.
+
+### Step 7: Agent Performs Controlled Execution
 Before editing files, the agent must verify:
-- required sources are readable;
+- the completed `Controlled Task Brief` is present;
+- Human Execution Authorization exists for that exact brief;
+- the human-assigned Risk Profile is present;
+- any package, report, or evidence paths named in the brief are present or clearly expected;
 - the current branch and repository state are safe enough for the task;
-- Human Execution Authorization exists;
-- the Risk Profile was assigned by a human;
 - allowed and forbidden scope are explicit;
 - nothing requires scope expansion.
 
@@ -191,11 +217,53 @@ Expected output:
 - one `Execution Report`
 - collected Evidence
 
-### Step 7: Review The Execution Report And Evidence
-After execution, review what the agent claims it changed and what Evidence it provides.
+### Step 8: Run Controlled Execution Guard Scopecheck
+After execution and before Evidence Review, verify the changed-file boundary.
+
+Example:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos scopecheck --package <package.yaml> --changed-files <changed-files-list>
+```
+
+Important:
+- `BLOCKED` means stop.
+- `UNKNOWN_BLOCKED` means stop and ask for human/project-owner review.
+- `HUMAN_REVIEW_REQUIRED` means a required human checkpoint or boundary decision is missing or incomplete.
+
+### Step 9: Create The Execution Report
+Create the `Execution Report` before final evidence review.
 
 Use:
 - `aos/templates/reports/execution-report-template.md`
+
+The report should reflect:
+- what files changed;
+- what validations ran;
+- PASS / NOT_RUN / UNKNOWN separation;
+- whether scope stayed inside authorization.
+
+### Step 10: Run Controlled Execution Guard Postcheck
+Before finalizing Evidence Review, verify the evidence/report boundary.
+
+Example:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos postcheck --package <package.yaml> --report <evidence-report.md>
+```
+
+Important:
+- Guard PASS is not approval.
+- Guard PASS does not authorize commit.
+- Guard PASS does not authorize push.
+- `BLOCKED` means stop.
+- `UNKNOWN_BLOCKED` means stop and ask for human/project-owner review.
+- `HUMAN_REVIEW_REQUIRED` means a required human checkpoint or boundary decision is missing or incomplete.
+
+### Step 11: Review The Execution Report And Evidence
+After execution, review what the agent claims it changed and what Evidence it provides.
+
+Use:
 - `aos/templates/reports/evidence-review-template.md`
 - `aos/templates/reports/verification-report-template.md`
 
@@ -215,11 +283,13 @@ Expected output:
 Important:
 - Evidence Review is not commit approval.
 - Evidence Review is not push approval.
+- Guard PASS is not commit approval.
+- Guard PASS is not push approval.
 
-### Step 8: Separate Commit And Push Decisions
+### Step 12: Separate Commit And Push Decisions
 Only after human review of the Evidence:
 - prepare commit authorization;
-- later, after commit, prepare push authorization.
+- after commit and post-commit verification, prepare push authorization.
 
 These are separate decisions.
 
@@ -235,6 +305,7 @@ These are separate decisions.
 - [ ] Allowed and forbidden scope are explicit.
 - [ ] A human assigned the Risk Profile.
 - [ ] A human created explicit execution authorization.
+- [ ] I ran Controlled Execution Guard `precheck`.
 - [ ] I am using the controlled execution prompt.
 - [ ] I understand that commit and push are still not authorized.
 
@@ -253,18 +324,23 @@ Evidence Review should answer:
 - What validations were `NOT_RUN`?
 - What remains `UNKNOWN`?
 - Are there unresolved questions?
+- Did `scopecheck` stay inside authorized changed-file boundaries?
+- Did `postcheck` confirm the Evidence boundary disclosures?
 
 Evidence Review must say clearly:
 - `PASS` is not approval.
 - Evidence is not commit approval.
 - the next step is commit authorization only if the human approves.
+- Guard PASS is not approval.
 
 ## BLOCKED Conditions
 Stop with `BLOCKED` if:
-- required sources are missing;
 - the brief is missing or ambiguous;
 - Human Execution Authorization is missing;
 - Risk Profile assignment is missing;
+- guard `precheck`, `scopecheck`, or `postcheck` returns `BLOCKED`;
+- guard `precheck`, `scopecheck`, or `postcheck` returns `UNKNOWN_BLOCKED`;
+- guard `precheck`, `scopecheck`, or `postcheck` returns `HUMAN_REVIEW_REQUIRED`;
 - scope is unclear;
 - the task requires extra files not in scope;
 - validation status is missing and cannot be clarified;
