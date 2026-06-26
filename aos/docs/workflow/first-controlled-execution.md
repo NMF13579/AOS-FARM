@@ -176,6 +176,8 @@ Example:
 python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos precheck --package <package.yaml>
 ```
 
+For a filled valid package example, see `aos/reports/examples/README.md`.
+
 Current step:
 - Guard precheck
 
@@ -332,6 +334,23 @@ Evidence Review must say clearly:
 - Evidence is not commit approval.
 - the next step is commit authorization only if the human approves.
 - Guard PASS is not approval.
+
+## Status Handling
+
+| Status | Meaning | Required action |
+|---|---|---|
+| PASS | The guard check passed. | Continue only to the next already-authorized step. PASS is not approval. |
+| BLOCKED | A boundary violation, forbidden claim, missing artifact, or unsafe state was detected. | Stop. Fix the input/scope or request human/project-owner review. |
+| UNKNOWN_BLOCKED | The state cannot be safely classified. | Stop. Human/project-owner review is required. UNKNOWN is not OK. |
+| HUMAN_REVIEW_REQUIRED | A required human checkpoint, Risk Profile assignment, or authorization is missing/incomplete. | Stop. Obtain a real human decision. Human approval cannot be simulated. |
+| NOT_RUN | A check did not run. | Do not treat as PASS. Run it or record honestly as NOT_RUN. |
+
+Guard PASS does not authorize commit.
+Guard PASS does not authorize push.
+Evidence does not authorize commit.
+CI PASS does not authorize push.
+Commit requires a separate human commit authorization.
+Push requires a separate human push authorization.
 
 ## BLOCKED Conditions
 Stop with `BLOCKED` if:

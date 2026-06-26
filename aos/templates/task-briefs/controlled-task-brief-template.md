@@ -11,6 +11,7 @@
 - **Branch:** [Branch Name]
 - **Risk Profile Assignment:** [e.g. MEDIUM_RISK_GUIDED - MUST be assigned by human, not proposed by agent]
 - **Human Execution Authorization:** [Path / checkpoint / explicit decision record]
+- **Execution Package:** [Path to copied controlled execution package, based on aos/templates/execution-packages/controlled-execution-package-template.yaml]
 
 ## Context & Goal
 - **Context:** Provide background on why this task is being executed.
@@ -31,6 +32,8 @@
 - **Evidence Requirements:** Artifacts, diffs, or logs to provide. (Evidence requirements ≠ collected Evidence).
 - **Expected Final Report:** What the final agent response should contain.
 - **Evidence Review Target:** [Where the human will review the execution result]
+- **Expected Execution Report:** [Path]
+- **Expected Evidence Report:** [Path, based on aos/templates/reports/controlled-execution-evidence-report-template.md]
 
 ## Final Boundary Rule
 - **Execution readiness ≠ execution authorization.**

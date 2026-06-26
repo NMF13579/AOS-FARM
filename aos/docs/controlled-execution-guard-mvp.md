@@ -21,6 +21,8 @@ The Controlled Execution Guard MVP is an optional transferable AOS tool for dete
 
 ## CLI Usage
 
+For a discoverable examples index, see `aos/reports/examples/README.md`.
+
 Precheck:
 
 ```bash

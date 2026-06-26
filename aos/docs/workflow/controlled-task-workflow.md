@@ -32,3 +32,4 @@ AOS execution follows a deterministic loop to ensure safety and traceability.
 
 ## Reference
 For a non-programmer-friendly walkthrough, see `aos/docs/workflow/first-controlled-execution.md`.
+For copyable guard examples and expected PASS/BLOCKED outcomes, see `aos/reports/examples/README.md`.

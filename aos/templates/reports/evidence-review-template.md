@@ -3,6 +3,7 @@
 ## Review Scope
 - **Controlled Task Brief Reviewed:** [Path or ID]
 - **Execution Report Reviewed:** [Path or ID]
+- **Controlled Execution Evidence Report Reviewed:** [Path based on aos/templates/reports/controlled-execution-evidence-report-template.md]
 - **Human Execution Authorization Reviewed:** [Path or ID]
 
 ## Claimed Evidence
@@ -34,6 +35,7 @@
 - **Evidence Review is not commit approval.**
 - **Evidence Review is not push approval.**
 - **PASS is not approval.**
+- **Use the controlled execution evidence report template before requesting commit authorization.**
 
 ## Next Safe Step
 - Prepare commit authorization only if the human approves this review.

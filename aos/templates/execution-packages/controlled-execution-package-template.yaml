@@ -1,0 +1,60 @@
+package_id: CONTROLLED-EXECUTION-PACKAGE-TEMPLATE
+task_id: REPLACE_WITH_TASK_ID
+task_title: REPLACE_WITH_TASK_TITLE
+package_type: controlled_execution_package
+package_version: 1
+mode: consumer_runtime
+aos_root: aos
+project_root: .
+risk_profile: REPLACE_WITH_HUMAN_ASSIGNED_RISK_PROFILE
+risk_profile_assigned_by: human
+human_execution_authorization:
+  required: true
+  authorization_file: REPLACE_WITH_PATH_TO_HUMAN_EXECUTION_AUTHORIZATION
+  execution_authorized: false
+  authorized_by: null
+  authorized_at: null
+controlled_task_brief:
+  required: true
+  task_brief_file: REPLACE_WITH_PATH_TO_CONTROLLED_TASK_BRIEF
+authorized_scope:
+  summary: REPLACE_WITH_EXACT_AUTHORIZED_SCOPE
+  authorized_files:
+    - REPLACE_WITH_AUTHORIZED_FILE_OR_DIRECTORY
+  authorized_commands:
+    - REPLACE_WITH_AUTHORIZED_COMMAND_OR_COMMAND_FAMILY
+forbidden_scope:
+  forbidden_files:
+    - agentos/
+    - 00_AOS_Core_Control.md
+    - 01_AOS_Assembly_Pipelines_and_Build_Roadmap.md
+    - 02_AOS_Governance_Control_Module_and_Safety_Rules.md
+  forbidden_actions:
+    - commit
+    - push
+    - force_push
+    - tag_push
+    - merge
+    - release
+    - start_next_task
+    - destructive_cleanup
+expected_outputs:
+  execution_report: REPLACE_WITH_PATH_TO_EXECUTION_REPORT
+  evidence_report: REPLACE_WITH_PATH_TO_EVIDENCE_REPORT
+guard_checks:
+  precheck_required: true
+  scopecheck_required: true
+  postcheck_required: true
+safety_invariants:
+  PASS_is_not_approval: true
+  Evidence_is_not_approval: true
+  CI_PASS_is_not_approval: true
+  UNKNOWN_is_not_OK: true
+  NOT_RUN_is_not_PASS: true
+  human_approval_cannot_be_simulated: true
+final_boundary:
+  commit_authorized: false
+  push_authorized: false
+  merge_authorized: false
+  release_authorized: false
+  next_task_authorized: false

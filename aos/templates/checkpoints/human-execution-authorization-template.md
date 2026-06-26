@@ -6,6 +6,9 @@
 ## Controlled Task Brief
 [Exact path or ID]
 
+## Controlled Execution Package
+[Exact package path copied from aos/templates/execution-packages/controlled-execution-package-template.yaml]
+
 ## Requested Authorization
 Approval to execute this exact `Controlled Task Brief` and exact allowed scope only.
 
@@ -51,6 +54,7 @@ Approval to execute this exact `Controlled Task Brief` and exact allowed scope o
 - readiness is not execution approval.
 - Human Execution Authorization is required before execution.
 - This approval applies only to this exact `Controlled Task Brief` and exact allowed scope.
+- After this authorization is created, run Controlled Execution Guard `precheck` against the matching execution package before editing files.
 - It does not authorize future tasks.
 - `PASS` is not approval.
 - Evidence is not approval.

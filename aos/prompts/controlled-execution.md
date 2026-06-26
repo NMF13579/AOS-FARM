@@ -39,6 +39,22 @@ If Controlled Execution Guard precheck, scopecheck, or postcheck returns:
 - UNKNOWN_BLOCKED: stop and ask for human/project-owner review.
 - HUMAN_REVIEW_REQUIRED: stop because a required human checkpoint or boundary decision is missing or incomplete.
 
+Status handling:
+- PASS: continue only to the next already-authorized step. PASS is not approval.
+- BLOCKED: stop and fix the input/scope or request human/project-owner review.
+- UNKNOWN_BLOCKED: stop. UNKNOWN is not OK.
+- HUMAN_REVIEW_REQUIRED: stop and obtain a real human decision. Human approval cannot be simulated.
+- NOT_RUN: do not treat as PASS. Run it or record honestly as NOT_RUN.
+
+Guard PASS does not authorize commit.
+Guard PASS does not authorize push.
+Evidence does not authorize commit.
+CI PASS does not authorize push.
+Commit requires a separate human commit authorization.
+Push requires a separate human push authorization.
+
+For copyable guard examples, see aos/reports/examples/README.md.
+
 During execution:
 - change only files inside the authorized scope;
 - do not commit;
