@@ -1,0 +1,67 @@
+# AOS-FARM.441.9 Project State Scanner Report
+
+- task_id: AOS-FARM.441.9
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/tools/optional/project_state_scanner.py
+  - aos/scripts/aos_status.py
+  - tests/project_state/test_project_state_scanner.py
+  - aos/reports/examples/project-state/README.md
+  - aos/reports/examples/project-state/status-example.json
+  - reports/aos-farm-441-9-project-state-scanner-report.md
+- scanner_capabilities:
+  - report compact machine-readable local project state
+  - inspect read-only git branch head origin_dev and ahead_behind when local refs are available
+  - fall back to null plus UNKNOWN_BLOCKED for unavailable origin_dev data
+  - inspect deterministic AOS-FARM.441 report and draft artifacts without inferring authorization
+  - expose reusable Python function and thin CLI wrapper
+- scanner_limitations:
+  - read-only local state only
+  - does not require or use live remote network access
+  - does not infer approval, Risk Profile assignment, execution authorization, commit authorization, push authorization, or merge/release readiness from narrative prose
+- compact_state_fields:
+  - branch
+  - head
+  - origin_dev
+  - ahead_behind
+  - remote_probe_status
+  - latest_closed_task
+  - latest_candidate
+  - candidate_status
+  - next_required_action
+  - execution_authorized
+  - commit_authorized
+  - push_authorized
+- unknown_handling:
+  - if origin_dev or related local ref data is unavailable, scanner returns null for the missing value and remote_probe_status as UNKNOWN_BLOCKED
+  - if latest_closed_task is not exposed by an explicit closed-status report field, scanner returns null instead of guessing from report presence
+  - scanner keeps authorization flags false by default rather than guessing
+- validation_commands_run:
+  - python3 -m unittest discover -s tests/project_state -p 'test_project_state_scanner.py'
+  - python3 aos/scripts/aos_status.py status
+  - python3 aos/scripts/aos_status.py status --json
+  - git diff --check -- aos/tools/optional/project_state_scanner.py aos/scripts/aos_status.py tests/project_state/test_project_state_scanner.py aos/reports/examples/project-state/README.md aos/reports/examples/project-state/status-example.json reports/aos-farm-441-9-project-state-scanner-report.md
+- validation_result: PASS; unittest ran 13 tests OK; status CLI returned machine-readable JSON; latest_closed_task stayed null conservatively; git diff --check clean
+- protected_files_touched: false
+- canonical_files_touched: false
+- parser_modified: false
+- selection_validator_modified: false
+- task_brief_compiler_modified: false
+- lifecycle_guard_modified: false
+- network_used: false
+- llm_calls_used: false
+- db_used: false
+- sqlite_used: false
+- rag_used: false
+- file_mutation_outside_allowed_files: false
+- git_mutation_performed: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

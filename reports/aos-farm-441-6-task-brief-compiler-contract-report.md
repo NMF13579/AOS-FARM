@@ -1,0 +1,33 @@
+# AOS-FARM.441.6 Task Brief Compiler Contract Report
+
+- task_id: AOS-FARM.441.6
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/docs/workflow/task-brief-compiler.md
+  - aos/templates/task-briefs/README.md
+  - aos/reports/examples/task-brief-compiler/README.md
+  - aos/reports/examples/task-brief-compiler/task-brief-draft-example.md
+  - reports/aos-farm-441-6-task-brief-compiler-contract-report.md
+- contract_created: true
+- example_created: true
+- compiler_code_created: false
+- compiler_cli_created: false
+- compiler_tests_created: false
+- validation_commands_run:
+  - git diff --check -- aos/docs/workflow/task-brief-compiler.md aos/templates/task-briefs/README.md aos/reports/examples/task-brief-compiler/README.md aos/reports/examples/task-brief-compiler/task-brief-draft-example.md reports/aos-farm-441-6-task-brief-compiler-contract-report.md
+  - semantic review for forbidden positive claims across the same scoped files
+- validation_result: PASS; git diff --check clean; narrowed semantic review found no forbidden positive claims
+- protected_files_touched: false
+- canonical_files_touched: false
+- parser_modified: false
+- validator_modified: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

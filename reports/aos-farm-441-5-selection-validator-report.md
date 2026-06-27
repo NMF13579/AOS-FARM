@@ -1,0 +1,75 @@
+# AOS-FARM.441.5 Selection Validator Report
+
+- task_id: AOS-FARM.441.5
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/tools/optional/next_task_selection_validator.py
+  - aos/scripts/aos_next_task_selection.py
+  - tests/next_task_selection/test_next_task_selection_validator.py
+  - aos/reports/examples/next-task-selection/fixtures/valid/selection-accept.md
+  - aos/reports/examples/next-task-selection/fixtures/valid/selection-clarify.md
+  - aos/reports/examples/next-task-selection/fixtures/valid/selection-defer.md
+  - aos/reports/examples/next-task-selection/fixtures/valid/selection-reject.md
+  - aos/reports/examples/next-task-selection/fixtures/negative/selection-authorizes-execution.md
+  - aos/reports/examples/next-task-selection/fixtures/negative/selection-claims-approval.md
+  - aos/reports/examples/next-task-selection/fixtures/negative/selection-starts-next-task.md
+  - aos/reports/examples/next-task-selection/fixtures/negative/selection-assigns-risk-profile-without-human.md
+  - reports/aos-farm-441-5-selection-validator-report.md
+- validator_capabilities:
+  - validate one selection artifact at a time
+  - return machine-readable PASS BLOCKED HUMAN_REVIEW_REQUIRED UNKNOWN_BLOCKED results
+  - validate required control fields and allowed selection decisions
+  - block forbidden authorization, lifecycle, and Risk Profile control-field claims
+  - block UNKNOWN is OK, NOT_RUN is PASS, PASS is approval, Evidence is approval, and CI PASS is approval semantics
+  - expose reusable Python validation function and CLI command
+- validator_limitations:
+  - validates only simple Markdown control fields and narrow lifecycle semantics
+  - does not create Task Briefs or compile candidates
+  - does not authorize execution, commit, push, or next-task start
+  - does not mutate files or perform external calls
+- valid_fixtures_created:
+  - selection-accept.md
+  - selection-clarify.md
+  - selection-defer.md
+  - selection-reject.md
+- negative_fixtures_created:
+  - selection-authorizes-execution.md
+  - selection-claims-approval.md
+  - selection-starts-next-task.md
+  - selection-assigns-risk-profile-without-human.md
+- validation_commands_run:
+  - python3 -m unittest discover -s tests/next_task_selection -p 'test_next_task_selection_validator.py'
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/valid/selection-accept.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/valid/selection-clarify.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/valid/selection-defer.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/valid/selection-reject.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/negative/selection-authorizes-execution.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/negative/selection-claims-approval.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/negative/selection-starts-next-task.md
+  - python3 aos/scripts/aos_next_task_selection.py validate-selection --selection aos/reports/examples/next-task-selection/fixtures/negative/selection-assigns-risk-profile-without-human.md
+  - git diff --check -- aos/tools/optional/next_task_selection_validator.py aos/scripts/aos_next_task_selection.py tests/next_task_selection/test_next_task_selection_validator.py aos/reports/examples/next-task-selection/fixtures/valid/selection-accept.md aos/reports/examples/next-task-selection/fixtures/valid/selection-clarify.md aos/reports/examples/next-task-selection/fixtures/valid/selection-defer.md aos/reports/examples/next-task-selection/fixtures/valid/selection-reject.md aos/reports/examples/next-task-selection/fixtures/negative/selection-authorizes-execution.md aos/reports/examples/next-task-selection/fixtures/negative/selection-claims-approval.md aos/reports/examples/next-task-selection/fixtures/negative/selection-starts-next-task.md aos/reports/examples/next-task-selection/fixtures/negative/selection-assigns-risk-profile-without-human.md reports/aos-farm-441-5-selection-validator-report.md
+- validation_result: PASS; unittest ran 15 tests OK; valid fixtures returned PASS; negative fixtures returned expected BLOCKED; git diff --check clean
+- expected_negative_fixture_blocks:
+  - selection-authorizes-execution.md
+  - selection-claims-approval.md
+  - selection-starts-next-task.md
+  - selection-assigns-risk-profile-without-human.md
+- protected_files_touched: false
+- canonical_files_touched: false
+- parser_modified: false
+- network_used: false
+- llm_calls_used: false
+- db_used: false
+- sqlite_used: false
+- rag_used: false
+- file_mutation_outside_allowed_files: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

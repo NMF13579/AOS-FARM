@@ -1,0 +1,51 @@
+# AOS-FARM.441.4 Selection Template And Examples Report
+
+- task_id: AOS-FARM.441.4
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/docs/workflow/next-task-selection-gate.md
+  - aos/templates/selection/README.md
+  - aos/templates/selection/next-task-selection-decision-template.md
+  - aos/reports/examples/next-task-selection/README.md
+  - aos/reports/examples/next-task-selection/selection-accept-example.md
+  - aos/reports/examples/next-task-selection/selection-clarify-example.md
+  - aos/reports/examples/next-task-selection/selection-defer-example.md
+  - aos/reports/examples/next-task-selection/selection-reject-example.md
+  - reports/aos-farm-441-4-selection-template-examples-report.md
+- decision_options_documented:
+  - ACCEPT
+  - CLARIFY
+  - DEFER
+  - REJECT
+  - REPLACE
+- required_boundary_fields_documented:
+  - candidate_status: DRAFT
+  - selection_decision:
+  - execution_authorized: false
+  - task_brief_authorized: false
+  - risk_profile_assigned_by_human: false
+  - next_task_started: false
+  - human_review_required: true
+  - final_status: HUMAN_REVIEW_REQUIRED
+- examples_created:
+  - selection-accept-example.md
+  - selection-clarify-example.md
+  - selection-defer-example.md
+  - selection-reject-example.md
+- validation_commands_run:
+  - git diff --check -- aos/docs/workflow/next-task-selection-gate.md aos/templates/selection/README.md aos/templates/selection/next-task-selection-decision-template.md aos/reports/examples/next-task-selection/README.md aos/reports/examples/next-task-selection/selection-accept-example.md aos/reports/examples/next-task-selection/selection-clarify-example.md aos/reports/examples/next-task-selection/selection-defer-example.md aos/reports/examples/next-task-selection/selection-reject-example.md reports/aos-farm-441-4-selection-template-examples-report.md
+  - semantic review for forbidden positive claims across the same scoped files
+- validation_result: PASS; git diff --check clean; semantic review found only negative boundary statements and no forbidden positive claims
+- protected_files_touched: false
+- canonical_files_touched: false
+- validator_code_created: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

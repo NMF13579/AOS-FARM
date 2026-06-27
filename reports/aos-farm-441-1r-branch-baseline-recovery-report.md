@@ -1,0 +1,21 @@
+# AOS-FARM.441.1R Branch Baseline Recovery Report
+
+- task_id: AOS-FARM.441.1R
+- recovery_for: AOS-FARM.441.1
+- previous_branch: build/evidence-to-backlog-loop-mvp
+- expected_branch: build/deterministic-control-helpers-mvp
+- actual_branch_after_recovery: build/deterministic-control-helpers-mvp
+- HEAD: 9ca21bb1bc04fcb0380ca058d550addf666e66e9
+- origin/dev: 9ca21bb1bc04fcb0380ca058d550addf666e66e9
+- ahead_behind: 0 0
+- remote_probe_status: LIVE_VERIFIED
+- branch_created: true
+- branch_switched: true
+- protected_files_touched: false
+- implementation_started: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

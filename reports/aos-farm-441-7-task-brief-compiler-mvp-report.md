@@ -1,0 +1,61 @@
+# AOS-FARM.441.7 Task Brief Compiler MVP Report
+
+- task_id: AOS-FARM.441.7
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/tools/optional/task_brief_compiler.py
+  - aos/scripts/aos_task_brief_compile.py
+  - tests/task_brief_compiler/test_task_brief_compiler.py
+  - aos/reports/examples/task-brief-compiler/fixtures/valid/accepted-selection.md
+  - aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md
+  - aos/reports/examples/task-brief-compiler/fixtures/negative/selection-not-accepted.md
+  - aos/reports/examples/task-brief-compiler/fixtures/negative/selection-authorizes-execution.md
+  - reports/aos-farm-441-7-task-brief-compiler-mvp-report.md
+- compiler_capabilities:
+  - compile one candidate plus one ACCEPT selection artifact at a time
+  - validate preconditions before writing output
+  - write only to the explicit output path
+  - leave source candidate and source selection unchanged
+  - return machine-readable result and expose reusable Python function plus thin CLI wrapper
+- compiler_limitations:
+  - supports only simple Markdown field parsing and deterministic review-only draft output
+  - does not authorize execution, assign Risk Profile, approve task, commit, push, merge, release, or start next task
+  - does not mutate git state or any file outside the explicit output path
+- valid_fixtures_created:
+  - accepted-selection.md
+  - source-candidate.md
+- negative_fixtures_created:
+  - selection-not-accepted.md
+  - selection-authorizes-execution.md
+- generated_draft_path: reports/aos-farm-441-7-dogfood-task-brief-draft.md
+- validation_commands_run:
+  - python3 -m unittest discover -s tests/task_brief_compiler -p 'test_task_brief_compiler.py'
+  - python3 aos/scripts/aos_task_brief_compile.py compile --candidate aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md --selection aos/reports/examples/task-brief-compiler/fixtures/valid/accepted-selection.md --output reports/aos-farm-441-7-dogfood-task-brief-draft.md
+  - python3 aos/scripts/aos_task_brief_compile.py compile --candidate aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md --selection aos/reports/examples/task-brief-compiler/fixtures/negative/selection-not-accepted.md --output /tmp/aos-farm-441-7-negative-selection-not-accepted.md
+  - python3 aos/scripts/aos_task_brief_compile.py compile --candidate aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md --selection aos/reports/examples/task-brief-compiler/fixtures/negative/selection-authorizes-execution.md --output /tmp/aos-farm-441-7-negative-selection-authorizes-execution.md
+  - review generated dogfood draft fields for DRAFT false authorization flags and HUMAN_REVIEW_REQUIRED
+  - git diff --check -- aos/tools/optional/task_brief_compiler.py aos/scripts/aos_task_brief_compile.py tests/task_brief_compiler/test_task_brief_compiler.py aos/reports/examples/task-brief-compiler/fixtures/valid/accepted-selection.md aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md aos/reports/examples/task-brief-compiler/fixtures/negative/selection-not-accepted.md aos/reports/examples/task-brief-compiler/fixtures/negative/selection-authorizes-execution.md reports/aos-farm-441-7-dogfood-task-brief-draft.md reports/aos-farm-441-7-task-brief-compiler-mvp-report.md
+- validation_result: PASS; unittest ran 17 tests OK; valid compile returned PASS; negative fixtures returned expected BLOCKED; generated draft stayed review-only; git diff --check clean
+- expected_negative_fixture_blocks:
+  - selection-not-accepted.md
+  - selection-authorizes-execution.md
+- protected_files_touched: false
+- canonical_files_touched: false
+- parser_modified: false
+- validator_modified: false
+- network_used: false
+- llm_calls_used: false
+- db_used: false
+- sqlite_used: false
+- rag_used: false
+- file_mutation_outside_allowed_files: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

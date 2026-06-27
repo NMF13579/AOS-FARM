@@ -1,0 +1,14 @@
+{
+  "branch": "build/deterministic-control-helpers-mvp",
+  "head": "9ca21bb1bc04fcb0380ca058d550addf666e66e9",
+  "origin_dev": "9ca21bb1bc04fcb0380ca058d550addf666e66e9",
+  "ahead_behind": "0\t0",
+  "remote_probe_status": null,
+  "latest_closed_task": null,
+  "latest_candidate": "aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md",
+  "candidate_status": "DRAFT",
+  "next_required_action": "HUMAN_REVIEW_TASK_BRIEF_DRAFT",
+  "execution_authorized": false,
+  "commit_authorized": false,
+  "push_authorized": false
+}

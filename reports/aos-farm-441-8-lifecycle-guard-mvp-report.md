@@ -1,0 +1,68 @@
+# AOS-FARM.441.8 Lifecycle Guard MVP Report
+
+- task_id: AOS-FARM.441.8
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/tools/optional/lifecycle_guard.py
+  - aos/scripts/aos_lifecycle_guard.py
+  - tests/lifecycle_guard/test_lifecycle_guard.py
+  - aos/reports/examples/lifecycle-guard/README.md
+  - aos/reports/examples/lifecycle-guard/fixtures/valid/commit-authorized.md
+  - aos/reports/examples/lifecycle-guard/fixtures/valid/push-authorized.md
+  - aos/reports/examples/lifecycle-guard/fixtures/negative/commit-not-authorized.md
+  - aos/reports/examples/lifecycle-guard/fixtures/negative/push-not-authorized.md
+  - aos/reports/examples/lifecycle-guard/fixtures/negative/force-push-claimed.md
+  - reports/aos-farm-441-8-lifecycle-guard-mvp-report.md
+- lifecycle_guard_capabilities:
+  - validate one commit or push checkpoint artifact at a time
+  - return machine-readable PASS BLOCKED HUMAN_REVIEW_REQUIRED UNKNOWN_BLOCKED results
+  - validate required control fields for commit authorization checkpoints
+  - validate required control fields for push authorization checkpoints
+  - block forbidden force-push, tag-push, merge, release, and next-task claims
+  - expose reusable Python functions and thin CLI wrapper
+- lifecycle_guard_limitations:
+  - validates checkpoint semantics only
+  - does not perform git operations or mutate files
+  - does not authorize commit, push, merge, release, or next-task start by itself
+- valid_fixtures_created:
+  - commit-authorized.md
+  - push-authorized.md
+- negative_fixtures_created:
+  - commit-not-authorized.md
+  - push-not-authorized.md
+  - force-push-claimed.md
+- validation_commands_run:
+  - python3 -m unittest discover -s tests/lifecycle_guard -p 'test_lifecycle_guard.py'
+  - python3 aos/scripts/aos_lifecycle_guard.py validate-commit-checkpoint --checkpoint aos/reports/examples/lifecycle-guard/fixtures/valid/commit-authorized.md
+  - python3 aos/scripts/aos_lifecycle_guard.py validate-push-checkpoint --checkpoint aos/reports/examples/lifecycle-guard/fixtures/valid/push-authorized.md
+  - python3 aos/scripts/aos_lifecycle_guard.py validate-commit-checkpoint --checkpoint aos/reports/examples/lifecycle-guard/fixtures/negative/commit-not-authorized.md
+  - python3 aos/scripts/aos_lifecycle_guard.py validate-push-checkpoint --checkpoint aos/reports/examples/lifecycle-guard/fixtures/negative/push-not-authorized.md
+  - python3 aos/scripts/aos_lifecycle_guard.py validate-push-checkpoint --checkpoint aos/reports/examples/lifecycle-guard/fixtures/negative/force-push-claimed.md
+  - git diff --check -- aos/tools/optional/lifecycle_guard.py aos/scripts/aos_lifecycle_guard.py tests/lifecycle_guard/test_lifecycle_guard.py aos/reports/examples/lifecycle-guard/README.md aos/reports/examples/lifecycle-guard/fixtures/valid/commit-authorized.md aos/reports/examples/lifecycle-guard/fixtures/valid/push-authorized.md aos/reports/examples/lifecycle-guard/fixtures/negative/commit-not-authorized.md aos/reports/examples/lifecycle-guard/fixtures/negative/push-not-authorized.md aos/reports/examples/lifecycle-guard/fixtures/negative/force-push-claimed.md reports/aos-farm-441-8-lifecycle-guard-mvp-report.md
+- validation_result: PASS; unittest ran 18 tests OK; valid checkpoints returned PASS; negative fixtures returned expected BLOCKED; git diff --check clean
+- expected_negative_fixture_blocks:
+  - commit-not-authorized.md
+  - push-not-authorized.md
+  - force-push-claimed.md
+- protected_files_touched: false
+- canonical_files_touched: false
+- parser_modified: false
+- selection_validator_modified: false
+- task_brief_compiler_modified: false
+- network_used: false
+- llm_calls_used: false
+- db_used: false
+- sqlite_used: false
+- rag_used: false
+- file_mutation_outside_allowed_files: false
+- git_mutation_performed: false
+- runner_behavior_introduced: false
+- approval_simulation_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED

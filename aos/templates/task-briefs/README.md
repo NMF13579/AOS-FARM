@@ -6,9 +6,11 @@ The root `AGENTS.md` is the primary required root entrypoint. Optional marker bl
 ## Controlled Task Brief Templates
 - Use `controlled-task-brief-template.md` to define one exact execution task.
 - Use `next-task-candidate-template.md` only to frame a possible follow-up task for human review.
+- A compiler contract may draft a Task Brief only after an accepted `Next Task Candidate` plus a valid selection decision, and that draft remains review-only.
 - The brief should name the expected execution package path, usually copied from `aos/templates/execution-packages/controlled-execution-package-template.yaml`.
 - The brief is not execution approval. Pair it with a real Human Execution Authorization before running guard `precheck`.
 - A Next Task Candidate is not a Controlled Task Brief, not an approved task, and not execution authorization.
+- A compiled Task Brief draft is not executable, does not assign Risk Profile, does not authorize execution, commit, or push, and ends at `HUMAN_REVIEW_REQUIRED` until a later human checkpoint.
 
 **AOS Core Rules & Boundaries:**
 - PASS ≠ approval.

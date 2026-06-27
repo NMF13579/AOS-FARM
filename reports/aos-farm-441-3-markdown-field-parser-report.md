@@ -1,0 +1,43 @@
+# AOS-FARM.441.3 Markdown Field Parser Report
+
+- task_id: AOS-FARM.441.3
+- branch: build/deterministic-control-helpers-mvp
+- files_created_or_modified:
+  - aos/tools/optional/markdown_field_parser.py
+  - tests/shared/test_markdown_field_parser.py
+  - reports/aos-farm-441-3-markdown-field-parser-report.md
+- parser_capabilities:
+  - read a Markdown file
+  - extract simple key:value control fields
+  - normalize true and false to Python booleans
+  - extract status fields into machine-readable output
+  - detect missing required fields
+  - record duplicate keys deterministically
+  - record malformed and ignored lines without crashing
+  - preserve UNKNOWN and NOT_RUN as blocking status values
+- parser_limitations:
+  - supports only simple top-level key:value fields
+  - does not parse nested Markdown sections or full YAML
+  - does not infer approval, Risk Profile assignment, or execution authorization
+  - does not mutate files or perform external calls
+- validation_commands_run:
+  - python3 -m unittest discover -s tests/shared -p 'test_markdown_field_parser.py'
+  - git diff --check -- aos/tools/optional/markdown_field_parser.py tests/shared/test_markdown_field_parser.py reports/aos-farm-441-3-markdown-field-parser-report.md
+- validation_result: PASS; python3 unittest ran 11 tests OK; git diff --check clean
+- protected_files_touched: false
+- canonical_files_touched: false
+- network_used: false
+- llm_calls_used: false
+- db_used: false
+- sqlite_used: false
+- rag_used: false
+- file_mutation_outside_allowed_files: false
+- approval_inference_present: false
+- risk_profile_self_assignment_present: false
+- execution_authorization_present: false
+- commit_performed: false
+- push_performed: false
+- merge_performed: false
+- release_performed: false
+- next_task_started: false
+- final_status: HUMAN_REVIEW_REQUIRED
