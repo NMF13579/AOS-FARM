@@ -30,6 +30,14 @@ AOS execution follows a deterministic loop to ensure safety and traceability.
 - Guard PASS does not authorize push.
 - `BLOCKED`, `UNKNOWN_BLOCKED`, and `HUMAN_REVIEW_REQUIRED` mean stop and ask for human/project-owner review.
 
+## 5. Post-Execution Learning
+- After Evidence Review, use the Evidence-to-Backlog Loop to record lessons learned and candidate hardening work.
+- See `aos/docs/workflow/evidence-to-backlog-loop.md`.
+- Lessons Learned are not approval.
+- Pipeline Hardening Backlog Items are not execution authorization.
+- Next Task Candidates are not approved tasks.
+- The loop ends at `HUMAN_REVIEW_REQUIRED` unless a human explicitly authorizes the next lifecycle transition.
+
 ## Reference
 For a non-programmer-friendly walkthrough, see `aos/docs/workflow/first-controlled-execution.md`.
 For copyable guard examples and expected PASS/BLOCKED outcomes, see `aos/reports/examples/README.md`.

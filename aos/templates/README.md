@@ -10,6 +10,10 @@ The root `AGENTS.md` is the primary required root entrypoint. Optional marker bl
 - `reports/execution-report-template.md` records execution claims and guard results.
 - `reports/controlled-execution-evidence-report-template.md` records Evidence, NOT_RUN, UNKNOWN, BLOCKED, and approval-boundary fields.
 - `reports/evidence-review-template.md` supports human review after Evidence is collected.
+- `reviews/post-execution-review-template.md` records lessons, gaps, backlog items, and next-task candidates after Evidence Review.
+- `reviews/lessons-learned-template.md` records one lesson from completed evidence.
+- `backlog/pipeline-hardening-backlog-item-template.md` records one possible hardening item without authorizing execution.
+- `task-briefs/next-task-candidate-template.md` frames a possible follow-up task for human review only.
 
 **AOS Core Rules & Boundaries:**
 - PASS ≠ approval.
@@ -19,4 +23,8 @@ The root `AGENTS.md` is the primary required root entrypoint. Optional marker bl
 - NOT_RUN ≠ PASS.
 - Human approval cannot be simulated.
 - Commit, push, merge, release, and destructive operations require explicit human authorization.
+- Lessons Learned ≠ approval.
+- Pipeline Hardening Backlog Item ≠ execution authorization.
+- Next Task Candidate ≠ approved task.
+- Validator PASS ≠ approval.
 - Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.

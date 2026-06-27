@@ -301,6 +301,22 @@ These are separate decisions.
 - merge;
 - release.
 
+### Step 13: Capture Post-Execution Learning
+After Evidence Review and any available closure evidence, use the
+Evidence-to-Backlog Loop to record lessons learned, possible hardening backlog
+items, and a Next Task Candidate for human review.
+
+Use:
+- `aos/docs/workflow/evidence-to-backlog-loop.md`
+
+Important:
+- Evidence Review is not approval.
+- Lessons Learned are not approval.
+- Pipeline Hardening Backlog Items are not execution authorization.
+- Next Task Candidates are not approved tasks.
+- Validator PASS is not approval.
+- The loop does not authorize commit, push, merge, release, or the next task.
+
 ## User Checklist Before Execution
 - [ ] I selected exactly one queue item.
 - [ ] I reviewed the full `Controlled Task Brief`.
@@ -370,6 +386,7 @@ This guide does not:
 - automate execution;
 - replace human review;
 - authorize future tasks;
+- authorize post-execution backlog work;
 - authorize commit or push;
 - change lifecycle taxonomy;
 - enable runner, CI, database, RAG, vector DB, or Spec Kit execution.

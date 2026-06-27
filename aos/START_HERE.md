@@ -1,6 +1,6 @@
 # AOS Consumer Kit - Start Here
 
-Welcome to AOS. To ensure safe and controlled AI development, you must follow the strict entry flow. 
+Welcome to AOS. To ensure safe and controlled AI development, you must follow the strict entry flow.
 
 **Do not write code or create a task brief yet.**
 
@@ -10,7 +10,7 @@ Before your agent can write any code, you must define the problem and establish 
 
 ### Step 1: Problem Intake
 Start by clearly defining what you are trying to build and the problems you are solving.
-- **What to do:** Have your AI agent read the guide at `aos/docs/workflow/first-session-guide.md` and initialize using `aos/prompts/problem-intake.md`. 
+- **What to do:** Have your AI agent read the guide at `aos/docs/workflow/first-session-guide.md` and initialize using `aos/prompts/problem-intake.md`.
 - **What it does:** The agent will interview you one question at a time to uncover risks and requirements.
 - **Output:** A structured `Problem Intake Summary`.
 
@@ -33,11 +33,13 @@ Review the proposed tasks before authorizing any work.
 
 ### Step 5: Controlled Execution
 Only after a task is reviewed and selected from the queue can you begin execution.
-- **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task. 
+- **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task.
 - **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries.
 - **Next step guide:** See [First Controlled Execution](docs/workflow/first-controlled-execution.md) for the safe path from `Controlled Task Brief` to Human Execution Authorization, Controlled Execution Guard `precheck`, controlled execution, `scopecheck`, `postcheck`, and Evidence Review.
+- **Post-execution learning:** After Evidence Review, see the [Evidence-to-Backlog Loop](docs/workflow/evidence-to-backlog-loop.md) to capture lessons learned, backlog candidates, and a Next Task Candidate for human review.
 - **Important:** Controlled execution still requires explicit human authorization. The brief alone is not approval.
 - **Important:** Guard PASS is not approval. Guard PASS does not authorize commit or push.
+- **Important:** Lessons Learned, Pipeline Hardening Backlog Items, and Next Task Candidates do not authorize execution.
 
 ---
 
