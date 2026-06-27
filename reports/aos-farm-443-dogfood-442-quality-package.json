@@ -1,0 +1,22 @@
+{
+  "task_id": "AOS-FARM.442",
+  "acceptance_criteria": [
+    {"id": "req-1", "required": true},
+    {"id": "req-2", "required": true},
+    {"id": "req-3", "required": true},
+    {"id": "req-4", "required": true},
+    {"id": "req-5", "required": true},
+    {"id": "opt-1", "required": false}
+  ],
+  "evidence": [
+    {"criterion_id": "req-1", "status": "PASS"},
+    {"criterion_id": "req-2", "status": "PASS"},
+    {"criterion_id": "req-3", "status": "PASS"},
+    {"criterion_id": "req-4", "status": "PASS"},
+    {"criterion_id": "req-5", "status": "PASS"}
+  ],
+  "validation_outputs": {
+    "forbidden_claims_present": false,
+    "human_review_required": true
+  }
+}

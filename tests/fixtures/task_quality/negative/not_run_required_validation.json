@@ -1,0 +1,6 @@
+{
+  "task_id": "443",
+  "acceptance_criteria": [{"id": "c1", "required": true}],
+  "evidence": [{"criterion_id": "c1", "status": "PASS"}],
+  "validation_outputs": {"forbidden_claims_present": false, "human_review_required": true, "some_val": "NOT_RUN"}
+}

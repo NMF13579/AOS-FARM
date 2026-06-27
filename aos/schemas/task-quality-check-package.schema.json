@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["task_id", "acceptance_criteria", "evidence", "validation_outputs"],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": {
+          "id": {"type": "string"},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["criterion_id", "status"],
+        "properties": {
+          "criterion_id": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      }
+    },
+    "validation_outputs": {
+      "type": "object",
+      "required": ["forbidden_claims_present", "human_review_required"],
+      "properties": {
+        "forbidden_claims_present": {"type": "boolean"},
+        "human_review_required": {"type": "boolean"}
+      }
+    }
+  }
+}
