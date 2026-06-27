@@ -1,0 +1,42 @@
+task_id: AOS-FARM.442.11
+parent_task_id: AOS-FARM.442
+title: Dogfood
+branch: build/task-registry-queue-contract-mvp
+execution_authorized_by_human: true
+risk_profile: HIGH_RISK_PROTECTED
+created_files:
+  - reports/aos-farm-442-dogfood-task-registry.md
+  - reports/aos-farm-442-dogfood-task-queue.md
+  - reports/aos-farm-442-dogfood-summary.json
+  - reports/aos-farm-442-dogfood-show-current.json
+  - reports/aos-farm-442-dogfood-show-next.json
+  - reports/aos-farm-442-dogfood-report.md
+dogfood_registry_created: true
+dogfood_queue_created: true
+dogfood_validate_passed: true
+dogfood_summary_created: true
+dogfood_show_current_created: true
+dogfood_show_next_created: true
+expected_summary_matched: true
+expected_show_current_matched: true
+expected_show_next_matched: false
+current_task: AOS-FARM.442
+next_task: AOS-FARM.443
+next_task_execution_authorized: false
+next_task_final_status: HUMAN_REVIEW_REQUIRED
+dogfood_authorized_execution: false
+dogfood_authorized_commit: false
+dogfood_authorized_push: false
+validator_modified: false
+cli_modified: false
+tests_modified: false
+runner_behavior_introduced: false
+auto_approval_introduced: false
+auto_execution_introduced: false
+sqlite_implementation_introduced: false
+rag_light_implementation_introduced: false
+commit_performed: false
+push_performed: false
+next_allowed_step: AOS-FARM.442.12 Final Review
+final_status: BLOCKED
+reason: dogfood_failed
