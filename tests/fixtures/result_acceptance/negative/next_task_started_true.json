@@ -1,0 +1,11 @@
+{
+  "human_decision": "ACCEPT_RESULT",
+  "result_accepted_by_human": true,
+  "task_quality_status": "PASS",
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false,
+  "next_task_started": true,
+  "lifecycle_mutation_authorized": false
+}

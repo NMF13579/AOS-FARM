@@ -1,0 +1,26 @@
+{
+  "task_id": "AOS-FARM.443",
+  "task_title": "Dogfood Result Acceptance",
+  "task_quality_package_path": "reports/aos-farm-443-dogfood-442-quality-package.json",
+  "task_quality_result_path": "reports/aos-farm-443-dogfood-442-quality-result.json",
+  "task_quality_status": "PASS_WITH_WARNINGS",
+  "task_quality_known_limits": [
+    "Task Quality checker validates structure and declared Evidence links only.",
+    "It does not prove semantic product correctness.",
+    "Dogfood on AOS-FARM.442 remained NOT_ENOUGH_EVIDENCE because historical human result acceptance checkpoint was absent."
+  ],
+  "acceptance_summary_path": "reports/aos-farm-444-dogfood-443-result-acceptance-summary.md",
+  "human_decision": "ACCEPT_RESULT",
+  "human_decision_reason": "Human accepts AOS-FARM.443 result while explicitly acknowledging MVP limits.",
+  "human_acknowledges_known_limits": true,
+  "result_accepted_by_human": true,
+  "requires_follow_up_task": false,
+  "follow_up_task_candidate": null,
+  "rejection_reason": null,
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false,
+  "next_task_started": false,
+  "lifecycle_mutation_authorized": false
+}

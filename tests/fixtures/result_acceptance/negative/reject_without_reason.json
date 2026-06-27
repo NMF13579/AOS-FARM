@@ -1,0 +1,9 @@
+{
+  "human_decision": "REJECT_RESULT",
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false,
+  "next_task_started": false,
+  "lifecycle_mutation_authorized": false
+}
