@@ -1,0 +1,10 @@
+task_id: AOS-FARM.450
+phase: EXEC
+branch: build/first-controlled-code-change-dogfood
+changed_files:
+  - path: aos/scripts/aos_task_queue_helper.py
+    classification: code
+    scope_status: in_scope
+  - path: tests/test_aos_task_queue_helper.py
+    classification: test
+    scope_status: in_scope

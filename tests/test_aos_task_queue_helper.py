@@ -88,5 +88,33 @@ class TestTaskQueueHelper(unittest.TestCase):
         mtime_after = os.stat(self.fixture_valid).st_mtime
         self.assertEqual(mtime_before, mtime_after)
 
+    def test_json_explicit_safety_boundaries(self):
+        res = self.run_helper("validate", self.fixture_valid)
+        self.assertEqual(res.returncode, 0)
+        data = json.loads(res.stdout)
+        self.assertIn("status", data)
+        self.assertIn("warnings", data)
+        self.assertTrue(data.get("approval_required"))
+        self.assertFalse(data.get("execution_authorized"))
+        self.assertFalse(data.get("commit_authorized"))
+        self.assertFalse(data.get("push_authorized"))
+        self.assertFalse(data.get("release_authorized"))
+        self.assertIn("unknown_items", data)
+        self.assertIn("not_run_items", data)
+        self.assertIn("invalid_transitions", data)
+        self.assertIn("approval_boundary_violations", data)
+
+        res_current = self.run_helper("show-current", self.fixture_valid)
+        data_current = json.loads(res_current.stdout)
+        self.assertIn("status", data_current)
+        self.assertTrue(data_current.get("candidate_only"))
+        self.assertTrue(data_current.get("approval_required"))
+        self.assertFalse(data_current.get("commit_authorized"))
+
+        res_summary = self.run_helper("summary", self.fixture_valid)
+        data_summary = json.loads(res_summary.stdout)
+        self.assertIn("status", data_summary)
+        self.assertFalse(data_summary.get("commit_authorized"))
+
 if __name__ == '__main__':
     unittest.main()

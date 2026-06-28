@@ -28,16 +28,16 @@ def main():
     parser.add_argument("command", choices=["validate", "summary", "show-current", "show-next"])
     parser.add_argument("--registry", required=True, help="Path to registry markdown file")
     parser.add_argument("--queue", required=True, help="Path to queue markdown file")
-    
+
     args = parser.parse_args()
-    
+
     try:
         with open(args.registry, "r", encoding="utf-8") as f:
             registry_text = f.read()
     except Exception as e:
         print(json.dumps({"ok": False, "final_status": "BLOCKED", "errors": [f"Failed to read registry: {e}"], "warnings": []}))
         sys.exit(1)
-        
+
     try:
         with open(args.queue, "r", encoding="utf-8") as f:
             queue_text = f.read()
@@ -46,18 +46,38 @@ def main():
         sys.exit(1)
 
     print_invariants()
-        
+
     if args.command == "validate":
         res = task_registry_validator.validate_registry_queue(registry_text, queue_text)
+        res["status"] = res.get("final_status", "UNKNOWN")
+        res["approval_required"] = True
+        res["execution_authorized"] = False
+        res["commit_authorized"] = False
+        res["push_authorized"] = False
+        res["release_authorized"] = False
+        res["candidate_only"] = False
+        res["unknown_items"] = sum(1 for e in res.get("errors", []) if "UNKNOWN" in e)
+        res["not_run_items"] = sum(1 for w in res.get("warnings", []) if "NOT_RUN" in w)
+        res["invalid_transitions"] = sum(1 for e in res.get("errors", []) if "invalid transition" in e)
+        res["approval_boundary_violations"] = sum(1 for e in res.get("errors", []) if "READY_FOR_EXECUTION" in e)
+
         print(json.dumps(res, indent=2))
         if not res.get("ok"):
             sys.exit(1)
-            
+
     elif args.command == "summary":
         res = task_registry_validator.summarize_registry_queue(registry_text, queue_text)
         summary = res.get("summary", {})
         total = sum(summary.values())
         out = {
+            "status": "PASS",
+            "warnings": res.get("warnings", []),
+            "approval_required": True,
+            "execution_authorized": False,
+            "commit_authorized": False,
+            "push_authorized": False,
+            "release_authorized": False,
+            "candidate_only": False,
             "total_tasks": total,
             "closed": summary.get("CLOSED", 0),
             "queued": summary.get("QUEUED", 0),
@@ -66,13 +86,13 @@ def main():
             "replaced": summary.get("REPLACED", 0)
         }
         print(json.dumps(out, indent=2))
-        
+
     elif args.command in ("show-current", "show-next"):
         if args.command == "show-current":
             res = task_registry_validator.select_current_task(registry_text, queue_text)
         else:
             res = task_registry_validator.select_next_task(registry_text, queue_text)
-            
+
         task = res.get("task")
         if task:
             queue_data = task_registry_validator.parse_markdown_yaml(queue_text)
@@ -82,13 +102,19 @@ def main():
                 if q.get("task_id") == task.get("task_id"):
                     qid = q.get("queue_item_id")
                     break
-                    
+
             out = {
+                "status": res.get("final_status", "HUMAN_REVIEW_REQUIRED") if not res.get("ok") else task.get("final_status", "PASS"),
+                "warnings": res.get("warnings", []),
                 "selected_task_id": task.get("task_id"),
                 "selected_queue_item_id": qid,
                 "next_action": task.get("next_action"),
+                "approval_required": True,
                 "execution_authorized": task.get("execution_authorized", False),
-                "final_status": res.get("final_status", "HUMAN_REVIEW_REQUIRED") if not res.get("ok") else task.get("final_status", "PASS"),
+                "commit_authorized": False,
+                "push_authorized": False,
+                "release_authorized": False,
+                "candidate_only": True,
                 "invariants": {
                     "queue_position_is_not_approval": True,
                     "show_next_is_not_execution": True,
@@ -98,9 +124,16 @@ def main():
             }
         else:
             out = {
+                "status": res.get("final_status", "BLOCKED"),
+                "warnings": res.get("warnings", []),
                 "selected_task_id": None,
                 "selected_queue_item_id": None,
-                "final_status": res.get("final_status", "BLOCKED"),
+                "approval_required": True,
+                "execution_authorized": False,
+                "commit_authorized": False,
+                "push_authorized": False,
+                "release_authorized": False,
+                "candidate_only": True,
                 "invariants": {
                     "queue_position_is_not_approval": True,
                     "show_next_is_not_execution": True,
