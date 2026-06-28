@@ -7,6 +7,7 @@ To adopt AOS in an existing project:
 1. Follow the [Installation Guide](INSTALL.md) to copy the `/aos/` folder and `/AGENTS.md` template into your project.
 2. Direct your AI agent to read the `aos/START_HERE.md` entrypoint.
 3. Treat your existing codebase as the environment. You do not need to rewrite your code; you only need to govern the *agent's actions* moving forward.
+4. Ensure your project's root `.gitignore` ignores the `/.aos-tmp/` directory, which AI agents will use for temporary command outputs and logs.
 
 ## First Session Flow
 When adopting AOS, your first interaction with an agent should follow the **First Session Flow**:

@@ -1,0 +1,5 @@
+# AOS Consumer Kit
+# Standard Git ignore entries for AOS target projects
+
+# AOS Local Temporary Workspace
+/.aos-tmp/
