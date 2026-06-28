@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "AOS-FARM.457",
+  "task_brief": "reports/aos-farm-457-task-brief.md",
+  "implementation_summary": "Added result acceptance gate: schema, template, validator function, fixtures, tests.",
+  "related_quality_package": "reports/aos-farm-457-quality-package.json",
+  "related_forbidden_behavior_mapping": "reports/aos-farm-457-forbidden-behavior-mapping.json",
+  "changed_files": [
+    {
+      "path": "aos/schemas/task-execution-result-acceptance.schema.json",
+      "change_type": "ADDED",
+      "scope_status": "IN_SCOPE",
+      "human_review_required": false
+    },
+    {
+      "path": "aos/templates/task-execution-result-acceptance.md",
+      "change_type": "ADDED",
+      "scope_status": "IN_SCOPE",
+      "human_review_required": false
+    },
+    {
+      "path": "aos/scripts/aos_task_quality_check.py",
+      "change_type": "MODIFIED",
+      "scope_status": "IN_SCOPE",
+      "human_review_required": false
+    }
+  ],
+  "validation_results": [
+    {
+      "name": "unittest_result_acceptance",
+      "command_or_check": "python3 -m unittest tests/test_task_execution_result_acceptance.py",
+      "status": "PASS",
+      "evidence": "All tests passed",
+      "human_review_required": false
+    }
+  ],
+  "evidence_items": [
+    {
+      "evidence_id": "EV_001",
+      "description": "Unit tests pass for all result acceptance fixtures",
+      "path_or_command": "python3 -m unittest tests/test_task_execution_result_acceptance.py"
+    }
+  ],
+  "not_run_items": [],
+  "unknown_items": [],
+  "approval_boundary": {
+    "pass_is_not_approval": true,
+    "evidence_is_not_approval": true,
+    "ci_pass_is_not_approval": true,
+    "result_acceptance_is_not_approval": true,
+    "human_review_required": true,
+    "validator_does_not_grant_approval": true,
+    "validator_does_not_grant_commit_authorization": true,
+    "validator_does_not_grant_push_authorization": true,
+    "validator_does_not_grant_merge_authorization": true,
+    "validator_does_not_grant_release_authorization": true
+  },
+  "result_acceptance_boundary": {
+    "validator_checks_structure_only": true,
+    "validator_does_not_check_semantic_correctness": true,
+    "human_decision_required_for_acceptance": true
+  },
+  "final_status": "READY_FOR_HUMAN_RESULT_REVIEW",
+  "approval_granted": false,
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false
+}

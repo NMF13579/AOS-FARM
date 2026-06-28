@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "AOS-FARM.457",
+  "task_brief": "reports/aos-farm-457-task-brief.md",
+  "implementation_summary": "Fixture: NOT_RUN without human_review_required must be blocked (NOT_RUN != PASS).",
+  "changed_files": [
+    {
+      "path": "some/file.py",
+      "change_type": "MODIFIED",
+      "scope_status": "IN_SCOPE",
+      "human_review_required": false
+    }
+  ],
+  "validation_results": [
+    {
+      "name": "skipped_test_suite",
+      "command_or_check": "python3 -m unittest tests/test_something.py",
+      "status": "NOT_RUN",
+      "evidence": "not executed",
+      "human_review_required": false
+    }
+  ],
+  "evidence_items": [],
+  "not_run_items": [],
+  "unknown_items": [],
+  "approval_boundary": {
+    "pass_is_not_approval": true,
+    "evidence_is_not_approval": true,
+    "ci_pass_is_not_approval": true,
+    "result_acceptance_is_not_approval": true,
+    "human_review_required": true,
+    "validator_does_not_grant_approval": true,
+    "validator_does_not_grant_commit_authorization": true,
+    "validator_does_not_grant_push_authorization": true,
+    "validator_does_not_grant_merge_authorization": true,
+    "validator_does_not_grant_release_authorization": true
+  },
+  "result_acceptance_boundary": {
+    "validator_checks_structure_only": true,
+    "validator_does_not_check_semantic_correctness": true,
+    "human_decision_required_for_acceptance": true
+  },
+  "final_status": "READY_FOR_HUMAN_RESULT_REVIEW",
+  "approval_granted": false,
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false
+}

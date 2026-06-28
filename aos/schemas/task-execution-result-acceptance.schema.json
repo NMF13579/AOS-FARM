@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "task_brief",
+    "implementation_summary",
+    "changed_files",
+    "validation_results",
+    "evidence_items",
+    "not_run_items",
+    "unknown_items",
+    "approval_boundary",
+    "result_acceptance_boundary",
+    "final_status"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "task_id": { "type": "string" },
+    "task_brief": { "type": "string" },
+    "implementation_summary": { "type": "string" },
+    "related_quality_package": { "type": "string" },
+    "related_forbidden_behavior_mapping": { "type": "string" },
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "change_type", "scope_status", "human_review_required"],
+        "properties": {
+          "path": { "type": "string" },
+          "change_type": {
+            "type": "string",
+            "enum": ["ADDED", "MODIFIED", "DELETED", "RENAMED"]
+          },
+          "scope_status": {
+            "type": "string",
+            "enum": ["IN_SCOPE", "OUT_OF_SCOPE", "UNKNOWN"]
+          },
+          "human_review_required": { "type": "boolean" }
+        }
+      }
+    },
+    "validation_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "command_or_check", "status", "evidence", "human_review_required"],
+        "properties": {
+          "name": { "type": "string" },
+          "command_or_check": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN", "BLOCKED", "HUMAN_REVIEW_REQUIRED"]
+          },
+          "evidence": { "type": "string" },
+          "human_review_required": { "type": "boolean" }
+        }
+      }
+    },
+    "evidence_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "description", "path_or_command"],
+        "properties": {
+          "evidence_id": { "type": "string" },
+          "description": { "type": "string" },
+          "path_or_command": { "type": "string" }
+        }
+      }
+    },
+    "not_run_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id", "reason"],
+        "properties": {
+          "item_id": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "unknown_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id", "description", "human_review_required"],
+        "properties": {
+          "item_id": { "type": "string" },
+          "description": { "type": "string" },
+          "human_review_required": { "type": "boolean" }
+        }
+      }
+    },
+    "approval_boundary": {
+      "type": "object",
+      "required": [
+        "pass_is_not_approval",
+        "evidence_is_not_approval",
+        "ci_pass_is_not_approval",
+        "result_acceptance_is_not_approval",
+        "human_review_required",
+        "validator_does_not_grant_approval",
+        "validator_does_not_grant_commit_authorization",
+        "validator_does_not_grant_push_authorization",
+        "validator_does_not_grant_merge_authorization",
+        "validator_does_not_grant_release_authorization"
+      ],
+      "properties": {
+        "pass_is_not_approval": { "const": true },
+        "evidence_is_not_approval": { "const": true },
+        "ci_pass_is_not_approval": { "const": true },
+        "result_acceptance_is_not_approval": { "const": true },
+        "human_review_required": { "const": true },
+        "validator_does_not_grant_approval": { "const": true },
+        "validator_does_not_grant_commit_authorization": { "const": true },
+        "validator_does_not_grant_push_authorization": { "const": true },
+        "validator_does_not_grant_merge_authorization": { "const": true },
+        "validator_does_not_grant_release_authorization": { "const": true }
+      }
+    },
+    "result_acceptance_boundary": {
+      "type": "object",
+      "required": [
+        "validator_checks_structure_only",
+        "validator_does_not_check_semantic_correctness",
+        "human_decision_required_for_acceptance"
+      ],
+      "properties": {
+        "validator_checks_structure_only": { "const": true },
+        "validator_does_not_check_semantic_correctness": { "const": true },
+        "human_decision_required_for_acceptance": { "const": true }
+      }
+    },
+    "scope_boundary": {
+      "type": "object",
+      "properties": {
+        "allowed_files": { "type": "array", "items": { "type": "string" } },
+        "forbidden_files": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "human_review": {
+      "type": "object",
+      "properties": {
+        "items_requiring_review": { "type": "array", "items": { "type": "string" } },
+        "reviewer_notes": { "type": "string" }
+      }
+    },
+    "final_status": {
+      "type": "string",
+      "enum": [
+        "READY_FOR_HUMAN_RESULT_REVIEW",
+        "HUMAN_REVIEW_REQUIRED",
+        "BLOCKED",
+        "UNKNOWN_BLOCKED",
+        "REJECTED_BY_VALIDATOR"
+      ]
+    },
+    "approval_granted": { "const": false },
+    "commit_authorized": { "const": false },
+    "push_authorized": { "const": false },
+    "merge_authorized": { "const": false },
+    "release_authorized": { "const": false }
+  }
+}
