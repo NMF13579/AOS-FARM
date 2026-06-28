@@ -31,7 +31,7 @@ def parse_pseudo_yaml(content):
 def validate_package(file_path: Path) -> dict:
     if not file_path.exists():
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "File not found"}
-        
+
     try:
         content = file_path.read_text(encoding="utf-8")
     except Exception as e:
@@ -50,7 +50,7 @@ def validate_package(file_path: Path) -> dict:
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "Missing risk_profile"}
     if 'risk_profile_assigned_by' not in data or data['risk_profile_assigned_by'] != 'human':
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "Risk profile not assigned by human"}
-    
+
     if data.get('execution_authorized') != 'true':
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "execution_authorized is false or missing"}
     if data.get('candidate_only') == 'true':
@@ -60,7 +60,7 @@ def validate_package(file_path: Path) -> dict:
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "allowed_files empty or missing"}
     if 'forbidden_files' not in data:
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "forbidden_files missing"}
-        
+
     if 'required_tests' not in data or not data['required_tests']:
         return {"status": "CODE_QUALITY_BLOCKED", "reason": "required_tests missing"}
     if 'required_checks' not in data or not data['required_checks']:
@@ -89,16 +89,16 @@ def validate_package(file_path: Path) -> dict:
     allowed = data.get('allowed_files', [])
     forbidden = data.get('forbidden_files', [])
     protected_patterns = ['00_', '01_', '02_', 'README', 'AGENTS', 'START_HERE']
-    
+
     for changed_file in planned_changes:
         # Protected check
         for pat in protected_patterns:
             if pat in changed_file:
                 return {"status": "CODE_QUALITY_BLOCKED", "reason": f"Protected/canonical planned change: {changed_file}"}
-        
+
         if changed_file in forbidden:
             return {"status": "CODE_QUALITY_BLOCKED", "reason": f"Planned change inside forbidden_files: {changed_file}"}
-        
+
         # Must be in allowed
         is_allowed = False
         for a in allowed:
@@ -130,24 +130,38 @@ def validate_package(file_path: Path) -> dict:
 
 def summarize(file_path: Path) -> dict:
     res = validate_package(file_path)
-    if res['status'] == 'CODE_QUALITY_BLOCKED':
-        summary = f"Summary: BLOCKED due to {res['reason']}"
-    else:
-        summary = "Summary: Ready for human review"
-    return {"summary": summary, "status": res['status']}
+    is_blocked = (res['status'] == 'CODE_QUALITY_BLOCKED')
+
+    summary = f"Summary: blocked" if is_blocked else "Summary: human review required"
+    blocked_reasons = [res['reason']] if is_blocked else []
+
+    return {
+        "status": res['status'],
+        "summary": summary,
+        "package": str(file_path),
+        "human_review_required": True,
+        "approval_granted": False,
+        "commit_authorized": False,
+        "push_authorized": False,
+        "release_authorized": False,
+        "blocked_reasons_count": len(blocked_reasons),
+        "blocked_reasons": blocked_reasons,
+        "unknown_count": 0,
+        "not_run_count": 0
+    }
 
 def main():
     parser = argparse.ArgumentParser(description="Code Quality Control Validator")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    
+
     val_parser = subparsers.add_parser("validate-package")
     val_parser.add_argument("--package", required=True)
-    
+
     sum_parser = subparsers.add_parser("summarize")
     sum_parser.add_argument("--package", required=True)
-    
+
     args = parser.parse_args()
-    
+
     if args.command == "validate-package":
         print(json.dumps(validate_package(Path(args.package)), indent=2))
     elif args.command == "summarize":
