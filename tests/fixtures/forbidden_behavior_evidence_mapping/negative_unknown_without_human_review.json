@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "task_id": "456",
+  "related_quality_package": "reports/quality.json",
+  "forbidden_behavior_evidence_mappings": [
+    {
+      "forbidden_behavior_id": "fb1",
+      "forbidden_behavior": "No auto-approval",
+      "evidence_items": ["EV_1"],
+      "verification_method": "manual",
+      "verification_status": "UNKNOWN",
+      "human_review_required": false
+    }
+  ],
+  "approval_boundary": {
+    "pass_is_not_approval": true,
+    "evidence_is_not_approval": true,
+    "mapping_validation_is_not_approval": true,
+    "human_review_required": true,
+    "validator_does_not_grant_approval": true,
+    "validator_does_not_grant_commit_authorization": true,
+    "validator_does_not_grant_push_authorization": true,
+    "validator_does_not_grant_merge_authorization": true,
+    "validator_does_not_grant_release_authorization": true
+  },
+  "final_status": "READY_FOR_HUMAN_REVIEW"
+}

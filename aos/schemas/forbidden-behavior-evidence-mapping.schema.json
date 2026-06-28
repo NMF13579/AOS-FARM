@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "related_quality_package",
+    "forbidden_behavior_evidence_mappings",
+    "approval_boundary",
+    "final_status"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "task_id": { "type": "string" },
+    "related_quality_package": { "type": "string" },
+    "forbidden_behavior_evidence_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "forbidden_behavior_id",
+          "forbidden_behavior",
+          "evidence_items",
+          "verification_method",
+          "verification_status",
+          "human_review_required"
+        ],
+        "properties": {
+          "forbidden_behavior_id": { "type": "string" },
+          "forbidden_behavior": { "type": "string" },
+          "evidence_items": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "verification_method": { "type": "string" },
+          "verification_status": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "FAILED",
+              "NOT_RUN",
+              "UNKNOWN",
+              "NOT_APPLICABLE",
+              "HUMAN_REVIEW_REQUIRED"
+            ]
+          },
+          "human_review_required": { "type": "boolean" }
+        }
+      }
+    },
+    "approval_boundary": {
+      "type": "object",
+      "required": [
+        "pass_is_not_approval",
+        "evidence_is_not_approval",
+        "mapping_validation_is_not_approval",
+        "human_review_required",
+        "validator_does_not_grant_approval",
+        "validator_does_not_grant_commit_authorization",
+        "validator_does_not_grant_push_authorization",
+        "validator_does_not_grant_merge_authorization",
+        "validator_does_not_grant_release_authorization"
+      ],
+      "properties": {
+        "pass_is_not_approval": { "const": true },
+        "evidence_is_not_approval": { "const": true },
+        "mapping_validation_is_not_approval": { "const": true },
+        "human_review_required": { "const": true },
+        "validator_does_not_grant_approval": { "const": true },
+        "validator_does_not_grant_commit_authorization": { "const": true },
+        "validator_does_not_grant_push_authorization": { "const": true },
+        "validator_does_not_grant_merge_authorization": { "const": true },
+        "validator_does_not_grant_release_authorization": { "const": true }
+      }
+    },
+    "final_status": {
+      "type": "string",
+      "enum": [
+        "READY_FOR_HUMAN_REVIEW",
+        "HUMAN_REVIEW_REQUIRED",
+        "BLOCKED",
+        "UNKNOWN_BLOCKED"
+      ]
+    },
+    "approval_granted": { "const": false },
+    "commit_authorized": { "const": false },
+    "push_authorized": { "const": false },
+    "merge_authorized": { "const": false },
+    "release_authorized": { "const": false }
+  }
+}
