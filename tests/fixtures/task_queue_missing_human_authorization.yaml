@@ -1,0 +1,15 @@
+schema_version: 1
+tasks:
+  - task_id: AOS-FARM.INVALID.3
+    title: Missing Human Auth
+    registry_status: READY_FOR_EXECUTION
+    lifecycle_stage: READY_FOR_EXECUTION
+    execution_authorized: false
+    risk_profile_assigned_by_human: false
+    final_status: UNKNOWN
+queue_revision: 2026-06-27-01
+queue_items:
+  - queue_item_id: Q.3
+    queue_order: "001"
+    task_id: AOS-FARM.INVALID.3
+    status: READY_FOR_EXECUTION

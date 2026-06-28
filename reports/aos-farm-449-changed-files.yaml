@@ -1,0 +1,20 @@
+# AOS-FARM.449 Changed Files
+
+changed_files:
+  - aos/scripts/aos_task_queue_helper.py
+  - aos/tools/optional/task_registry_validator.py
+  - tests/fixtures/task_queue_valid.yaml
+  - tests/fixtures/task_queue_invalid_candidate_as_approved.yaml
+  - tests/fixtures/task_queue_invalid_transition.yaml
+  - tests/fixtures/task_queue_missing_human_authorization.yaml
+  - tests/test_aos_task_queue_helper.py
+  - reports/aos-farm-449-selected-scope.md
+  - reports/aos-farm-449-controlled-task-brief.md
+  - reports/aos-farm-449-human-execution-authorization-record.md
+  - reports/aos-farm-449-changed-files.yaml
+  - reports/aos-farm-449-execution-report.md
+  - reports/aos-farm-449-evidence-report.md
+  - reports/aos-farm-449-evidence-review.md
+  - reports/aos-farm-449-lessons-learned.md
+  - reports/aos-farm-449-next-task-candidate.md
+  - reports/aos-farm-449-final-closure-report.md

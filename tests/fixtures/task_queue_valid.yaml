@@ -1,0 +1,16 @@
+schema_version: 1
+tasks:
+  - task_id: AOS-FARM.VALID.1
+    title: Valid Task
+    registry_status: SELECTED
+    lifecycle_stage: SELECTED
+    execution_authorized: true
+    risk_profile_assigned_by_human: true
+    risk_profile: MEDIUM_RISK_GUIDED
+    final_status: PASS
+queue_revision: 2026-06-27-01
+queue_items:
+  - queue_item_id: Q.1
+    queue_order: "001"
+    task_id: AOS-FARM.VALID.1
+    status: SELECTED

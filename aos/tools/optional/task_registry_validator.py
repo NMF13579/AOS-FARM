@@ -116,6 +116,14 @@ def validate_registry_queue(registry_text: str, queue_text: str) -> dict:
             warnings.append(f"Task {tid} replaced_by {replaced_by} which is not in this registry")
             
         status = t.get("registry_status")
+        lifecycle = t.get("lifecycle_stage")
+
+        # Invalid transition checks (approximated via state mismatches without full history)
+        if status == "IN_PROGRESS" and lifecycle == "CANDIDATE":
+            errors.append(f"Task {tid} invalid transition: CANDIDATE -> IN_PROGRESS")
+        if status == "CLOSED" and lifecycle in ["CANDIDATE", "QUEUED"]:
+            errors.append(f"Task {tid} invalid transition: {lifecycle} -> CLOSED")
+
         if status == "READY_FOR_EXECUTION":
             if not t.get("risk_profile"):
                 errors.append(f"Task {tid} READY_FOR_EXECUTION but Risk Profile missing")
@@ -125,8 +133,13 @@ def validate_registry_queue(registry_text: str, queue_text: str) -> dict:
                 errors.append(f"Task {tid} READY_FOR_EXECUTION but execution_authorized is false")
         
         final_status = t.get("final_status")
-        if final_status in ["PASS", "Evidence", "UNKNOWN", "NOT_RUN"] and t.get("execution_authorized"):
+        if final_status == "UNKNOWN":
+            errors.append(f"Task {tid} final_status is UNKNOWN, which is BLOCKED/not OK")
+        if final_status == "NOT_RUN":
+            warnings.append(f"Task {tid} final_status is NOT_RUN, which is not PASS")
+        if final_status in ["PASS", "Evidence"] and t.get("execution_authorized"):
             warnings.append(f"Task {tid} has final_status {final_status} which does not imply approval, yet execution_authorized is true")
+
 
     queue_items = queue_data.get("queue_items", [])
     q_ids = set()

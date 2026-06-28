@@ -1,0 +1,15 @@
+schema_version: 1
+tasks:
+  - task_id: AOS-FARM.INVALID.2
+    title: Invalid Transition
+    registry_status: IN_PROGRESS
+    lifecycle_stage: CANDIDATE
+    execution_authorized: false
+    risk_profile_assigned_by_human: false
+    final_status: UNKNOWN
+queue_revision: 2026-06-27-01
+queue_items:
+  - queue_item_id: Q.2
+    queue_order: "001"
+    task_id: AOS-FARM.INVALID.2
+    status: IN_PROGRESS
