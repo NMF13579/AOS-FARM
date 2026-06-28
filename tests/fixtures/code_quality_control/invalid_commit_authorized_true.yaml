@@ -1,0 +1,23 @@
+risk_profile: HIGH_RISK_PROTECTED
+risk_profile_assigned_by: human
+execution_authorized: true
+candidate_only: false
+allowed_files:
+  - aos/scripts/aos_code_quality_control.py
+forbidden_files:
+  - 00_AOS_Core_Control.md
+required_tests:
+  - tests/test_aos_code_quality_control.py
+required_checks:
+  - check_invariants
+commit_authorized: true
+push_authorized: false
+merge_authorized: false
+release_authorized: false
+approval_record_creation_allowed: false
+lifecycle_mutation_authorized: false
+planned_changes:
+  - aos/scripts/aos_code_quality_control.py
+commands:
+  - python3 -m unittest
+notes: Clean implementation
