@@ -123,24 +123,66 @@ def validate_package(file_path: Path) -> dict:
         if risk in notes.lower():
             return {"status": "CODE_QUALITY_BLOCKED", "reason": f"Overengineering risk: {risk}"}
 
+    # Check for overengineering_controls
+    has_oe_controls = False
+    if 'overengineering_controls' in data:
+        # Check if it's actually parsed as a sub-block or just a key
+        has_oe_controls = True
+    elif any(k.startswith('overengineering_controls') for k in data.keys()):
+        has_oe_controls = True
+
+    warnings = []
+    if not has_oe_controls:
+        warnings.append("overengineering_controls section missing")
+        return {
+            "status": "OVERENGINEERING_REVIEW_REQUIRED",
+            "reason": "Missing overengineering_controls",
+            "overengineering_controls_present": False,
+            "warnings": warnings,
+            "overengineering_review_required": True
+        }
+
     return {
         "status": "CODE_QUALITY_REPORTED_HUMAN_REVIEW_REQUIRED",
-        "reason": "Package meets quality control standards. No approval granted."
+        "reason": "Package meets quality control standards. No approval granted.",
+        "overengineering_controls_present": True,
+        "warnings": [],
+        "overengineering_review_required": True
     }
 
 def summarize(file_path: Path) -> dict:
     res = validate_package(file_path)
-    is_blocked = (res['status'] == 'CODE_QUALITY_BLOCKED')
+    status = res.get('status', 'CODE_QUALITY_BLOCKED')
+    is_blocked = (status == 'CODE_QUALITY_BLOCKED')
 
     summary = f"Summary: blocked" if is_blocked else "Summary: human review required"
-    blocked_reasons = [res['reason']] if is_blocked else []
+    blocked_reasons = [res['reason']] if is_blocked and 'reason' in res else []
+
+    oe_present = res.get('overengineering_controls_present', False)
+    warnings = res.get('warnings', [])
+
+    # If blocked before we even get to the oe checks, we still must report them as per invariants
+    # though missing controls will just be false/empty if not reached.
+    # But let's assume we do a quick check to satisfy the "include overengineering_controls_present"
+    if is_blocked and 'overengineering_controls_present' not in res:
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            if 'overengineering_controls:' in content:
+                oe_present = True
+            else:
+                warnings.append("overengineering_controls section missing")
+        except:
+            pass
 
     return {
-        "status": res['status'],
+        "status": status,
         "summary": summary,
         "package": str(file_path),
         "human_review_required": True,
         "approval_granted": False,
+        "overengineering_review_required": True,
+        "overengineering_controls_present": oe_present,
+        "warnings": warnings,
         "commit_authorized": False,
         "push_authorized": False,
         "release_authorized": False,

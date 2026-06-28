@@ -20,10 +20,10 @@ class TestCodeQualityControl(unittest.TestCase):
             result = validate_package(file_path)
 
             if file_path.name.startswith("valid_"):
-                self.assertEqual(
+                self.assertIn(
                     result["status"],
-                    "CODE_QUALITY_REPORTED_HUMAN_REVIEW_REQUIRED",
-                    f"Expected valid but failed for {file_path.name}: {result['reason']}"
+                    ["CODE_QUALITY_REPORTED_HUMAN_REVIEW_REQUIRED", "OVERENGINEERING_REVIEW_REQUIRED"],
+                    f"Expected valid but failed for {file_path.name}: {result.get('reason', '')}"
                 )
                 self.assertNotIn("APPROVAL", result["status"])
                 self.assertNotIn("PASS", result["status"])
@@ -60,10 +60,43 @@ class TestCodeQualityControl(unittest.TestCase):
 
         self.assertIn("blocked_reasons_count", summary)
 
+        # New overengineering assertions
+        self.assertIn("overengineering_review_required", summary)
+        self.assertTrue(summary["overengineering_review_required"])
+        self.assertIn("overengineering_controls_present", summary)
+        self.assertIn("warnings", summary)
+
         # Verify forbidden emits
         summary_str = json.dumps(summary)
         self.assertNotIn("APPROVED", summary_str)
+        self.assertNotIn("READY_FOR_COMMIT", summary_str)
+        self.assertNotIn("READY_FOR_PUSH", summary_str)
+        self.assertNotIn("READY_FOR_MERGE", summary_str)
+        self.assertNotIn("READY_FOR_RELEASE", summary_str)
         self.assertNotIn("PASS-as-approval", summary_str)
+
+    def test_missing_overengineering_controls(self):
+        temp_file = Path("temp_missing_oe.yaml")
+        temp_file.write_text(
+            "risk_profile: HIGH_RISK\n"
+            "risk_profile_assigned_by: human\n"
+            "execution_authorized: true\n"
+            "allowed_files:\n  - a\n"
+            "forbidden_files:\n  - b\n"
+            "required_tests:\n  - c\n"
+            "required_checks:\n  - d\n"
+        )
+
+        result = validate_package(temp_file)
+        self.assertEqual(result["status"], "OVERENGINEERING_REVIEW_REQUIRED")
+        self.assertFalse(result["overengineering_controls_present"])
+        self.assertIn("warnings", result)
+        self.assertEqual(result["warnings"], ["overengineering_controls section missing"])
+        self.assertTrue(result["overengineering_review_required"])
+
+        # Clean up
+        if temp_file.exists():
+            temp_file.unlink()
 
 if __name__ == "__main__":
     unittest.main()
