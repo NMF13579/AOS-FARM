@@ -1,0 +1,69 @@
+schema_version: 1
+task_id: AOS-FARM.448
+
+human_execution_authorization:
+  authorized: true
+  authorized_by: human
+  authorization_artifact: reports/human-checkpoints/aos-farm-448-human-execution-authorization.md
+
+risk_profile:
+  value: HIGH_RISK_PROTECTED
+  assigned_by: human
+
+branch:
+  authorized_branch: build/first-controlled-task-lifecycle-dogfood
+  base_branch: dev
+
+scope:
+  authorized_files:
+    - reports/aos-farm-448-selected-queue-item.md
+    - reports/aos-farm-448-task-registry-queue-check.md
+    - reports/aos-farm-448-controlled-task-brief.md
+    - reports/human-checkpoints/aos-farm-448-human-execution-authorization.md
+    - reports/aos-farm-448-controlled-execution-package.yaml
+    - reports/aos-farm-448-changed-files.yaml
+    - reports/aos-farm-448-execution-report.md
+    - reports/aos-farm-448-evidence-report.md
+    - reports/aos-farm-448-evidence-review.md
+    - reports/aos-farm-448-lessons-learned.md
+    - reports/aos-farm-448-pipeline-hardening-backlog-item.md
+    - reports/aos-farm-448-next-task-candidate.md
+    - reports/aos-farm-448-final-closure-report.md
+
+  forbidden_files:
+    - 00_AOS_Core_Control.md
+    - 01_AOS_Assembly_Pipelines_and_Build_Roadmap.md
+    - 02_AOS_Governance_Control_Module_and_Safety_Rules.md
+    - 03_AOS_Future_and_Legacy_Reference_OPTIONAL.md
+    - 04_AOS_Model_Routing_and_Task_Decomposition_Research.md
+    - aos/**/*
+
+  allowed_changes:
+    - Preparation of dogfood lifecycle artifacts.
+    - Recording of evidence and postcheck execution logs.
+
+  forbidden_changes:
+    - Commit, push, release, merge.
+    - Protected or canonical structure mutation.
+    - Starting the next task.
+    - Cleaning or resetting baseline state.
+
+validation_plan:
+  - scopecheck verification before execution.
+  - Controlled Execution Guard precheck.
+  - postcheck verification after execution.
+
+expected_evidence:
+  - Execution Report
+  - Evidence Report / Evidence Review
+  - Guard logs
+
+execution_boundaries:
+  commit_allowed: false
+  push_allowed: false
+  merge_allowed: false
+  release_allowed: false
+  next_task_allowed: false
+  approval_claim_allowed: false
+
+final_status: READY_FOR_EXECUTION

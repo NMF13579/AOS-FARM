@@ -1,0 +1,35 @@
+# Commit Report: AOS-FARM.448
+
+- **final_status:** AOS_FARM_448_COMMITTED_PUSH_REQUIRED
+- **branch:** `build/first-controlled-task-lifecycle-dogfood`
+- **commit message:** `docs: dogfood first controlled task lifecycle`
+- **commit hash:** `4162224b43caa1eb4ba17b5c28867d100f244120`
+- **committed files:**
+  - reports/aos-farm-448-selected-queue-item.md
+  - reports/aos-farm-448-task-registry-queue-check.md
+  - reports/aos-farm-448-controlled-task-brief.md
+  - reports/human-checkpoints/aos-farm-448-human-execution-authorization.md
+  - reports/aos-farm-448-controlled-execution-package.yaml
+  - reports/aos-farm-448-changed-files.yaml
+  - reports/aos-farm-448-execution-report.md
+  - reports/aos-farm-448-evidence-report.md
+  - reports/aos-farm-448-evidence-review.md
+  - reports/aos-farm-448-lessons-learned.md
+  - reports/aos-farm-448-pipeline-hardening-backlog-item.md
+  - reports/aos-farm-448-next-task-candidate.md
+  - reports/aos-farm-448-final-closure-report.md
+  - reports/aos-farm-448-human-review-precommit-verification.md
+  - reports/aos-farm-448-commit-report.md
+- **guard precheck result:** PASS
+- **guard scopecheck result:** PASS
+- **guard postcheck result:** PASS
+- **protected/canonical status:** UNMODIFIED
+- **`/aos/` status:** UNMODIFIED
+- **source/tests status:** UNMODIFIED
+- **unrelated pre-existing files untouched:** true
+- **commit_performed:** true
+- **push_performed:** false
+- **merge_performed:** false
+- **release_performed:** false
+- **next_task_started:** false
+- **push_authorization_required:** true
