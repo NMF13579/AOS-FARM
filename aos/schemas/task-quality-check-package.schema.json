@@ -1,10 +1,47 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["task_id", "acceptance_criteria", "evidence", "validation_outputs"],
+  "required": [
+    "contract_version",
+    "package_type",
+    "task_id",
+    "task_title",
+    "task_brief_path",
+    "acceptance_criteria_path",
+    "evidence_matrix_path",
+    "expected_artifacts",
+    "actual_artifacts",
+    "changed_files",
+    "validation_outputs",
+    "known_limitations",
+    "warnings",
+    "blockers",
+    "human_review_required",
+    "non_authority_boundary",
+    "acceptance_criteria",
+    "evidence"
+  ],
   "properties": {
-    "task_id": {
-      "type": "string"
+    "contract_version": { "type": "string" },
+    "package_type": { "type": "string" },
+    "task_id": { "type": "string" },
+    "task_title": { "type": "string" },
+    "task_brief_path": { "type": "string" },
+    "acceptance_criteria_path": { "type": "string" },
+    "evidence_matrix_path": { "type": "string" },
+    "expected_artifacts": { "type": "array", "items": { "type": "string" } },
+    "actual_artifacts": { "type": "array", "items": { "type": "string" } },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "known_limitations": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "human_review_required": { "type": "boolean" },
+    "non_authority_boundary": {
+      "type": "object",
+      "required": ["task_quality_pass_is_not_human_result_acceptance"],
+      "properties": {
+        "task_quality_pass_is_not_human_result_acceptance": { "type": "boolean" }
+      }
     },
     "acceptance_criteria": {
       "type": "array",
@@ -30,10 +67,9 @@
     },
     "validation_outputs": {
       "type": "object",
-      "required": ["forbidden_claims_present", "human_review_required"],
+      "required": ["forbidden_claims_present"],
       "properties": {
-        "forbidden_claims_present": {"type": "boolean"},
-        "human_review_required": {"type": "boolean"}
+        "forbidden_claims_present": {"type": "boolean"}
       }
     }
   }

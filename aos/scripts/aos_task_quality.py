@@ -19,10 +19,9 @@ def main():
         checker = TaskQualityChecker(args.package)
         result = checker.validate()
     except json.JSONDecodeError:
-        sys.exit(2)
+        result = "BLOCKED"
     except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(2)
+        result = "BLOCKED"
         
     if args.action == "validate":
         if args.json:

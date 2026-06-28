@@ -1,6 +1,36 @@
 {
   "task_id": "443",
-  "acceptance_criteria": [{"id": "c1", "required": true}],
-  "evidence": [{"criterion_id": "c1", "status": "PASS"}],
-  "validation_outputs": {"forbidden_claims_present": false, "human_review_required": true, "some_val": "NOT_RUN"}
+  "acceptance_criteria": [
+    {
+      "id": "c1",
+      "required": true
+    }
+  ],
+  "evidence": [
+    {
+      "criterion_id": "c1",
+      "status": "PASS"
+    }
+  ],
+  "validation_outputs": {
+    "forbidden_claims_present": false,
+    "human_review_required": true,
+    "some_val": "NOT_RUN"
+  },
+  "contract_version": "1.0",
+  "package_type": "task_quality",
+  "task_title": "Example Task",
+  "task_brief_path": "reports/task-brief.md",
+  "acceptance_criteria_path": "reports/criteria.md",
+  "evidence_matrix_path": "reports/matrix.md",
+  "expected_artifacts": [],
+  "actual_artifacts": [],
+  "changed_files": [],
+  "known_limitations": [],
+  "warnings": [],
+  "blockers": [],
+  "human_review_required": true,
+  "non_authority_boundary": {
+    "task_quality_pass_is_not_human_result_acceptance": true
+  }
 }

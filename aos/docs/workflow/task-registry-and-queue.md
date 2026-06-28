@@ -1,13 +1,26 @@
 # AOS-FARM Task Registry and Queue Contract
 
-## 1. Purpose
+## 1. Core Principles
+- The Task Registry and Task Queue act as read-only Source of Truth inputs for verification and planning.
+- **Canonical Model:** The YAML Task Registry and YAML Task Queue are the canonical structural source of truth.
+- **Projection View:** The Markdown table queue is a human-readable projection and compatibility view only.
+- They must not automatically execute code or mutate repository lifecycle state.
+- **Queue position is not approval.**
+- **show-current is not execution.**
+- **show-next is not execution.**
+
+## 2. Read-Only Constraint
+- The CLI script (`aos_tasks.py`) and validator (`task_registry_validator.py`) are STRICTLY read-only tools.
+- They MUST NOT write files, create commits, execute tasks, assign risk profiles, or mutate lifecycle states.
+
+## 3. Purpose
 Create a safe task-management control layer for AOS-FARM:
 1. Task Registry — state of all known tasks.
 2. Task Queue — ordered execution queue.
 3. Workflow / State Machine — allowed and forbidden lifecycle transitions.
 4. Automation / Validators — read-only validation, summary, show-current, show-next.
 
-## 2. Source of Truth
+## 4. Source of Truth
 - markdown_yaml_registry_queue: Source of Truth
 - sqlite: future_derived_index_only
 - rag_light: future_navigation_search_summary_only

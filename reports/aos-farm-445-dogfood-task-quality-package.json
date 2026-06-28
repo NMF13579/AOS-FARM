@@ -1,0 +1,34 @@
+{
+  "contract_version": "1.0",
+  "package_type": "TASK_QUALITY_CHECK",
+  "task_id": "DOGFOOD-001",
+  "task_title": "Task Quality Dogfood Verification",
+  "task_brief_path": "reports/task-briefs/dogfood-001.md",
+  "acceptance_criteria_path": "reports/acceptance-criteria/dogfood-001.md",
+  "evidence_matrix_path": "reports/evidence/dogfood-001.md",
+  "expected_artifacts": [],
+  "actual_artifacts": [],
+  "changed_files": [],
+  "known_limitations": [],
+  "warnings": [],
+  "blockers": [],
+  "human_review_required": true,
+  "non_authority_boundary": {
+    "task_quality_pass_is_not_human_result_acceptance": true
+  },
+  "acceptance_criteria": [
+    {
+      "id": "ac-001",
+      "required": true
+    }
+  ],
+  "evidence": [
+    {
+      "criterion_id": "ac-001",
+      "status": "PASS"
+    }
+  ],
+  "validation_outputs": {
+    "forbidden_claims_present": false
+  }
+}

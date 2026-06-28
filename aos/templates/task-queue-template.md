@@ -1,4 +1,12 @@
-# Manual Task Queue
+# Manual Task Queue (Projection / Compatibility View)
+
+> [!WARNING]
+> **PROJECTION ONLY**: This Markdown table format is a human-readable projection and compatibility view. The **canonical model** is the YAML Task Registry / Queue located in `aos/templates/tasks/task-registry-entry-template.md` and `aos/templates/tasks/task-queue-template.md`.
+>
+> **CRITICAL INVARIANTS**:
+> - Queue position is NOT approval.
+> - `show-current` is NOT execution.
+> - `show-next` is NOT execution.
 
 *Note: This is a markdown-first, manual tracking queue, not an automated runner queue.*
 

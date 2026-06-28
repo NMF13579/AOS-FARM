@@ -3,76 +3,31 @@
   "title": "Human Result Acceptance Decision",
   "type": "object",
   "properties": {
-    "task_id": {
-      "type": "string"
-    },
-    "task_title": {
-      "type": "string"
-    },
-    "task_quality_package_path": {
-      "type": "string"
-    },
-    "task_quality_result_path": {
-      "type": "string"
-    },
-    "task_quality_status": {
-      "type": "string"
-    },
-    "task_quality_known_limits": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "acceptance_summary_path": {
-      "type": "string"
-    },
+    "task_id": { "type": "string" },
+    "task_title": { "type": "string" },
+    "task_quality_package_path": { "type": "string" },
+    "task_quality_result_path": { "type": "string" },
+    "task_quality_status": { "type": "string" },
+    "task_quality_known_limits": { "type": "array", "items": { "type": "string" } },
+    "acceptance_summary_path": { "type": "string" },
     "human_decision": {
       "type": "string",
       "enum": ["ACCEPT_RESULT", "NEEDS_CHANGES", "REJECT_RESULT"]
     },
-    "human_decision_reason": {
-      "type": "string"
-    },
-    "human_acknowledges_known_limits": {
-      "type": "boolean"
-    },
-    "result_accepted_by_human": {
-      "type": "boolean"
-    },
-    "requires_follow_up_task": {
-      "type": "boolean"
-    },
-    "follow_up_task_candidate": {
-      "type": ["string", "null"]
-    },
-    "rejection_reason": {
-      "type": ["string", "null"]
-    },
-    "commit_authorized": {
-      "type": "boolean",
-      "const": false
-    },
-    "push_authorized": {
-      "type": "boolean",
-      "const": false
-    },
-    "merge_authorized": {
-      "type": "boolean",
-      "const": false
-    },
-    "release_authorized": {
-      "type": "boolean",
-      "const": false
-    },
-    "next_task_started": {
-      "type": "boolean",
-      "const": false
-    },
-    "lifecycle_mutation_authorized": {
-      "type": "boolean",
-      "const": false
-    }
+    "human_decision_reason": { "type": "string" },
+    "result_accepted_by_human": { "type": "boolean" },
+    "human_acknowledges_known_limits": { "type": "boolean" },
+    "requires_follow_up_task": { "type": "boolean" },
+    "follow_up_task_candidate": { "type": ["string", "null"] },
+    "rejection_reason": { "type": ["string", "null"] },
+    "commit_authorized": { "type": "boolean", "const": false },
+    "push_authorized": { "type": "boolean", "const": false },
+    "merge_authorized": { "type": "boolean", "const": false },
+    "release_authorized": { "type": "boolean", "const": false },
+    "next_task_started": { "type": "boolean", "const": false },
+    "lifecycle_mutation_authorized": { "type": "boolean", "const": false },
+    "auto_approval_claim": { "type": "boolean" },
+    "auto_closure_claim": { "type": "boolean" }
   },
   "required": [
     "task_id",
@@ -82,6 +37,9 @@
     "task_quality_status",
     "acceptance_summary_path",
     "human_decision",
+    "human_decision_reason",
+    "result_accepted_by_human",
+    "human_acknowledges_known_limits",
     "commit_authorized",
     "push_authorized",
     "merge_authorized",

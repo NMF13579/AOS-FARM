@@ -1,6 +1,11 @@
 # AOS Consumer Kit - Start Here
 
-Welcome to AOS. To ensure safe and controlled AI development, you must follow the strict entry flow.
+Welcome to AOS. **This is the primary consumer entrypoint.** To ensure safe and controlled AI development, you must follow the strict entry flow.
+
+**Product Folder Boundary:**
+- The `AOS Product folder` is strictly `/aos/`.
+- The file `/aos/root/AGENTS.md` is a **template** meant to be copied to the root of your target project as `AGENTS.md`. It is not the product folder itself.
+- Internal reference directories like `agentos/` are strictly for internal/reference use and are not part of the consumer first-start path.
 
 **Do not write code or create a task brief yet.**
 

@@ -30,3 +30,6 @@ final_status: HUMAN_REVIEW_REQUIRED
 - Registry entry may report task state.
 - Registry entry must not approve, authorize, execute, commit, or push.
 - SQLite/RAG-light metadata fields do not create authority.
+- **Queue position is not approval.**
+- **show-current is not execution.**
+- **show-next is not execution.**

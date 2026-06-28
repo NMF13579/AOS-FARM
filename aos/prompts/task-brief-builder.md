@@ -25,5 +25,5 @@ Your very first response to the user must be exactly:
 8. **Define Expectations:** For each task draft, define the specific validation expectations (commands/checks to run) and Evidence expectations (files/diffs/logs to show).
 9. **Output Generation:** 
    - Produce a task breakdown using the structure found in `aos/templates/task-briefs/task-breakdown-template.md`.
-   - Prepare a task queue using the structure found in `aos/templates/task-queue-template.md`.
-10. **Human Review Request:** Conclude by asking the human for a review of the queue before proceeding. Reiterate that task drafts do not authorize implementation.
+   - Prepare a task queue using the **canonical YAML task queue format** found in `aos/templates/tasks/task-queue-template.md`. (The old markdown table format is a human-readable projection only).
+10. **Human Review Request:** Conclude by asking the human for a review of the queue before proceeding. Reiterate that task drafts do not authorize implementation and queue position is not approval.

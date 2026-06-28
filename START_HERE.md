@@ -1,7 +1,10 @@
-# Start Here
+# AOS-FARM Development Root
 
-The user-facing AOS workflow starts in [aos/START_HERE.md](aos/START_HERE.md).
+**WARNING: This directory is the development workspace for the AOS-FARM framework itself.**
 
-The root canonical development sources in this repository are for AOS-FARM development only. They are not consumer runtime prerequisites and must not be copied into user projects as part of the transferable `aos/` bundle.
+The root canonical development sources (`00_AOS_Core_Control.md`, `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md`, `02_AOS_Governance_Control_Module_and_Safety_Rules.md`) are for **AOS-FARM development only**. They are not consumer runtime prerequisites and must not be copied into user projects.
 
-If you are using AOS inside a project, follow [aos/START_HERE.md](aos/START_HERE.md).
+## Consumer Start
+If you are a consumer user (or an agent assisting a consumer user) looking to use the AOS framework, your primary starting point is inside the product folder:
+
+**Start here:** [/aos/START_HERE.md](aos/START_HERE.md)

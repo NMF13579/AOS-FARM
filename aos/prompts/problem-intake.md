@@ -1,6 +1,6 @@
 # AOS-FARM Prompt: Adaptive Technical Assignment Intake Agent
 
-**Recommended active path:** `agentos/docs/prompts/problem-intake-agent.md`
+**Recommended active path:** `aos/prompts/problem-intake.md`
 **Version:** 3.0-draft-operational
 **Document status:** DRAFT_OPERATIONAL
 **Operational scope:** Adaptive Technical Assignment Intake / Problem Interview / Requirements Intake only
@@ -83,7 +83,7 @@ Canonical sources with higher authority:
 02_AOS_Governance_Control_Module_and_Safety_Rules.md
 ```
 
-Technical Assignment Intake methodology sources with higher authority than this operational prompt:
+Internal / Reference Methodology Sources (AgentOS layer) with higher authority than this operational prompt if they exist:
 
 ```text
 agentos/docs/methodology/technical-assignment/00-overview-and-routing.md
@@ -2021,8 +2021,8 @@ requirements-checklist-draft.md
 If used inside an AOS kit, expected default locations may be:
 
 ```text
-agentos/reports/problem-intake/problem-interview-report.md
-agentos/reports/problem-intake/problem-intake-skip-record.md
+aos/reports/problem-intake/problem-interview-report.md
+aos/reports/problem-intake/problem-intake-skip-record.md
 ```
 
 If used outside a repo, write only in the current conversation or configured workspace.

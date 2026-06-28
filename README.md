@@ -5,7 +5,7 @@
 AOS is a pure-methodology, markdown-first framework designed to safely manage autonomous AI agents. Instead of relying on active Python runners, CI hooks, or databases, AOS enforces a fail-closed structural boundary through deterministic file management and explicit human checkpoints.
 
 ## What is AOS?
-AOS is distributed as a self-contained consumer kit located in the `aos/` directory. It provides:
+AOS is distributed as a self-contained consumer kit. The complete **Product folder AOS** is located strictly in the `/aos/` directory. It provides:
 - **Strict Methodology**: Rules that AI agents must obey (e.g. `PASS ≠ approval`).
 - **Templates**: Checkpoints, task briefs, and execution reports.
 - **Prompts**: Standardized agent entrypoints.
@@ -19,20 +19,20 @@ AOS is distributed as a self-contained consumer kit located in the `aos/` direct
 
 ## Quick Start
 To adopt AOS in your project:
-1. Copy the `aos/` folder into your project root.
-2. Copy `aos/root/AGENTS.md` to your project root.
-3. Open `START_HERE.md` in the project root.
-4. From there, follow `aos/START_HERE.md`. This is the user-facing starting point that guides you through Problem Intake, Technical Assignment, Task Breakdown, Controlled Task Brief, Human Execution Authorization, Controlled Execution Guard checks, and only then controlled execution.
+1. Copy the `/aos/` folder into your project root.
+2. Copy the template `/aos/root/AGENTS.md` to your project root as `AGENTS.md`.
+3. The consumer user and their agent must start at `/aos/START_HERE.md`.
 
 ## No Magic Allowed
-AOS requires no active Python runners, continuous integration scripts, databases, or RAG components to function. It relies entirely on the AI agent's adherence to clear, markdown-defined systemic rules.
+AOS requires **no mandatory active Python runners**, continuous integration scripts, databases, or RAG components to function. It relies entirely on the AI agent's adherence to clear, markdown-defined systemic rules.
+
+While the `/aos/` folder includes optional Python checkers (e.g., in `/aos/scripts/`), these are strictly **read-only tools**. They generate validation signals but cannot execute tasks, mutate state, or approve operations.
 
 ## Documentation
 - **[Installation Guide](aos/INSTALL.md)**
-- **[Root Start Here](START_HERE.md)**
-- **[Start Here for Agents](aos/START_HERE.md)**
+- **[Consumer Start Here](aos/START_HERE.md)**
 - **[Agent Context](aos/AGENT_CONTEXT.md)**
 - **[Adoption Guide](aos/ADOPTION.md)**
 
 ---
-*Note: The root of this specific repository is the development environment for the AOS framework itself. If you are a consumer, refer only to the `aos/` directory.*
+*Note: The root of this specific repository is the development environment for the AOS-FARM framework itself. If you are a consumer, refer only to the `/aos/` directory.*

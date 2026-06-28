@@ -40,5 +40,13 @@ class TestTaskQualityChecker(unittest.TestCase):
         checker = TaskQualityChecker(os.path.join(FIXTURES_DIR, 'negative/forbidden_approval_claim.json'))
         self.assertEqual(checker.validate(), "BLOCKED")
 
+    def test_negative_missing_non_authority_boundary(self):
+        checker = TaskQualityChecker(os.path.join(FIXTURES_DIR, 'negative/missing_non_authority_boundary.json'))
+        self.assertEqual(checker.validate(), "BLOCKED")
+
+    def test_negative_missing_required_fields(self):
+        checker = TaskQualityChecker(os.path.join(FIXTURES_DIR, 'negative/missing_required_fields.json'))
+        self.assertEqual(checker.validate(), "BLOCKED")
+
 if __name__ == '__main__':
     unittest.main()

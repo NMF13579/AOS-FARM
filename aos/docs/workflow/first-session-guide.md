@@ -2,7 +2,7 @@
 
 Welcome to your first session using the AOS Consumer Kit. This guide will walk you through the correct path to start your project safely and effectively. 
 
-AOS is methodology-first. You will interact with an AI agent (like ChatGPT, Claude, or a local agent) by providing it with carefully crafted prompts.
+AOS is methodology-first. You will interact with an AI agent (like ChatGPT, Claude, or a local agent) by providing it with carefully crafted prompts. **Your first session must always start by reading `aos/START_HERE.md`.**
 
 ## The Workflow: 5-Minute Overview
 
@@ -30,7 +30,7 @@ Now that the problem is defined, you must translate it into technical boundaries
 A Technical Assignment is too broad for an AI to implement all at once. You must break it down.
 - **Which prompt do I copy next?** Open `aos/prompts/task-brief-builder.md` and copy its contents.
 - **What input do I paste with it?** Paste the prompt and the full `Technical Assignment` document from Step 3.
-- **What output should I expect?** The agent will generate a `Task Breakdown` and a manual `Task Queue`. The agent will explicitly tell you it will not write code yet.
+- **What output should I expect?** The agent will generate a `Task Breakdown` and a canonical YAML `Task Queue`. The agent will explicitly tell you it will not write code yet.
 
 ### 5. Human Task Review
 You must manually review the generated task queue.
@@ -43,16 +43,24 @@ Now you can create a specific, execution-ready brief for your chosen task.
 - **Create the brief:** Use `aos/templates/task-briefs/controlled-task-brief-template.md` to define the exact constraints for the selected task.
 - **When can the agent start writing code?** Only after you have explicitly given the agent the filled-out `controlled-task-brief` and explicitly granted **Execution Authorization**.
 - **What should I read next?** Open `aos/docs/workflow/first-controlled-execution.md`. It explains the first safe bridge from `Controlled Task Brief` to `Human Execution Authorization`, `Controlled Execution`, and `Evidence Review`.
+- **Post-execution learning:** After Evidence Review, see the [Evidence-to-Backlog Loop](docs/workflow/evidence-to-backlog-loop.md) to capture lessons learned, backlog candidates, and a Next Task Candidate for human review.
+- **Important:** Controlled execution still requires explicit human authorization. The brief alone is not approval.
+- **Important:** Guard PASS is not approval. Guard PASS does not authorize commit or push.
+- **Important:** Lessons Learned, Pipeline Hardening Backlog Items, and Next Task Candidates do not authorize execution.
 
 ---
 
 ## Important Clarifications
 
 ### Is the Python Runner Required?
-**No.** There is a Python runner located in `aos/tools/optional/problem-intake-runner/`, but it is completely optional. It exists for advanced, guided execution in local environments. The markdown-only chat workflow described above is fully functional and recommended for your first session.
+**No. There is no mandatory runner.** The markdown-only chat workflow described above is fully functional and recommended for your first session. Optional, read-only Python checkers exist for verification but they cannot execute tasks.
 
-### What is Approval?
-AOS operates on strict fail-closed security invariants:
+### Human Checkpoint Boundaries
+AOS operates on strict fail-closed security invariants through explicit human checkpoints:
+- **Task Quality PASS is not Human Result Acceptance:** Automated quality checks do not replace human review.
+- **Human Result Acceptance is not commit authorization:** Accepting a result means the task is done, but committing requires its own distinct authorization.
+- **Commit authorization is not push authorization.**
+- **Push authorization is not release authorization.**
 - **PASS ≠ Approval:** Just because an agent completes an interview or finishes a script without errors does not mean it has permission to execute code.
 - **Evidence ≠ Approval:** Generating these intake documents provides *evidence* of planning, but you must still explicitly authorize the agent to act on them.
 - Only a human can grant the agent permission to edit protected files, commit, push, or deploy.

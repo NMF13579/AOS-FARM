@@ -375,6 +375,18 @@ generic RAG database
 multi-agent framework first
 ```
 
+## Product Folder Boundaries
+
+Следующие границы структуры проекта строго определены:
+
+```text
+Product folder AOS = /aos/
+/aos/root/AGENTS.md = template for target project root AGENTS.md
+Root 00/01/02 = AOS-FARM development canonical sources, not consumer runtime prerequisites.
+agentos/ = internal/reference layer, not consumer first-start path.
+AgentOS = remains reference only and must not be imported into AOS-FARM.
+```
+
 ## Layer Model
 
 ```text

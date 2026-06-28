@@ -75,13 +75,23 @@ def main():
                 "selected_queue_item_id": qid,
                 "next_action": task.get("next_action"),
                 "execution_authorized": task.get("execution_authorized", False),
-                "final_status": res.get("final_status", "HUMAN_REVIEW_REQUIRED") if not res.get("ok") else task.get("final_status", "PASS")
+                "final_status": res.get("final_status", "HUMAN_REVIEW_REQUIRED") if not res.get("ok") else task.get("final_status", "PASS"),
+                "invariants": {
+                    "queue_position_is_not_approval": True,
+                    "show_next_is_not_execution": True,
+                    "show_current_is_not_execution": True
+                }
             }
         else:
             out = {
                 "selected_task_id": None,
                 "selected_queue_item_id": None,
-                "final_status": res.get("final_status", "BLOCKED")
+                "final_status": res.get("final_status", "BLOCKED"),
+                "invariants": {
+                    "queue_position_is_not_approval": True,
+                    "show_next_is_not_execution": True,
+                    "show_current_is_not_execution": True
+                }
             }
         print(json.dumps(out, indent=2))
 

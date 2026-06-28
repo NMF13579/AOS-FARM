@@ -4,8 +4,8 @@
 This document defines the strict bridge between the consumer-facing Markdown workflow and the underlying runtime code layer. It clarifies artifact locations, expected handoff paths, and the exact boundaries of optional python tooling.
 
 ## Layer Boundaries
-- **`aos/` Layer:** This is the consumer-facing kit. It is the primary, default starting path for all workflows.
-- **`agentos/` Layer:** Contains implementation/runtime-side code slices. It is **not** the first-start path and should not be invoked directly by consumers during standard onboarding.
+- **`/aos/` Layer (Product Folder):** This is the consumer-facing kit and the **only** product folder. It is the primary, default starting path for all workflows.
+- **`agentos/` Layer (Internal/Reference):** Contains implementation/runtime-side code slices. It is strictly an **internal/reference layer**, is **not** the consumer first-start path, and should not be invoked directly by consumers during standard onboarding.
 
 ## Manual Markdown-First Happy Path
 The expected flow for moving from an idea to execution is entirely Markdown-based:

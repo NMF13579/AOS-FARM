@@ -1,0 +1,19 @@
+{
+  "task_id": "DOGFOOD-001",
+  "task_title": "Task Quality Dogfood Verification",
+  "task_quality_package_path": "reports/aos-farm-445-dogfood-task-quality-package.json",
+  "task_quality_result_path": "reports/aos-farm-445-dogfood-task-quality-result.json",
+  "task_quality_status": "PASS",
+  "task_quality_known_limits": [],
+  "acceptance_summary_path": "reports/aos-farm-445-dogfood-user-facing-summary.md",
+  "human_decision": "ACCEPT_RESULT",
+  "human_decision_reason": "Verified that the dogfood task behaves correctly and constraints hold.",
+  "result_accepted_by_human": true,
+  "human_acknowledges_known_limits": true,
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false,
+  "next_task_started": false,
+  "lifecycle_mutation_authorized": false
+}

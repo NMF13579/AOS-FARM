@@ -1,9 +1,10 @@
-# AOS Consumer Kit
+# AGENTS
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+> **TEMPLATE NOTE:** This file (`/aos/root/AGENTS.md`) is a template. It should be copied to the root of your target project and renamed to `AGENTS.md`. It is not the product folder itself. The actual product folder remains `/aos/`.
 
-**AOS Core Rules & Boundaries:**
+When you copy this file to your project root, it serves as the primary root entrypoint for AI agents operating in your project, directing them to the strict AOS methodology.
+
+## AOS Core Rules & Boundaries:
 - PASS ≠ approval.
 - Evidence ≠ approval.
 - CI PASS ≠ approval.
@@ -11,4 +12,6 @@ The root `AGENTS.md` is the primary required root entrypoint. Optional marker bl
 - NOT_RUN ≠ PASS.
 - Human approval cannot be simulated.
 - Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+- Exclusions: No active runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+
+**Agent Start Here:** Agents should always begin by reading `aos/START_HERE.md`.

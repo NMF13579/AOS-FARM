@@ -22,26 +22,25 @@ def main():
 
     checker = HumanResultAcceptanceChecker()
 
-    if args.command == "validate":
+    try:
         result = checker.validate(args.decision)
+    except Exception as e:
+        result = {"status": "BLOCKED", "reason": f"Exception: {e}"}
+
+    if args.command == "validate":
         if args.json:
             print(json.dumps(result, indent=2))
         else:
             print(f"Status: {result['status']}")
-            print(f"Reason: {result['reason']}")
-            
-        if result["status"] == "BLOCKED" and result["reason"] == "Invalid JSON in decision file.":
-            sys.exit(2)
+            print(f"Reason: {result.get('reason', '')}")
             
     elif args.command == "summary":
-        result = checker.validate(args.decision)
         print(f"Acceptance Status: {result['status']}")
     
     elif args.command == "user-summary":
-        result = checker.validate(args.decision)
         print("=== User Summary ===")
         print(f"Status: {result['status']}")
-        print(f"Details: {result['reason']}")
+        print(f"Details: {result.get('reason', '')}")
 
 if __name__ == "__main__":
     main()

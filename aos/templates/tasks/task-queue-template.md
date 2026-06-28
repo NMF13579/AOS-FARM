@@ -21,3 +21,6 @@ queue_items:
 - Queue order changes require new queue_revision.
 - Queue may report current/next task.
 - Queue must not approve, authorize, execute, commit, or push.
+- **Queue position is not approval.**
+- **show-current is not execution.**
+- **show-next is not execution.**

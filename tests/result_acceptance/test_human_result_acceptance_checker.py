@@ -100,5 +100,29 @@ class TestHumanResultAcceptanceChecker(unittest.TestCase):
 
     def test_invalid_json(self):
         res = self.run_checker('malformed/invalid_json.json')
-        self.assertEqual(res.returncode, 2)
-        # Should exit with code 2 and not produce json output properly
+        # Since we changed script to return {"status": "BLOCKED"} instead of sys.exit(2)
+        # res.returncode will be 0, but JSON will be BLOCKED
+        self.assertEqual(res.returncode, 0)
+        data = json.loads(res.stdout)
+        self.assertEqual(data['status'], 'BLOCKED')
+
+    def test_missing_required_field(self):
+        res = self.run_checker('negative/missing_required_field.json')
+        self.assertEqual(res.returncode, 0)
+        data = json.loads(res.stdout)
+        self.assertEqual(data['status'], 'BLOCKED')
+
+    def test_auto_approval_claim_true(self):
+        res = self.run_checker('negative/auto_approval_claim_true.json')
+        self.assertEqual(res.returncode, 0)
+        data = json.loads(res.stdout)
+        self.assertEqual(data['status'], 'BLOCKED')
+
+    def test_auto_closure_claim_true(self):
+        res = self.run_checker('negative/auto_closure_claim_true.json')
+        self.assertEqual(res.returncode, 0)
+        data = json.loads(res.stdout)
+        self.assertEqual(data['status'], 'BLOCKED')
+
+if __name__ == '__main__':
+    unittest.main()
