@@ -1,0 +1,7 @@
+{
+  "non_authority_boundary": {
+    "task_quality_pass_is_not_human_result_acceptance": true
+  },
+  "human_review_required": true,
+  "evidence": []
+}

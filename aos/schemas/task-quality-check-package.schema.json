@@ -71,6 +71,18 @@
       "properties": {
         "forbidden_claims_present": {"type": "boolean"}
       }
+    },
+    "functional_intent": {
+      "type": "object",
+      "properties": {
+        "declared_purpose": { "type": "string" },
+        "forbidden_behaviors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "verification_status": { "type": "string" },
+        "verification_method": { "type": "string" }
+      }
     }
   }
 }

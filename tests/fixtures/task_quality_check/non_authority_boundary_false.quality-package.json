@@ -1,0 +1,11 @@
+{
+  "non_authority_boundary": {
+    "task_quality_pass_is_not_human_result_acceptance": false
+  },
+  "human_review_required": true,
+  "evidence": [],
+  "functional_intent": {
+    "declared_purpose": "Add functional intent gate",
+    "forbidden_behaviors": ["no approval"]
+  }
+}
