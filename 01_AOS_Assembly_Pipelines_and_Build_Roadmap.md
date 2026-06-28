@@ -4,7 +4,7 @@
 
 ```yaml
 document_type: assembly_pipelines_and_build_roadmap
-project: AOS-1 / AgentOS Next
+project: AOS-FARM
 status: active_assembly_pipeline_and_build_order
 source_pack_role: core_required
 language: ru
@@ -51,8 +51,25 @@ Product folder AOS = /aos/
 /aos/root/AGENTS.md = template for target project root AGENTS.md
 Root 00/01/02 = AOS-FARM development canonical sources, not consumer runtime prerequisites.
 agentos/ = internal/reference layer, not consumer first-start path.
-AgentOS = remains reference only and must not be imported into AOS-FARM.
+legacy AgentOS = must not be imported into AOS-FARM and may be used only as reference.
 ```
+
+## Local Temporary Workspace Boundary
+
+AOS-FARM repo and target projects use root-level `/.aos-tmp/` for temporary command outputs, scratch logs, and local disposable intermediate files.
+
+The `/.aos-tmp/` directory is:
+* local-only
+* ignored by git
+* disposable
+* not Source of Truth
+* not Evidence storage
+* not approval storage
+* not checkpoint storage
+* not canonical documentation storage
+
+Evidence, reports, approvals, checkpoints, protected/canonical files, and lifecycle artifacts must never be stored in `/.aos-tmp/`.
+Temporary command outputs must not be written into repo root or inside `/aos/`.
 
 ## Assembly Core
 

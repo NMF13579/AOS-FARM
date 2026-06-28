@@ -4,7 +4,7 @@
 
 ```yaml
 document_type: core_control
-project: AOS-1 / AgentOS Next
+project: AOS-FARM
 status: canonical_project_control_source
 source_pack_role: core_required
 language: ru
@@ -32,7 +32,7 @@ legacy boundary
 medical boundary
 ```
 
-AOS-1 / AgentOS Next — это Markdown-first система управления AI-разработкой. Она помогает безопасно пройти путь:
+AOS-FARM — это Markdown-first система управления AI-разработкой. (AOS-1, AgentOS и AgentOS Next в старой документации — это historical/reference naming, которое не используется как активное без явного human approval). Она помогает безопасно пройти путь:
 
 ```text
 идея
@@ -170,18 +170,18 @@ UNKNOWN_BLOCKED
 Репозиторий:
 
 ```text
-NMF13579/AOS-1
+NMF13579/AOS-FARM
 ```
 
 Модель веток:
 
 ```text
 main = стабильная / публичная / default branch
-dev = frozen skeleton/reference baseline
-build/assembly-first = рекомендуемая новая ветка реализации
+dev = active controlled integration baseline
+build/ = recommended branch pattern for controlled implementation stages
 ```
 
-`dev` считается сохранённым `skeleton/reference baseline`.
+`dev` считается active controlled integration baseline.
 
 Новую работу нельзя случайно вести прямо в `dev`.
 
@@ -244,7 +244,7 @@ architecture_retained: true
 target_skeleton_retained: true
 dev_baseline_preserved: true
 main_as_stable_default_branch: true
-new_implementation_branch_recommended: build/assembly-first
+new_implementation_branch_recommended: build/
 
 old_milestone_heavy_plan_retained: false
 full_documentation_rewrite_required: false
@@ -352,7 +352,7 @@ Do not guess canonical file paths.
 
 ## Product Identity
 
-AOS-1 — это:
+AOS-FARM — это:
 
 ```text
 governance layer
@@ -363,7 +363,7 @@ Markdown/YAML-first project operating system
 safety boundary between agent claims and human decisions
 ```
 
-AOS-1 не является:
+AOS-FARM не является:
 
 ```text
 autonomous coding agent
@@ -384,8 +384,25 @@ Product folder AOS = /aos/
 /aos/root/AGENTS.md = template for target project root AGENTS.md
 Root 00/01/02 = AOS-FARM development canonical sources, not consumer runtime prerequisites.
 agentos/ = internal/reference layer, not consumer first-start path.
-AgentOS = remains reference only and must not be imported into AOS-FARM.
+legacy AgentOS = must not be imported into AOS-FARM and may be used only as reference.
 ```
+
+## Local Temporary Workspace Boundary
+
+AOS-FARM repo and target projects use root-level `/.aos-tmp/` for temporary command outputs, scratch logs, and local disposable intermediate files.
+
+The `/.aos-tmp/` directory is:
+* local-only
+* ignored by git
+* disposable
+* not Source of Truth
+* not Evidence storage
+* not approval storage
+* not checkpoint storage
+* not canonical documentation storage
+
+Evidence, reports, approvals, checkpoints, protected/canonical files, and lifecycle artifacts must never be stored in `/.aos-tmp/`.
+Temporary command outputs must not be written into repo root or inside `/aos/`.
 
 ## Layer Model
 
@@ -481,7 +498,7 @@ replace architecture without decision record
 
 ```text
 Old AgentOS = reference source.
-AOS-1 / AgentOS Next = active target.
+AOS-FARM = active target.
 ```
 
 Старые материалы не дают:
@@ -498,7 +515,7 @@ required milestone chain
 
 ## Medical Boundary
 
-AOS-1 core не является медицинской системой.
+AOS-FARM core не является медицинской системой.
 
 Если задача затрагивает:
 
