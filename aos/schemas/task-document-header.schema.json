@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AOS-FARM Task Document Header",
+  "type": "object",
+  "properties": {
+    "task_id": { "type": "string" },
+    "title": { "type": "string" },
+    "type": { "type": "string" },
+    "template_level": { "type": "string", "enum": ["S", "M", "L"] },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "READY_FOR_EXECUTION",
+        "IN_PROGRESS",
+        "HUMAN_REVIEW_REQUIRED",
+        "BLOCKED",
+        "APPROVED",
+        "REJECTED",
+        "CLOSED"
+      ]
+    },
+    "queue_mode": {
+      "type": "string",
+      "enum": ["AUTO", "MANUAL", "PINNED"]
+    },
+    "queue_position": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "queue_status": {
+      "type": "string",
+      "enum": ["BACKLOG", "NEXT", "IN_PROGRESS", "BLOCKED", "DONE"]
+    },
+    "queue_priority": {
+      "type": "string",
+      "enum": ["LOW", "NORMAL", "HIGH"]
+    },
+    "risk_profile": { "type": "string" },
+    "risk_assigned_by": { "type": "string" },
+    "approval_status": { "type": "string" },
+    "human_checkpoint_required": { "type": "boolean" },
+    "validator_status": { "type": "string" },
+    "evidence_status": { "type": "string" },
+    "log_uri": { "type": "string" },
+    "log_status": { "type": "string" },
+    "owner": { "type": "string" },
+    "created_at": { "type": "string", "format": "date" },
+    "updated_at": { "type": "string", "format": "date" }
+  },
+  "required": [
+    "task_id",
+    "title",
+    "type",
+    "template_level",
+    "status",
+    "queue_mode",
+    "queue_position",
+    "queue_status",
+    "queue_priority",
+    "risk_profile",
+    "risk_assigned_by",
+    "approval_status",
+    "human_checkpoint_required",
+    "validator_status",
+    "evidence_status",
+    "log_uri",
+    "log_status",
+    "owner",
+    "created_at",
+    "updated_at"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "queue_mode": { "const": "AUTO" } }
+      },
+      "then": {
+        "properties": { "queue_position": { "type": "null" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "queue_mode": { "enum": ["MANUAL", "PINNED"] } }
+      },
+      "then": {
+        "properties": { "queue_position": { "type": "integer" } }
+      }
+    }
+  ],
+  "not": {
+    "anyOf": [
+      { "required": ["rank"] },
+      { "required": ["generated_rank"] },
+      { "required": ["queue_rank"] }
+    ]
+  }
+}
