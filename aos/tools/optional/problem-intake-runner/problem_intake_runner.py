@@ -501,7 +501,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Problem Intake Runner v2")
     parser.add_argument("--input", required=True, help="Path to input Markdown file")
     parser.add_argument("--run-id", required=True, help="Unique run identifier")
-    parser.add_argument("--output-root", default="agentos/reports/problem-intake", help="Root output directory")
+    # .aos-tmp/ is temporary scratch.
+    # .aos-tmp/ is local-only and disposable.
+    # .aos-tmp/ is not Source of Truth.
+    # Generated drafts are non-authoritative.
+    # Generated drafts are not Evidence, approval, checkpoint, or release artifact.
+    parser.add_argument("--output-root", default=".aos-tmp/problem-intake", help="Root output directory (.aos-tmp/ is temporary scratch)")
     parser.add_argument("--route", default=SUPPORTED_ROUTE, help="Automation route. Only EXISTING_SPEC_REVIEW is automated.")
     args = parser.parse_args()
 

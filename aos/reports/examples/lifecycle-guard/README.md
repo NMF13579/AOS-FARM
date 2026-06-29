@@ -1,3 +1,10 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Lifecycle Guard Examples
 
 These fixtures show review-only human checkpoint artifacts for commit and push

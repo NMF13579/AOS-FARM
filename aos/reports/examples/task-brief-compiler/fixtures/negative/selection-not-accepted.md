@@ -1,6 +1,13 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Negative Selection Not Accepted Fixture
 
-candidate_task_id: AOS-FARM.FIXTURE.COMPILER.CANDIDATE
+candidate_task_id: GENERIC-TASK.FIXTURE.COMPILER.CANDIDATE
 candidate_source_file: aos/reports/examples/task-brief-compiler/fixtures/valid/source-candidate.md
 candidate_status: DRAFT
 selection_decision: CLARIFY

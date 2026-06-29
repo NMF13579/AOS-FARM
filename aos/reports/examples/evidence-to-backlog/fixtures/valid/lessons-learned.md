@@ -1,8 +1,15 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Valid Lessons Learned Fixture
 
 expected_result: PASS
 
-source_task_id: AOS-FARM.FIXTURE
+source_task_id: GENERIC-TASK.FIXTURE
 source_evidence: reports/fixture-evidence.md
 lesson_type: safety_boundary
 problem_observed: users need a place to record post-execution learning

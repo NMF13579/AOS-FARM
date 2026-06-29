@@ -1,7 +1,14 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Missing Evidence Fixture
 
 ```yaml
-task_id: AOS-FARM.438
+task_id: GENERIC-TASK.438
 branch: build/controlled-execution-guard-mvp
 validation_results:
   commands_run: []

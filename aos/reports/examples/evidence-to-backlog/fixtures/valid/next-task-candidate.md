@@ -1,8 +1,15 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Valid Next Task Candidate Fixture
 
 expected_result: PASS
 
-candidate_task_id: AOS-FARM.FIXTURE.NEXT
+candidate_task_id: GENERIC-TASK.FIXTURE.NEXT
 source_backlog_item: GAP-FIXTURE-001
 source_evidence: reports/fixture-evidence.md
 candidate_goal: create one post-execution review template

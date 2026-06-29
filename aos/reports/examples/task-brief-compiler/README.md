@@ -1,3 +1,10 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Task Brief Compiler Examples
 
 These examples show the review-only output shape for a Task Brief draft that

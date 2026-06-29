@@ -1,8 +1,15 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Valid Post-Execution Review Fixture
 
 expected_result: HUMAN_REVIEW_REQUIRED
 
-source_task_id: AOS-FARM.FIXTURE
+source_task_id: GENERIC-TASK.FIXTURE
 source_evidence_report: reports/fixture-evidence.md
 source_execution_report: reports/fixture-execution.md
 guard_results:

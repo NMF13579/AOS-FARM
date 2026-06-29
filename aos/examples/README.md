@@ -1,3 +1,10 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # AOS Consumer Kit
 
 AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
@@ -11,4 +18,4 @@ The root `AGENTS.md` is the primary required root entrypoint. Optional marker bl
 - NOT_RUN ≠ PASS.
 - Human approval cannot be simulated.
 - Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical GENERIC-TASK reports and internal development sources are strictly excluded.

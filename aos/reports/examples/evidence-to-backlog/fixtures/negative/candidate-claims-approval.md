@@ -1,9 +1,16 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Negative Fixture: Candidate Claims Approval
 
 expected_result: BLOCKED
 violation: Next Task Candidate claims approved-task status
 
-candidate_task_id: AOS-FARM.NEGATIVE.NEXT
+candidate_task_id: GENERIC-TASK.NEGATIVE.NEXT
 source_backlog_item: GAP-NEGATIVE-001
 source_evidence: reports/negative-evidence.md
 candidate_goal: implement follow-up work

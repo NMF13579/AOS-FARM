@@ -1,3 +1,10 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Task Registry Examples
 
 These files provide examples of how the Task Registry and Queue contracts will look when applied.

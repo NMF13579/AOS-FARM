@@ -1,7 +1,14 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Lessons Learned Example
 
 ## Status
-source_task_id: AOS-FARM.EXAMPLE
+source_task_id: GENERIC-TASK.EXAMPLE
 source_evidence: reports/example-controlled-execution-evidence.md
 lesson_type: workflow_gap
 problem_observed: evidence review found a manual checklist that could be made clearer

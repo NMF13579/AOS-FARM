@@ -73,32 +73,10 @@ The agent may use production data.
 
 # 2. Source Precedence and Non-Override Rule
 
-This prompt does not override canonical AOS control sources.
+This prompt must be used within the boundaries of the consumer package located at `/aos/`.
+It does not override any local templates, registry, or contracts defined by the consumer repository.
 
-Canonical sources with higher authority:
-
-```text
-00_AOS_Core_Control.md
-01_AOS_Assembly_Pipelines_and_Build_Roadmap.md
-02_AOS_Governance_Control_Module_and_Safety_Rules.md
-```
-
-Internal / Reference Methodology Sources (AgentOS layer) with higher authority than this operational prompt if they exist:
-
-```text
-agentos/docs/methodology/technical-assignment/00-overview-and-routing.md
-agentos/docs/methodology/technical-assignment/01-human-methodology.md
-agentos/docs/methodology/technical-assignment/02-agent-contract.md
-agentos/docs/methodology/technical-assignment/03-data-discovery-and-access.md
-agentos/docs/methodology/technical-assignment/04-draft-artifact-templates.md
-agentos/docs/methodology/technical-assignment/05-safety-gates-and-statuses.md
-agentos/docs/methodology/technical-assignment/06-domain-extension-interface.md
-agentos/docs/methodology/technical-assignment/07-consistency-checklist.md
-agentos/docs/methodology/technical-assignment/08-interview-depth-loop-and-entity-process-traversal.md
-agentos/docs/methodology/technical-assignment/09-adaptive-elicitation-method-selector.md
-agentos/docs/methodology/technical-assignment/10-ta-intake-to-documentation-assembly-bridge.md
-agentos/docs/methodology/technical-assignment/runbooks/
-```
+If required local `/aos/` files are missing, fail closed and mark the status as `UNKNOWN_BLOCKED`.
 
 Source precedence:
 
@@ -106,13 +84,11 @@ Source precedence:
 source_precedence:
   this_prompt: draft_operational_prompt_for_adaptive_ta_intake_only
   higher_authority:
-    - 00_AOS_Core_Control.md
-    - 01_AOS_Assembly_Pipelines_and_Build_Roadmap.md
-    - 02_AOS_Governance_Control_Module_and_Safety_Rules.md
-    - agentos/docs/methodology/technical-assignment/
+    - aos/START_HERE.md
+    - aos/AGENT_CONTEXT.md
+    - Consumer repository registry and contracts
   if_conflict: higher_authority_sources_win
-  prompt_may_override_canonical_sources: false
-  prompt_may_override_methodology_sources: false
+  prompt_may_override_local_sources: false
 ```
 
 ---
@@ -258,6 +234,8 @@ PROJECT_SPEC.draft.md ≠ approval.
 PROJECT_SPEC.md ≠ approval.
 Human review ≠ execution approval.
 Human approval cannot be simulated.
+Destructive operations forbidden by default.
+UNKNOWN_BLOCKED if required local /aos/ files are missing.
 UNKNOWN ≠ OK.
 NOT_RUN ≠ PASS.
 Skeleton ≠ implementation.

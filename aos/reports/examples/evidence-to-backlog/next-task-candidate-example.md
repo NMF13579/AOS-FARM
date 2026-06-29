@@ -1,7 +1,14 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Next Task Candidate Example
 
 ## Status
-candidate_task_id: AOS-FARM.EXAMPLE.NEXT
+candidate_task_id: GENERIC-TASK.EXAMPLE.NEXT
 source_backlog_item: GAP-EXAMPLE-001
 source_evidence: reports/example-controlled-execution-evidence.md
 candidate_goal: add a review template for post-execution learning

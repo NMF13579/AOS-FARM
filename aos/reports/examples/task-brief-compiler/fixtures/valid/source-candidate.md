@@ -1,6 +1,13 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Valid Source Candidate For Compiler Fixture
 
-candidate_task_id: AOS-FARM.FIXTURE.COMPILER.CANDIDATE
+candidate_task_id: GENERIC-TASK.FIXTURE.COMPILER.CANDIDATE
 source_backlog_item: GAP-COMPILER-001
 source_evidence: reports/compiler-evidence.md
 candidate_goal: draft a review-only controlled task brief from accepted candidate material

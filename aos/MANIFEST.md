@@ -1,14 +1,21 @@
-# AOS Consumer Kit
+# AOS Package Manifest
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+## Product Package Purpose
+AOS is a self-contained consumer kit designed to provide agentic governance, safety bounds, and planning templates to any target repository.
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+## Top-Level Files/Folders
+- `aos/`: Required consumer package directory.
+- `aos/START_HERE.md`: Required entry point for consumer onboarding.
+- `aos/AGENT_CONTEXT.md`: Required context definition for agents.
+- `aos/prompts/`: Required consumer-facing prompts.
+- `aos/schemas/`: Required JSON schemas for task definitions.
+- `aos/tools/`: Optional helper tooling.
+- `aos/examples/`: Optional examples and templates.
+
+## Required vs Optional
+- Core docs (`START_HERE.md`, `AGENT_CONTEXT.md`), prompts, and schemas are REQUIRED.
+- `aos/tools/` and `aos/examples/` are OPTIONAL helpers and examples.
+
+## Source of Truth Boundaries
+- What is NOT Source of Truth: Generated artifacts, `aos/tools/optional/` scratch outputs (e.g. `.aos-tmp/`), and `aos/examples/` fixtures.
+- What is Excluded from Consumer Runtime Prerequisites: Internal `agentos/` directories and AOS-FARM root control sources (`00_AOS...`, `01_AOS...`, `02_AOS...`).

@@ -1,14 +1,14 @@
-# AOS Consumer Kit
+# AOS Uninstall Guide
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+## Manual Uninstall Guidance
+To uninstall the AOS consumer package, you must manually delete the `/aos/` directory and remove AOS references from `llms.txt` and `AGENTS.md`.
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+## Review Before Removal
+- Ensure no active tasks are depending on `aos/schemas/`.
+- Verify that custom tools or hooks are not pointing to `aos/tools/`.
+
+## Removal Rules
+- **No automatic destructive cleanup**: Scripts must not automatically remove the package.
+- **What may be removed**: The `/aos/` folder.
+- **What must be checked before removal**: Uncommitted work or custom templates saved inside `/aos/`.
+- **Human approval required**: Destructive operations (including deletion of the `/aos/` directory) require explicit human authorization.

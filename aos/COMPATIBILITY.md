@@ -1,14 +1,18 @@
-# AOS Consumer Kit
+# AOS Package Compatibility
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+## Supported Target Repo Assumptions
+- Standard Git repository.
+- Markdown support.
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+## Usage
+- Docs-only/manual-first usage is fully supported and recommended as the default.
+
+## Optional Helper Requirements
+- Python 3.10+ required if utilizing scripts in `aos/tools/optional/`.
+
+## Unsupported Cases
+- Environments without local file system access.
+- Fully autonomous execution without human-in-the-loop checkpoints.
+
+## Dependency Boundaries
+- The AOS package relies on no external proprietary databases. It relies solely on local filesystem state and standard Git operations.

@@ -1,14 +1,15 @@
-# AOS Consumer Kit
+# AOS Package Version
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+## Package Version/Status
+Version: 1.0.0-consumer-draft
+Status: Pre-release consumer package
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+## Branch/SHA Policy
+- Validated on branch: `dev`
+- Any changes to core schemas must be verified against the corresponding AOS-FARM release SHA.
+
+## Release and Compatibility Status
+- Release status: Pre-merge, not a finalized production release.
+- Compatibility status: See `COMPATIBILITY.md`.
+
+**Important**: A valid version is not approval for execution or release.

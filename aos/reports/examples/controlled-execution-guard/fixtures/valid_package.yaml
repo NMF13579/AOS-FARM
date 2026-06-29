@@ -1,4 +1,4 @@
-task_id: AOS-FARM.438
+task_id: GENERIC-TASK.438
 human_execution_authorization:
   authorized: true
   authorized_by: human
@@ -38,7 +38,7 @@ scope:
   allowed_changes:
     - create minimal deterministic controlled execution guard
     - add deterministic tests and examples
-    - add documentation and reports for AOS-FARM.438
+    - add documentation and reports for GENERIC-TASK.438
   forbidden_changes:
     - commit
     - push

@@ -1,14 +1,12 @@
-# AOS Consumer Kit
+# AOS Package Changelog
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+## Product Package Change Summary
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+### [Unreleased / Pre-merge]
+- Restructured `llms.txt` to safely bootstrap consumer agents.
+- Sanitized `problem-intake.md` prompt to remove internal `agentos/` dependencies.
+- Updated `problem_intake_runner.py` to route output to `.aos-tmp/`.
+- Hardened task quality check schema to enforce boolean constants.
+- Rewrote skeleton metadata docs to consumer-facing language.
+
+*Note: This is a pre-merge/pre-release changelog. There is no fake release maturity.*

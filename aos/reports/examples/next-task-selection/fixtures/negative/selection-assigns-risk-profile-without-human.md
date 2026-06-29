@@ -1,9 +1,16 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Negative Selection Assigns Risk Profile Without Human Fixture
 
 expected_result: BLOCKED
 violation: selection artifact assigns Risk Profile without human checkpoint
 
-candidate_task_id: AOS-FARM.FIXTURE.SELECTION.NEGATIVE.RISK
+candidate_task_id: GENERIC-TASK.FIXTURE.SELECTION.NEGATIVE.RISK
 candidate_source_file: aos/reports/examples/evidence-to-backlog/next-task-candidate-example.md
 candidate_status: DRAFT
 selection_decision: ACCEPT

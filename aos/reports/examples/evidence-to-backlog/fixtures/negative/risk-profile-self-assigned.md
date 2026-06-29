@@ -1,9 +1,16 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Negative Fixture: Risk Profile Self-Assigned
 
 expected_result: HUMAN_REVIEW_REQUIRED
 violation: Risk Profile assigned by a non-human actor
 
-candidate_task_id: AOS-FARM.NEGATIVE.RISK
+candidate_task_id: GENERIC-TASK.NEGATIVE.RISK
 source_backlog_item: GAP-NEGATIVE-002
 source_evidence: reports/negative-evidence.md
 candidate_goal: implement follow-up work

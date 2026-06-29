@@ -1,3 +1,3 @@
-task_id: AOS-FARM.438
+task_id: GENERIC-TASK.438
 report_kind: postcheck_negative_fixture
 not_run_is_pass: true

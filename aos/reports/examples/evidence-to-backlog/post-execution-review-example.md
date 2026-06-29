@@ -1,7 +1,14 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Post-Execution Review Example
 
 ## Status
-source_task_id: AOS-FARM.EXAMPLE
+source_task_id: GENERIC-TASK.EXAMPLE
 source_evidence_report: reports/example-controlled-execution-evidence.md
 source_execution_report: reports/example-execution-report.md
 guard_results:

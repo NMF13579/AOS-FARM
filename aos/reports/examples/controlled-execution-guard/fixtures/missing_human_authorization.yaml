@@ -1,4 +1,4 @@
-task_id: AOS-FARM.438
+task_id: GENERIC-TASK.438
 risk_profile:
   value: HIGH_RISK_PROTECTED
   assigned_by: human

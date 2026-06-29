@@ -1,11 +1,18 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # Task Registry Example
 
 ```yaml
 schema_version: 1
 tasks:
-  - task_id: AOS-FARM.441
+  - task_id: GENERIC-TASK.441
     title: Remote Baseline Closure
-    source_file: reports/aos-farm-441-remote-baseline-closure-report.md
+    source_file: reports/generic-task-441-remote-baseline-closure-report.md
     source_commit: null
     source_hash: null
     indexed_at: null
@@ -24,16 +31,16 @@ tasks:
     next_action: NONE
     final_status: REMOTE_BASELINE_CLOSED
 
-  - task_id: AOS-FARM.442
+  - task_id: GENERIC-TASK.442
     title: Task Registry and Queue Contract MVP
-    source_file: reports/aos-farm-442-task-brief-draft.md
+    source_file: reports/generic-task-442-task-brief-draft.md
     source_commit: null
     source_hash: null
     indexed_at: null
     registry_status: HUMAN_REVIEW_REQUIRED
     lifecycle_stage: IN_PROGRESS
     depends_on:
-      - AOS-FARM.441
+      - GENERIC-TASK.441
     blocked_by: []
     replaces: []
     replaced_by: null
@@ -46,7 +53,7 @@ tasks:
     next_action: CONTINUE_IMPLEMENTATION
     final_status: HUMAN_REVIEW_REQUIRED
 
-  - task_id: AOS-FARM.443
+  - task_id: GENERIC-TASK.443
     title: Next Task Candidate
     source_file: null
     source_commit: null
@@ -55,7 +62,7 @@ tasks:
     registry_status: QUEUED
     lifecycle_stage: CANDIDATE
     depends_on:
-      - AOS-FARM.442
+      - GENERIC-TASK.442
     blocked_by: []
     replaces: []
     replaced_by: null
@@ -68,7 +75,7 @@ tasks:
     next_action: PREPARE_TASK_BRIEF
     final_status: HUMAN_REVIEW_REQUIRED
 
-  - task_id: AOS-FARM.444
+  - task_id: GENERIC-TASK.444
     title: Blocked Example Task
     source_file: null
     source_commit: null
@@ -78,7 +85,7 @@ tasks:
     lifecycle_stage: HUMAN_REVIEW_REQUIRED
     depends_on: []
     blocked_by:
-      - AOS-FARM.441
+      - GENERIC-TASK.441
     replaces: []
     replaced_by: null
     task_brief_status: DRAFT
@@ -90,7 +97,7 @@ tasks:
     next_action: RESOLVE_BLOCKER
     final_status: BLOCKED
 
-  - task_id: AOS-FARM.445
+  - task_id: GENERIC-TASK.445
     title: Deferred Example Task
     source_file: null
     source_commit: null

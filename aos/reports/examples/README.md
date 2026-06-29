@@ -1,3 +1,10 @@
+---
+example_only: true
+authoritative: false
+---
+> [!WARNING]
+> This is an example document only. It is non-authoritative and does not represent actual execution history or approval.
+
 # AOS Report Examples
 
 Use these examples to copy a working shape before creating your own controlled execution package or evidence report.

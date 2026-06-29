@@ -1,4 +1,4 @@
-task_id: AOS-FARM.438
+task_id: GENERIC-TASK.438
 human_execution_authorization:
   authorized: true
   authorized_by: human
