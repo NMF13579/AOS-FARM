@@ -26,7 +26,7 @@ To adopt AOS in your project:
 ## No Magic Allowed
 AOS requires **no mandatory active Python runners**, continuous integration scripts, databases, or RAG components to function. It relies entirely on the AI agent's adherence to clear, markdown-defined systemic rules.
 
-While the `/aos/` folder includes optional Python checkers (e.g., in `/aos/scripts/`), these are strictly **read-only tools**. They generate validation signals but cannot execute tasks, mutate state, or approve operations.
+While the `/aos/` folder includes optional validators and local artifact generators (e.g., in `/aos/scripts/`), these helpers have no approval, commit, push, merge, or release authority. They may generate local drafts or validation signals, but they cannot execute tasks or approve operations.
 
 ## Documentation
 - **[Installation Guide](aos/INSTALL.md)**

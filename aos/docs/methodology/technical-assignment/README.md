@@ -1,11 +1,11 @@
 # Technical Assignment Methodology Package
 
-Пакет документов для AOS-FARM / AgentOS workflow по созданию технического задания агентом.
+Consumer-facing package of documents for creating a technical assignment with an AI agent.
 
-Целевой путь в репозитории:
+Consumer-facing path in a target repository:
 
 ```text
-agentos/docs/methodology/technical-assignment/
+aos/docs/methodology/technical-assignment/
 ```
 
 ## Состав core-пакета

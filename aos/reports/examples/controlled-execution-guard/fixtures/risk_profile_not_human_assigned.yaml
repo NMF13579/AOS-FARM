@@ -2,7 +2,7 @@ task_id: GENERIC-TASK.438
 human_execution_authorization:
   authorized: true
   authorized_by: human
-  authorization_artifact: aos/reports/human-checkpoints/examples/aos-farm-438-controlled-execution-authorization-example.md
+  authorization_artifact: aos/reports/examples/controlled-execution-guard/fixtures/generic-controlled-execution-authorization-example.md
 risk_profile:
   value: HIGH_RISK_PROTECTED
   assigned_by: agent
