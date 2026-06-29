@@ -629,7 +629,15 @@ def check_task_readiness(filepath, all_tasks=None):
     elif approval in bad_approval_values:
         reasons_blocked.append(f"Invalid approval_status (cannot treat '{approval}' as approval)")
     elif approval == "NOT_APPROVED":
-        reasons_human.append("approval_status is NOT_APPROVED")
+        if yaml_data.get("execution_authorized") is not True:
+            reasons_human.append("approval_status is NOT_APPROVED and execution_authorized is not true")
+
+    if yaml_data.get("commit_authorized") is True and approval != "APPROVED":
+        reasons_blocked.append("commit_authorized is true without explicit APPROVED approval_status")
+    if yaml_data.get("push_authorized") is True and approval != "APPROVED":
+        reasons_blocked.append("push_authorized is true without explicit APPROVED approval_status")
+    if yaml_data.get("release_authorized") is True and approval != "APPROVED":
+        reasons_blocked.append("release_authorized is true without explicit APPROVED approval_status")
 
     body = '\n'.join(content.split('\n')[end_idx+1:])
     level = yaml_data.get("template_level")
