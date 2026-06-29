@@ -767,6 +767,167 @@ def cmd_task_readiness_all():
     else:
         sys.exit(1)
 
+def cmd_task_result_review(filepath):
+    if not os.path.exists(filepath) and not filepath.endswith(".md"):
+        filepath = os.path.join("tasks", f"{filepath}.md")
+
+    if not os.path.exists(filepath):
+        print("RESULT_REVIEW_BLOCKED")
+        print(f"blocked_reason: file {filepath} not found")
+        print("next_allowed_action: fix handoff_result report or escalate to human review")
+        sys.exit(1)
+
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    if not yaml_data:
+        print("RESULT_REVIEW_BLOCKED")
+        print("blocked_reason: Missing YAML frontmatter")
+        print("next_allowed_action: fix handoff_result report or escalate to human review")
+        sys.exit(1)
+
+    task_id = yaml_data.get("task_id")
+    if not task_id:
+        print("RESULT_REVIEW_BLOCKED")
+        print("blocked_reason: Missing task_id")
+        print("next_allowed_action: fix handoff_result report or escalate to human review")
+        sys.exit(1)
+
+    status, reasons = check_task_readiness(filepath)
+    if status != "READY_FOR_HANDOFF":
+        print("RESULT_REVIEW_NOT_READY")
+        print(f"blocked_reason: Task readiness is {status}. Reasons: {', '.join(reasons)}")
+        print("next_allowed_action: fix task readiness before handoff")
+        sys.exit(1)
+
+    body = '\n'.join(content.split('\n')[end_idx+1:])
+    body_lower = body.lower()
+
+    idx = body_lower.find("handoff_result:")
+    if idx == -1:
+        idx = body_lower.find("## handoff result")
+    if idx == -1:
+        print("RESULT_REVIEW_BLOCKED")
+        print("blocked_reason: missing handoff_result section")
+        print("next_allowed_action: fix handoff_result report or escalate to human review")
+        sys.exit(1)
+
+    handoff_block = body[idx:]
+    hb_lower = handoff_block.lower()
+
+    blocked_reasons = []
+    unknown_reasons = []
+
+    if "reported_changed_files:" not in hb_lower and "changed files:" not in hb_lower:
+        unknown_reasons.append("reported changed files missing or unknown")
+    elif "changed files: unknown" in hb_lower or "reported_changed_files: unknown" in hb_lower:
+        unknown_reasons.append("reported changed files unknown")
+
+    protected_files = ["00_AOS_Core_Control.md", "01_AOS_Assembly_Pipelines_and_Build_Roadmap.md", "02_AOS_Governance_Control_Module_and_Safety_Rules.md", ".github/workflows", "aos/SELF_TEST.md"]
+    for pf in protected_files:
+        if pf.lower() in hb_lower:
+            # ensure it's not just listed as a rule, but actually changed
+            # we do a simple check: if it's in the block at all, we block unless we have a strict parser
+            # To be safe and meet requirements: "Reported changed files не содержат protected/canonical files."
+            blocked_reasons.append(f"root 00/01/02 or protected file changed: {pf}")
+
+    if ".aos-tmp" in hb_lower and "source of truth" in hb_lower:
+        blocked_reasons.append("/.aos-tmp/ used as Source of Truth")
+
+    if ("registry" in hb_lower or "queue" in hb_lower or "cache" in hb_lower) and "source of truth" in hb_lower:
+        blocked_reasons.append("generated registry/queue/cache used as Source of Truth")
+
+    if "approval_claimed: true" in hb_lower or "approval granted" in hb_lower or "human approved" in hb_lower or "approved: true" in hb_lower:
+        blocked_reasons.append("approval claimed")
+    elif "approved" in hb_lower and "approval_claimed: false" not in hb_lower and "not approved" not in hb_lower:
+        blocked_reasons.append("approval claimed or APPROVED found in result")
+
+    if "ready_for_execution_claimed: true" in hb_lower or "ready to merge" in hb_lower or "ready to release" in hb_lower:
+        blocked_reasons.append("READY_FOR_EXECUTION claimed")
+    elif "ready_for_execution" in hb_lower and "ready_for_execution_claimed: false" not in hb_lower and "not ready_for_execution" not in hb_lower:
+        blocked_reasons.append("READY_FOR_EXECUTION claimed")
+
+    if "validation_results:" not in hb_lower and "validation results:" not in hb_lower:
+        unknown_reasons.append("validation results missing without explicit NOT_RUN")
+    elif "validation results: unknown" in hb_lower or "validation_results: unknown" in hb_lower:
+        unknown_reasons.append("validation results unknown")
+
+    if "handoff_ready: unknown" in hb_lower or "handoff ready: unknown" in hb_lower:
+        unknown_reasons.append("handoff readiness unknown")
+
+    if "status: pass" in hb_lower or " pass " in hb_lower or "pass\n" in hb_lower:
+        if "evidence:" not in hb_lower and "evidence output" not in hb_lower:
+            blocked_reasons.append("PASS without Evidence")
+
+    if "not_run" in hb_lower and "pass" in hb_lower:
+        if "not_run treated as pass" in hb_lower or "not_run=pass" in hb_lower:
+            blocked_reasons.append("NOT_RUN treated as PASS")
+
+    if "ci pass" in hb_lower and "approval" in hb_lower:
+        blocked_reasons.append("CI PASS treated as approval")
+
+    if "commit_performed: true" in hb_lower or "commit authorized" in hb_lower or ("commit performed" in hb_lower and "commit_performed: false" not in hb_lower):
+        blocked_reasons.append("commit performed while commit_authorized=false")
+
+    if "push_performed: true" in hb_lower or "push authorized" in hb_lower or ("push performed" in hb_lower and "push_performed: false" not in hb_lower):
+        blocked_reasons.append("push performed while push_authorized=false")
+
+    if "release_performed: true" in hb_lower or "release authorized" in hb_lower:
+        blocked_reasons.append("release performed")
+
+    if "unknown" in hb_lower and "ok" in hb_lower:
+         blocked_reasons.append("UNKNOWN treated as OK")
+
+    if " state: unknown" in hb_lower or "status: unknown" in hb_lower or "result: unknown" in hb_lower:
+         unknown_reasons.append("ambiguous UNKNOWN state in handoff_result")
+
+    if "stop_condition:" not in hb_lower and "stop condition:" not in hb_lower:
+        blocked_reasons.append("stop condition missing")
+
+    if "human review" not in hb_lower:
+        blocked_reasons.append("stop condition missing explicit human review requirement")
+
+    # 4. Handoff prompt boundary (checking globally in body)
+    if "handoff prompt" not in body_lower and "controlled task handoff" not in body_lower and "handoff_result" not in body_lower:
+        blocked_reasons.append("handoff prompt boundary missing")
+
+    if blocked_reasons:
+        print("RESULT_REVIEW_BLOCKED")
+        print(f"blocked_reason: {blocked_reasons[0]}")
+        print("next_allowed_action: fix handoff_result report or escalate to human review")
+        sys.exit(1)
+
+    if unknown_reasons:
+        print("RESULT_REVIEW_UNKNOWN_BLOCKED")
+        print(f"blocked_reason: {unknown_reasons[0]}")
+        print("next_allowed_action: provide missing fields or clarify UNKNOWN state")
+        sys.exit(1)
+
+    print("RESULT_REVIEW_PASS")
+    print(f"task_id: {task_id}")
+    print("handoff_ready: true")
+    print("handoff_prompt_boundary: present")
+    print("handoff_result_report: present")
+    print("reported_changed_files: present")
+    print("protected_canonical_changes: none")
+    print("generated_artifacts_as_source_of_truth: none")
+    print("approval_claimed: false")
+    print("ready_for_execution_claimed: false")
+    print("pass_without_evidence: false")
+    print("ci_pass_as_approval: false")
+    print("commit_performed_without_authorization: false")
+    print("push_performed_without_authorization: false")
+    print("validation_results: present")
+    print("stop_condition_report: present")
+    print("next_allowed_state: READY_FOR_HUMAN_REVIEW")
+    print("not_approval: true")
+    print("not_ready_for_execution: true")
+    print("not_commit_authorization: true")
+    print("not_push_authorization: true")
+    sys.exit(0)
+
+
 def cmd_task_handoff_prompt(filepath):
     if not os.path.exists(filepath) and not filepath.endswith(".md"):
         filepath = os.path.join("tasks", f"{filepath}.md")
@@ -939,6 +1100,10 @@ def main():
             cmd_task_readiness(sys.argv[3])
         elif sub == "--readiness-all":
             cmd_task_readiness_all()
+        elif sub == "--result-review":
+            if len(sys.argv) < 4:
+                sys.exit(1)
+            cmd_task_result_review(sys.argv[3])
         elif sub == "--handoff-prompt":
             if len(sys.argv) < 4:
                 sys.exit(1)
