@@ -545,6 +545,228 @@ def cmd_task_renumber_preview():
         print(f"Duplicates: {duplicates}")
     print(f"Next ID by max+1 rule: {next_id}")
 
+def check_task_readiness(filepath, all_tasks=None):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        return "FAIL", [f"Failed to read file: {e}"]
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    if not yaml_data:
+        return "FAIL", ["Missing or invalid YAML frontmatter."]
+
+    reasons_blocked = []
+    reasons_human = []
+
+    task_id = yaml_data.get("task_id")
+    if not task_id:
+        reasons_blocked.append("Missing task_id")
+        task_id = "UNKNOWN"
+    else:
+        if not re.match(r"^AOS-FARM-TASK-\d+$", str(task_id)):
+            reasons_blocked.append(f"Invalid task_id format: {task_id}")
+        filename = os.path.basename(filepath)
+        if filename != f"{task_id}.md":
+            reasons_blocked.append(f"task_id {task_id} does not match filename {filename}")
+
+    if all_tasks is not None:
+        count = sum(1 for t in all_tasks if t.get("task_id") == task_id)
+        if count > 1:
+            return "FAIL", [f"duplicate task_id: {task_id}"]
+
+    missing_fields = REQUIRED_YAML_FIELDS - set(yaml_data.keys())
+    if missing_fields:
+        reasons_blocked.append(f"Missing required YAML fields: {missing_fields}")
+
+    for k, v in yaml_data.items():
+        if v == "OK" and k != "title":
+            reasons_blocked.append(f"Field {k} has forbidden value 'OK'")
+        if v == "PASS" and k != "title":
+            reasons_blocked.append(f"Field {k} has forbidden value 'PASS'")
+
+    if yaml_data.get("queue_mode") not in QUEUE_MODES:
+        reasons_blocked.append(f"Invalid queue_mode: {yaml_data.get('queue_mode')}")
+    if yaml_data.get("queue_priority") not in QUEUE_PRIORITIES:
+        reasons_blocked.append(f"Invalid queue_priority: {yaml_data.get('queue_priority')}")
+    if yaml_data.get("queue_status") not in QUEUE_STATUSES:
+        reasons_blocked.append(f"Invalid queue_status: {yaml_data.get('queue_status')}")
+
+    qmode = yaml_data.get("queue_mode")
+    qpos = yaml_data.get("queue_position")
+    if qmode == "AUTO" and qpos is not None:
+        reasons_blocked.append("queue_position must be null when queue_mode is AUTO")
+    elif qmode in ("MANUAL", "PINNED"):
+        if not isinstance(qpos, int) or qpos <= 0:
+            reasons_blocked.append(f"queue_position must be integer > 0 when queue_mode is {qmode}")
+
+    if yaml_data.get("status") not in LIFECYCLE_STATUSES:
+        reasons_blocked.append(f"Invalid status: {yaml_data.get('status')}")
+
+    if yaml_data.get("status") == "READY_FOR_EXECUTION":
+        if yaml_data.get("approval_status") != "APPROVED":
+             reasons_blocked.append("status READY_FOR_EXECUTION without explicit APPROVED approval_status")
+
+    risk = yaml_data.get("risk_profile")
+    if not risk:
+        reasons_blocked.append("risk_profile is missing")
+    elif risk == "UNKNOWN_BLOCKED":
+        reasons_blocked.append("risk_profile is UNKNOWN_BLOCKED")
+    else:
+        assigned_by = yaml_data.get("risk_assigned_by")
+        if not assigned_by or assigned_by == "none":
+            reasons_human.append("risk_assigned_by is missing or 'none'")
+        elif assigned_by.lower() in ("agent", "self", "ai"):
+            reasons_blocked.append(f"risk_assigned_by: {assigned_by} is forbidden (agent/self)")
+
+        if risk == "LOW_RISK_FAST" and assigned_by and assigned_by.lower() in ("agent", "self", "ai"):
+            reasons_blocked.append("LOW_RISK_FAST cannot be self-assigned by agent")
+
+    approval = yaml_data.get("approval_status")
+    bad_approval_values = ["PASS", "Evidence", "CI PASS", "queue rank", "queue_position", "queue_priority", "queue_status", "validator PASS"]
+    if not approval:
+        reasons_blocked.append("approval_status is missing")
+    elif approval in bad_approval_values:
+        reasons_blocked.append(f"Invalid approval_status (cannot treat '{approval}' as approval)")
+    elif approval == "NOT_APPROVED":
+        reasons_human.append("approval_status is NOT_APPROVED")
+
+    body = '\n'.join(content.split('\n')[end_idx+1:])
+    level = yaml_data.get("template_level")
+
+    required_sections = ["## Задача", "## Done когда", "## История", "## Evidence", "## ⛔ Решение"]
+    if level in ("M", "L"):
+        required_sections.append("## Contract")
+    if level == "L":
+        required_sections.extend(["## Protected/canonical boundary", "## Risk notes", "## Rollback / recovery note"])
+
+    for section in required_sections:
+        if section not in body:
+            reasons_blocked.append(f"Missing required section: {section}")
+
+    def is_section_empty(section_name):
+        idx = body.find(section_name)
+        if idx == -1: return True
+        start_idx = idx + len(section_name)
+        end_idx = body.find("## ", start_idx)
+        if end_idx == -1:
+            end_idx = len(body)
+        section_text = body[start_idx:end_idx].strip()
+        return not section_text
+
+    for section in required_sections:
+        if is_section_empty(section):
+            reasons_human.append(f"Empty section: {section}")
+
+    if "auto approval" in body.lower() or "auto-approved" in body.lower() or approval == "AUTO_APPROVED":
+         reasons_blocked.append("Auto approval is forbidden")
+
+    evidence_text = ""
+    idx = body.find("## Evidence")
+    if idx != -1:
+         end_idx_ev = body.find("## ", idx + len("## Evidence"))
+         if end_idx_ev == -1:
+             end_idx_ev = len(body)
+         evidence_text = body[idx + len("## Evidence"):end_idx_ev].strip()
+
+         if "approval" in evidence_text.lower() and "is not approval" not in evidence_text.lower():
+             reasons_blocked.append("Evidence claims approval")
+
+    decision_text = ""
+    idx = body.find("## ⛔ Решение")
+    if idx != -1:
+         end_idx_dec = body.find("## ", idx + len("## ⛔ Решение"))
+         if end_idx_dec == -1:
+             end_idx_dec = len(body)
+         decision_text = body[idx + len("## ⛔ Решение"):end_idx_dec].strip()
+         if decision_text.upper() == "PENDING":
+             reasons_human.append("human decision is PENDING")
+         if approval == "APPROVED" and "APPROVED" not in decision_text:
+             reasons_blocked.append("approval_status is APPROVED but human decision section does not contain APPROVED")
+
+    v_status = yaml_data.get("validator_status")
+    e_status = yaml_data.get("evidence_status")
+    if v_status == "NOT_RUN":
+        reasons_human.append("validator_status is NOT_RUN")
+    if e_status == "NOT_RUN":
+        reasons_human.append("evidence_status is NOT_RUN")
+
+    log_uri = yaml_data.get("log_uri")
+    if not log_uri:
+        reasons_blocked.append("log_uri is missing")
+    else:
+        if not str(log_uri).startswith(f".aos-tmp/tasks/{task_id}/"):
+            reasons_blocked.append(f"log_uri must be inside .aos-tmp/tasks/{task_id}/")
+
+    log_status = yaml_data.get("log_status")
+    if not log_status:
+        reasons_blocked.append("log_status is missing")
+
+    if reasons_blocked:
+        return "BLOCKED", reasons_blocked + reasons_human
+    if reasons_human:
+        return "HUMAN_REVIEW_REQUIRED", reasons_human
+    return "READY_FOR_HANDOFF", ["readiness passed"]
+
+def cmd_task_readiness(filepath):
+    if not os.path.exists(filepath) and not filepath.endswith(".md"):
+        # try as task_id
+        filepath = os.path.join("tasks", f"{filepath}.md")
+
+    if not os.path.exists(filepath):
+        print(f"FAIL: {filepath} not found")
+        sys.exit(1)
+
+    status, reasons = check_task_readiness(filepath)
+    task_id = os.path.basename(filepath).replace(".md", "")
+    print(f"Task: {task_id}")
+    print(f"Readiness: {status}")
+    print("Reasons:")
+    for r in reasons:
+        print(f"- {r}")
+    print("Boundary:")
+    if status == "READY_FOR_HANDOFF":
+        print("- READY_FOR_HANDOFF is not approval")
+        print("- READY_FOR_HANDOFF is not READY_FOR_EXECUTION")
+        print("- READY_FOR_HANDOFF is not execution authorization")
+        print("- Commit is not authorized")
+        print("- Push is not authorized")
+    else:
+        print("- READY_FOR_HANDOFF is not READY_FOR_EXECUTION")
+        print("- PASS is not approval")
+        print("- Evidence is not approval")
+        print("- CI PASS is not approval")
+
+    if status == "READY_FOR_HANDOFF":
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+def cmd_task_readiness_all():
+    tasks_dir = "tasks"
+    if not os.path.exists(tasks_dir):
+        print("PASS: no tasks directory")
+        sys.exit(0)
+
+    tasks = load_all_tasks(tasks_dir)
+    print("task_id | readiness | notes")
+    all_ready = True
+
+    for filename in sorted(os.listdir(tasks_dir)):
+        if not filename.endswith(".md"): continue
+        filepath = os.path.join(tasks_dir, filename)
+        status, reasons = check_task_readiness(filepath, all_tasks=tasks)
+        notes = ", ".join(reasons) if reasons else "none"
+        task_id = filename.replace(".md", "")
+        print(f"{task_id} | {status} | {notes}")
+        if status != "READY_FOR_HANDOFF":
+            all_ready = False
+
+    if all_ready:
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: aos_task_document_check.py [mode]")
@@ -588,6 +810,12 @@ def main():
             cmd_task_validate_all()
         elif sub == "--renumber-preview":
             cmd_task_renumber_preview()
+        elif sub == "--readiness":
+            if len(sys.argv) < 4:
+                sys.exit(1)
+            cmd_task_readiness(sys.argv[3])
+        elif sub == "--readiness-all":
+            cmd_task_readiness_all()
         else:
             print(f"Unknown task sub-command: {sub}")
             sys.exit(1)

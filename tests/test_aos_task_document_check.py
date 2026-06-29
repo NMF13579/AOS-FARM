@@ -231,5 +231,75 @@ class TestAOSTaskDocumentCheck(unittest.TestCase):
             os.chdir(original_cwd)
             shutil.rmtree(temp_dir)
 
+    def test_readiness_gate(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+
+            res_new = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--new"], capture_output=True, text=True)
+
+            # Default is BLOCKED due to UNKNOWN_BLOCKED risk_profile, etc
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--readiness", "AOS-FARM-TASK-0001"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("BLOCKED", res.stdout)
+            self.assertIn("risk_profile is UNKNOWN_BLOCKED", res.stdout)
+
+            # Create a READY_FOR_HANDOFF task
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0002"
+title: "Valid task"
+type: "task"
+template_level: "S"
+status: "DRAFT"
+queue_mode: "AUTO"
+queue_position: null
+queue_status: "BACKLOG"
+queue_priority: "NORMAL"
+risk_profile: "LOW_RISK_FAST"
+risk_assigned_by: "human"
+approval_status: "APPROVED"
+human_checkpoint_required: true
+validator_status: "VALIDATION_COMPLETE"
+evidence_status: "EVIDENCE_COLLECTED"
+log_uri: ".aos-tmp/tasks/AOS-FARM-TASK-0002/agent-actions.log"
+log_status: "NOT_STARTED"
+owner: "human"
+created_at: "2024"
+updated_at: "2024"
+---
+## Задача
+goal
+## Done когда
+done
+## История
+hist
+## Evidence
+ev
+## ⛔ Решение
+APPROVED
+"""
+            with open("tasks/AOS-FARM-TASK-0002.md", "w") as f:
+                 f.write(valid_content)
+
+            res_valid = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--readiness", "AOS-FARM-TASK-0002"], capture_output=True, text=True)
+            self.assertEqual(res_valid.returncode, 0)
+            self.assertIn("READY_FOR_HANDOFF", res_valid.stdout)
+            self.assertIn("READY_FOR_HANDOFF is not approval", res_valid.stdout)
+            self.assertNotIn("written", res_valid.stdout)
+
+            # test readiness-all
+            res_all = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--readiness-all"], capture_output=True, text=True)
+            self.assertNotEqual(res_all.returncode, 0)
+            self.assertIn("AOS-FARM-TASK-0001 | BLOCKED", res_all.stdout)
+            self.assertIn("AOS-FARM-TASK-0002 | READY_FOR_HANDOFF", res_all.stdout)
+
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
 if __name__ == '__main__':
     unittest.main()
