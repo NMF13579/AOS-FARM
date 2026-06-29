@@ -1,5 +1,8 @@
 import sys
 import os
+import re
+import tempfile
+import datetime
 
 LIFECYCLE_STATUSES = {"DRAFT", "READY_FOR_EXECUTION", "IN_PROGRESS", "HUMAN_REVIEW_REQUIRED", "BLOCKED", "APPROVED", "REJECTED", "CLOSED"}
 QUEUE_STATUSES = {"BACKLOG", "NEXT", "IN_PROGRESS", "BLOCKED", "DONE"}
@@ -19,25 +22,25 @@ def parse_yaml_frontmatter(content):
     lines = content.split('\n')
     if not lines or lines[0].strip() != '---':
         return None, 0
-    
+
     yaml_data = {}
     end_idx = -1
     for i in range(1, len(lines)):
         if lines[i].strip() == '---':
             end_idx = i
             break
-        
+
         line = lines[i]
         if ':' in line:
             parts = line.split(':', 1)
             key = parts[0].strip()
             val = parts[1].strip()
-            
+
             if val.startswith('"') and val.endswith('"'):
                 val = val[1:-1]
             elif val.startswith("'") and val.endswith("'"):
                 val = val[1:-1]
-            
+
             if val == 'null':
                 val = None
             elif val == 'true':
@@ -46,12 +49,12 @@ def parse_yaml_frontmatter(content):
                 val = False
             elif val.isdigit():
                 val = int(val)
-                
+
             yaml_data[key] = val
-            
+
     if end_idx == -1:
         return None, 0
-        
+
     return yaml_data, end_idx
 
 def validate_task_document(file_path):
@@ -60,32 +63,32 @@ def validate_task_document(file_path):
             content = f.read()
     except Exception as e:
         return False, [f"Failed to read file: {e}"]
-        
+
     yaml_data, end_idx = parse_yaml_frontmatter(content)
     if not yaml_data:
         return False, ["Missing or invalid YAML frontmatter."]
-        
+
     messages = []
     is_valid = True
-    
+
     missing_fields = REQUIRED_YAML_FIELDS - set(yaml_data.keys())
     if missing_fields:
         messages.append(f"Missing required YAML fields: {missing_fields}")
         is_valid = False
-        
+
     for bad_field in ["rank", "generated_rank", "queue_rank"]:
         if bad_field in yaml_data:
             messages.append(f"YAML contains generated rank field '{bad_field}'.")
             is_valid = False
-            
+
     if yaml_data.get("status") not in LIFECYCLE_STATUSES:
         messages.append(f"Invalid status: {yaml_data.get('status')}")
         is_valid = False
-        
+
     if yaml_data.get("queue_status") not in QUEUE_STATUSES:
         messages.append(f"Invalid queue_status: {yaml_data.get('queue_status')}")
         is_valid = False
-        
+
     if yaml_data.get("queue_priority") not in QUEUE_PRIORITIES:
         messages.append(f"Invalid queue_priority: {yaml_data.get('queue_priority')}")
         is_valid = False
@@ -93,10 +96,10 @@ def validate_task_document(file_path):
     if yaml_data.get("queue_mode") not in QUEUE_MODES:
         messages.append(f"Invalid queue_mode: {yaml_data.get('queue_mode')}")
         is_valid = False
-        
+
     qmode = yaml_data.get("queue_mode")
     qpos = yaml_data.get("queue_position")
-    
+
     if qmode == "AUTO" and qpos is not None:
         messages.append("queue_position must be null when queue_mode is AUTO")
         is_valid = False
@@ -104,26 +107,26 @@ def validate_task_document(file_path):
         if not isinstance(qpos, int) or qpos <= 0:
             messages.append(f"queue_position must be integer > 0 when queue_mode is {qmode}")
             is_valid = False
-            
+
     body = '\n'.join(content.split('\n')[end_idx+1:])
     level = yaml_data.get("template_level")
-    
+
     required_sections = ["## Задача", "## Done когда", "## История", "## Evidence", "## ⛔ Решение"]
     if level in ("M", "L"):
         required_sections.append("## Contract")
     if level == "L":
         required_sections.extend(["## Protected/canonical boundary", "## Risk notes", "## Rollback / recovery note"])
-        
+
     for section in required_sections:
         if section not in body:
             messages.append(f"Missing required section: {section}")
             is_valid = False
-            
+
     bad_approval_values = ["PASS", "Evidence", "CI PASS", "queue rank", "queue_position", "queue_priority", "queue_status", "validator PASS"]
     if yaml_data.get("approval_status") in bad_approval_values:
         messages.append(f"Invalid approval_status (cannot treat '{yaml_data.get('approval_status')}' as approval).")
         is_valid = False
-        
+
     for k, v in yaml_data.items():
         if v == "OK" and k != "title":
             messages.append("Found 'OK' value, treating UNKNOWN as OK is forbidden.")
@@ -131,19 +134,19 @@ def validate_task_document(file_path):
         if v == "PASS" and k != "title":
             messages.append("Found 'PASS' value, treating NOT_RUN as PASS is forbidden.")
             is_valid = False
-            
+
     if yaml_data.get("queue_status") == "NEXT" and yaml_data.get("status") == "READY_FOR_EXECUTION":
         messages.append("queue_status: NEXT does not create READY_FOR_EXECUTION")
         is_valid = False
-        
+
     if yaml_data.get("queue_status") == "DONE" and yaml_data.get("status") == "CLOSED":
         messages.append("queue_status: DONE does not create CLOSED")
         is_valid = False
-        
+
     if "auto approval" in body.lower() or "auto-approved" in body.lower() or yaml_data.get("approval_status") == "AUTO_APPROVED":
          messages.append("Auto approval is forbidden.")
          is_valid = False
-         
+
     return is_valid, messages
 
 def load_all_tasks(tasks_dir="tasks"):
@@ -185,32 +188,32 @@ def cmd_registry_check():
 
 def calculate_queue(tasks):
     active_tasks = [t for t in tasks if t.get("status") != "CLOSED"]
-    
+
     pinned = sorted([t for t in active_tasks if t.get("queue_mode") == "PINNED"], key=lambda x: x.get("queue_position", 9999))
     manual = sorted([t for t in active_tasks if t.get("queue_mode") == "MANUAL"], key=lambda x: x.get("queue_position", 9999))
     auto = sorted([t for t in active_tasks if t.get("queue_mode") == "AUTO"], key=lambda x: x.get("created_at", ""))
-    
+
     pinned_positions = [t.get("queue_position") for t in pinned]
     if len(pinned_positions) != len(set(pinned_positions)):
         print("FAIL: duplicate queue_position within active PINNED tasks", file=sys.stderr)
         sys.exit(1)
-        
+
     manual_positions = [t.get("queue_position") for t in manual]
     if len(manual_positions) != len(set(manual_positions)):
         print("FAIL: duplicate queue_position within active MANUAL tasks", file=sys.stderr)
         sys.exit(1)
-        
+
     common = set(pinned_positions).intersection(set(manual_positions))
     if common:
         print(f"WARN: same queue_position across PINNED and MANUAL: {common}", file=sys.stderr)
-        
+
     queue = []
     rank = 1
     for t in pinned + manual + auto:
         t['_rank'] = rank
         queue.append(t)
         rank += 1
-        
+
     return queue
 
 def cmd_queue_list():
@@ -243,7 +246,7 @@ def cmd_queue_explain(task_id):
     if not target:
         print(f"Task {task_id} not found in active queue.")
         sys.exit(1)
-        
+
     print(f"Task {task_id} is ranked {target['_rank']}.")
     print("Explanation: Rank is dynamically calculated based on PINNED > MANUAL > AUTO rules.")
     print("queue rank is not execution authority.")
@@ -256,31 +259,31 @@ def cmd_log_check(filepath):
     except:
         print(f"FAIL: could not read {filepath}", file=sys.stderr)
         sys.exit(1)
-        
+
     if not yaml_data:
          print(f"FAIL: invalid task document {filepath}", file=sys.stderr)
          sys.exit(1)
-         
+
     task_id = yaml_data.get("task_id")
     log_uri = yaml_data.get("log_uri")
-    
+
     if not log_uri:
          print(f"FAIL: log_uri is missing", file=sys.stderr)
          sys.exit(1)
-         
+
     if not str(log_uri).startswith(f".aos-tmp/tasks/{task_id}/"):
          print(f"FAIL: log_uri must be inside .aos-tmp/tasks/{task_id}/", file=sys.stderr)
          sys.exit(1)
-         
+
     if not os.path.exists(log_uri):
          print("WARN: log file does not exist (NOT_FOUND)")
          sys.exit(0)
-         
+
     allowed_events = {"SESSION_STARTED", "FILE_READ", "FILE_EDITED", "COMMAND", "COMMAND_RESULT", "VALIDATION_STARTED", "VALIDATION_RESULT", "ERROR", "RETRY", "SUMMARY", "SESSION_ENDED"}
-    
+
     with open(log_uri, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-        
+
     for line in lines:
         line = line.strip()
         if not line:
@@ -289,30 +292,266 @@ def cmd_log_check(filepath):
         if len(parts) < 4:
             print(f"FAIL: log line malformed: {line}")
             sys.exit(1)
-            
+
         line_task_id = parts[1]
         if not line_task_id:
             print("FAIL: log line missing task_id")
             sys.exit(1)
-            
+
         if line_task_id != task_id:
             print(f"FAIL: wrong task_id in log line. Expected {task_id}, got {line_task_id}")
             sys.exit(1)
-            
+
         event_type = parts[3]
         if event_type not in allowed_events:
             print(f"FAIL: invalid event_type {event_type} in log line")
             sys.exit(1)
-            
+
     print("PASS: log is valid.")
+
+def get_next_task_id(tasks_dir="tasks"):
+    if not os.path.exists(tasks_dir):
+        os.makedirs(tasks_dir)
+    max_id = 0
+    ids = []
+    for filename in os.listdir(tasks_dir):
+        m = re.match(r"^AOS-FARM-TASK-(\d+)\.md$", filename)
+        if m:
+            num = int(m.group(1))
+            ids.append(num)
+            if num > max_id:
+                max_id = num
+    return max_id + 1, ids
+
+def generate_task_content(task_id_str, title="New Task"):
+    dt = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    return f"""---
+task_id: "{task_id_str}"
+title: "{title}"
+type: "task"
+template_level: "S"
+status: "DRAFT"
+queue_mode: "AUTO"
+queue_position: null
+queue_status: "BACKLOG"
+queue_priority: "NORMAL"
+risk_profile: "UNKNOWN_BLOCKED"
+risk_assigned_by: "none"
+approval_status: "NOT_APPROVED"
+human_checkpoint_required: true
+validator_status: "NOT_RUN"
+evidence_status: "NOT_RUN"
+log_uri: ".aos-tmp/tasks/{task_id_str}/agent-actions.log"
+log_status: "NOT_STARTED"
+owner: "human"
+created_at: "{dt}"
+updated_at: "{dt}"
+---
+## Задача
+
+## Done когда
+
+## История
+
+## Evidence
+
+## ⛔ Решение
+"""
+
+def cmd_task_new():
+    tasks_dir = "tasks"
+    next_id, _ = get_next_task_id(tasks_dir)
+    task_id_str = f"AOS-FARM-TASK-{next_id:04d}"
+    content = generate_task_content(task_id_str)
+
+    target_path = os.path.join(tasks_dir, f"{task_id_str}.md")
+    if os.path.exists(target_path):
+        print(f"FAIL: {target_path} already exists")
+        sys.exit(1)
+
+    fd, temp_path = tempfile.mkstemp(dir=tasks_dir, text=True)
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(content)
+    os.replace(temp_path, target_path)
+    print(f"Created {target_path}")
+
+def cmd_task_new_batch():
+    tasks_dir = "tasks"
+    lines = sys.stdin.read().splitlines()
+    tasks_to_create = []
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if not line.startswith("- "):
+            print("FAIL: invalid non-list line")
+            sys.exit(1)
+        title = line[2:].strip()
+        tasks_to_create.append(title)
+
+    if not tasks_to_create:
+        print("FAIL: empty batch plan")
+        sys.exit(1)
+
+    next_id, _ = get_next_task_id(tasks_dir)
+
+    created_files = []
+    try:
+        for title in tasks_to_create:
+            task_id_str = f"AOS-FARM-TASK-{next_id:04d}"
+            target_path = os.path.join(tasks_dir, f"{task_id_str}.md")
+            if os.path.exists(target_path):
+                print(f"FAIL: {target_path} already exists")
+                sys.exit(1)
+            content = generate_task_content(task_id_str, title)
+
+            fd, temp_path = tempfile.mkstemp(dir=tasks_dir, text=True)
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write(content)
+            os.replace(temp_path, target_path)
+            created_files.append(target_path)
+            next_id += 1
+            print(f"Created {target_path}")
+    except Exception as e:
+        for f in created_files:
+            if os.path.exists(f):
+                os.remove(f)
+        print(f"FAIL: write failed: {e}")
+        sys.exit(1)
+
+def cmd_task_set_queue(args):
+    if len(args) < 1:
+        print("FAIL: missing file path")
+        sys.exit(1)
+    filepath = args[0]
+    updates = {}
+    for arg in args[1:]:
+        if '=' in arg:
+            k, v = arg.split('=', 1)
+            if v.lower() == 'null':
+                v = None
+            elif v.isdigit():
+                v = int(v)
+            updates[k] = v
+
+    if not os.path.exists(filepath):
+        print(f"FAIL: {filepath} not found")
+        sys.exit(1)
+
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    lines = content.split('\n')
+    if not lines or lines[0].strip() != '---':
+        sys.exit(1)
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    if not yaml_data:
+        sys.exit(1)
+
+    allowed_keys = {"queue_mode", "queue_position", "queue_status", "queue_priority"}
+    for k in updates.keys():
+        if k not in allowed_keys:
+            print(f"FAIL: not allowed to mutate {k}")
+            sys.exit(1)
+
+    new_lines = []
+    dt = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    in_yaml = True
+    for i, line in enumerate(lines):
+        if i > 0 and line.strip() == '---':
+            in_yaml = False
+
+        if in_yaml and ':' in line:
+            parts = line.split(':', 1)
+            k = parts[0].strip()
+            if k in updates:
+                v = updates[k]
+                val_str = f'"{v}"' if isinstance(v, str) else ('null' if v is None else str(v))
+                new_lines.append(f"{k}: {val_str}")
+                continue
+            if k == "updated_at":
+                new_lines.append(f'updated_at: "{dt}"')
+                continue
+
+        new_lines.append(line)
+
+    new_content = '\n'.join(new_lines)
+
+    fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(filepath)), text=True)
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+
+    temp_valid, temp_msgs = validate_task_document(temp_path)
+    if not temp_valid:
+        os.remove(temp_path)
+        print("FAIL: update results in invalid task document:")
+        for m in temp_msgs: print(f"  - {m}")
+        sys.exit(1)
+
+    os.replace(temp_path, filepath)
+    print(f"Updated {filepath}")
+
+def cmd_task_validate_all():
+    tasks_dir = "tasks"
+    if not os.path.exists(tasks_dir):
+        print("PASS: no tasks directory")
+        sys.exit(0)
+
+    all_pass = True
+    ids = set()
+    for filename in os.listdir(tasks_dir):
+        if not filename.endswith(".md"): continue
+        filepath = os.path.join(tasks_dir, filename)
+        is_valid, msgs = validate_task_document(filepath)
+        if not is_valid:
+            print(f"FAIL: {filepath} is invalid:")
+            for m in msgs: print(f"  - {m}")
+            all_pass = False
+
+        with open(filepath, 'r', encoding='utf-8') as f:
+            yaml_data, _ = parse_yaml_frontmatter(f.read())
+            if yaml_data:
+                tid = yaml_data.get("task_id")
+                if tid:
+                    if tid != filename[:-3]:
+                        print(f"FAIL: {filepath} filename mismatch with task_id {tid}")
+                        all_pass = False
+                    if tid in ids:
+                        print(f"FAIL: {filepath} duplicate task_id {tid}")
+                        all_pass = False
+                    ids.add(tid)
+
+    if all_pass:
+        print("PASS: all tasks valid")
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+def cmd_task_renumber_preview():
+    tasks_dir = "tasks"
+    next_id, ids = get_next_task_id(tasks_dir)
+    ids.sort()
+    duplicates = set([x for x in ids if ids.count(x) > 1])
+    gaps = []
+    for i in range(1, max(ids)+1) if ids else []:
+        if i not in ids:
+            gaps.append(i)
+
+    print(f"Existing IDs: {ids}")
+    if gaps:
+        print(f"Gaps: {gaps}")
+    if duplicates:
+        print(f"Duplicates: {duplicates}")
+    print(f"Next ID by max+1 rule: {next_id}")
 
 def main():
     if len(sys.argv) < 2:
         print("Usage: aos_task_document_check.py [mode]")
         sys.exit(1)
-        
+
     mode = sys.argv[1]
-    
+
     if mode == "validate":
         if len(sys.argv) < 3:
             sys.exit(1)
@@ -335,6 +574,23 @@ def main():
         if len(sys.argv) < 3:
             sys.exit(1)
         cmd_log_check(sys.argv[2])
+    elif mode == "task":
+        if len(sys.argv) < 3:
+            sys.exit(1)
+        sub = sys.argv[2]
+        if sub == "--new":
+            cmd_task_new()
+        elif sub == "--new-batch":
+            cmd_task_new_batch()
+        elif sub == "--set-queue":
+            cmd_task_set_queue(sys.argv[3:])
+        elif sub == "--validate-all":
+            cmd_task_validate_all()
+        elif sub == "--renumber-preview":
+            cmd_task_renumber_preview()
+        else:
+            print(f"Unknown task sub-command: {sub}")
+            sys.exit(1)
     else:
         print(f"Unknown mode: {mode}")
         sys.exit(1)

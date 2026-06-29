@@ -1,0 +1,3 @@
+- Implement feature A
+- Implement feature B
+- Fix bug C
