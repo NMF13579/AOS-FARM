@@ -301,5 +301,159 @@ APPROVED
             os.chdir(original_cwd)
             shutil.rmtree(temp_dir)
 
+    def test_handoff_prompt_comprehensive(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+
+            valid_yaml = """---
+task_id: "AOS-FARM-TASK-0003"
+title: "Valid task for handoff"
+type: "task"
+template_level: "S"
+status: "DRAFT"
+queue_mode: "AUTO"
+queue_position: null
+queue_status: "BACKLOG"
+queue_priority: "NORMAL"
+risk_profile: "LOW_RISK_FAST"
+risk_assigned_by: "human"
+approval_status: "APPROVED"
+human_checkpoint_required: true
+validator_status: "VALIDATION_COMPLETE"
+evidence_status: "EVIDENCE_COLLECTED"
+log_uri: ".aos-tmp/tasks/AOS-FARM-TASK-0003/agent-actions.log"
+log_status: "NOT_STARTED"
+owner: "human"
+created_at: "2024"
+updated_at: "2024"
+---"""
+
+            valid_body = """
+## Задача
+goal
+
+## Out of scope
+out of scope definition
+
+## Done когда
+done
+
+## История
+hist
+
+## Evidence
+ev
+
+## ⛔ Решение
+APPROVED
+"""
+
+            # A. Successful prompt for READY_FOR_HANDOFF fixture
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(valid_yaml + valid_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            out = res.stdout
+
+            self.assertIn("AOS-FARM Controlled Task Handoff Prompt", out)
+            self.assertIn("Source of Truth:", out)
+            self.assertIn("* The task file is the Source of Truth.", out)
+            self.assertIn("* This handoff prompt is derived output.", out)
+            self.assertIn("Evidence is not approval.", out)
+            self.assertIn("PASS is not approval.", out)
+            self.assertIn("CI PASS is not approval.", out)
+            self.assertIn("NOT_RUN is not PASS.", out)
+            self.assertIn("UNKNOWN is not OK.", out)
+            self.assertIn("Human approval cannot be simulated.", out)
+            self.assertIn("* This prompt does not authorize READY_FOR_EXECUTION.", out)
+            self.assertIn("* This prompt does not authorize commit.", out)
+            self.assertIn("* This prompt does not authorize push.", out)
+            self.assertIn("* This prompt does not authorize release.", out)
+            self.assertIn("Protected/canonical boundary:", out)
+            self.assertIn("Stop condition:", out)
+            self.assertNotIn("READY_FOR_EXECUTION granted.", out)
+            self.assertNotIn("READY_FOR_EXECUTION approved.", out)
+            self.assertNotIn("READY_FOR_EXECUTION created.", out)
+            self.assertNotIn("Task is READY_FOR_EXECUTION.", out)
+            self.assertNotIn("Handoff approved.", out)
+            self.assertNotIn("Approval granted.", out)
+
+            # B. Fail-closed for BLOCKED
+            blocked_yaml = valid_yaml.replace('risk_profile: "LOW_RISK_FAST"', 'risk_profile: "UNKNOWN_BLOCKED"')
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(blocked_yaml + valid_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("FAIL:", res.stdout)
+            self.assertIn("BLOCKED", res.stdout)
+
+            # C. Fail-closed for HUMAN_REVIEW_REQUIRED
+            hr_yaml = valid_yaml.replace('validator_status: "VALIDATION_COMPLETE"', 'validator_status: "NOT_RUN"')
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(hr_yaml + valid_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("FAIL:", res.stdout)
+            self.assertIn("HUMAN_REVIEW_REQUIRED", res.stdout)
+
+            # D. Fail-closed for FAIL
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write("invalid content")
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("FAIL", res.stdout)
+
+            # E. Missing out-of-scope boundary fails closed
+            # Actually remove the section heading and content
+            no_oos_body = valid_body.replace("## Out of scope\nout of scope definition", "")
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(valid_yaml + no_oos_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+            # F. Missing done criteria fails closed
+            no_done = valid_body.replace("## Done когда\ndone", "")
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(valid_yaml + no_done)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+            # G. Missing Evidence section fails closed
+            no_ev = valid_body.replace("## Evidence\nev", "")
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(valid_yaml + no_ev)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+            # H. Missing human-only decision section fails closed
+            no_hd = valid_body.replace("## ⛔ Решение\nAPPROVED", "")
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(valid_yaml + no_hd)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+            # I. Missing assigned Risk Profile fails closed
+            no_risk_yaml = valid_yaml.replace('risk_profile: "LOW_RISK_FAST"\n', "")
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(no_risk_yaml + valid_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+            # J. Invalid assigned Risk Profile fails closed
+            inv_risk_yaml = valid_yaml.replace('risk_profile: "LOW_RISK_FAST"', 'risk_profile: "UNKNOWN_BLOCKED"')
+            with open("tasks/AOS-FARM-TASK-0003.md", "w") as f:
+                 f.write(inv_risk_yaml + valid_body)
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--handoff-prompt", "AOS-FARM-TASK-0003"], capture_output=True, text=True)
+            self.assertNotEqual(res.returncode, 0)
+
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
 if __name__ == '__main__':
     unittest.main()

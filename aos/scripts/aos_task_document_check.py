@@ -767,6 +767,129 @@ def cmd_task_readiness_all():
     else:
         sys.exit(1)
 
+def cmd_task_handoff_prompt(filepath):
+    if not os.path.exists(filepath) and not filepath.endswith(".md"):
+        filepath = os.path.join("tasks", f"{filepath}.md")
+
+    if not os.path.exists(filepath):
+        print(f"FAIL: {filepath} not found")
+        sys.exit(1)
+
+    status, reasons = check_task_readiness(filepath)
+    if status != "READY_FOR_HANDOFF":
+        print(f"FAIL: Task readiness is {status}. Must be READY_FOR_HANDOFF.")
+        print("Reasons:")
+        for r in reasons:
+            print(f"- {r}")
+        sys.exit(1)
+
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    body = '\n'.join(content.split('\n')[end_idx+1:])
+
+    def extract_section(section_name):
+        idx = body.find(section_name)
+        if idx == -1: return ""
+        start_idx = idx + len(section_name)
+        end_idx = body.find("## ", start_idx)
+        if end_idx == -1: end_idx = len(body)
+        return body[start_idx:end_idx].strip()
+
+    scope = extract_section("## Задача")
+    done_criteria = extract_section("## Done когда")
+    evidence = extract_section("## Evidence")
+    human_decision = extract_section("## ⛔ Решение")
+
+    out_of_scope = extract_section("## Out of scope")
+    if not out_of_scope:
+        print("FAIL: out-of-scope boundary is missing")
+        sys.exit(1)
+
+    if not done_criteria:
+        print("FAIL: done criteria are missing")
+        sys.exit(1)
+    if not evidence:
+        print("FAIL: Evidence section is missing")
+        sys.exit(1)
+    if not human_decision:
+        print("FAIL: human-only decision section is missing")
+        sys.exit(1)
+
+    risk_profile = yaml_data.get("risk_profile")
+    if not risk_profile or risk_profile == "UNKNOWN_BLOCKED":
+        print("FAIL: assigned Risk Profile is missing or invalid")
+        sys.exit(1)
+
+    task_id = yaml_data.get("task_id", "UNKNOWN")
+    title = yaml_data.get("title", "UNKNOWN")
+    task_status = yaml_data.get("status", "UNKNOWN")
+    queue_status = yaml_data.get("queue_status", "UNKNOWN")
+    queue_pos = yaml_data.get("queue_position")
+    queue_pos_str = "null" if queue_pos is None else str(queue_pos)
+
+    prompt = f"""AOS-FARM Controlled Task Handoff Prompt
+
+* Task ID: {task_id}
+* Task title: {title}
+* Task status: {task_status}
+* Risk Profile: {risk_profile}
+* Queue status: {queue_status}
+* Queue position: {queue_pos_str}
+* Readiness: {status}
+
+Source of Truth:
+* The task file is the Source of Truth.
+* This handoff prompt is derived output.
+* If this prompt conflicts with the task file, the task file wins.
+
+Scope:
+{scope}
+
+Out of scope:
+{out_of_scope}
+
+Done criteria:
+{done_criteria}
+
+Evidence boundary:
+* Evidence may be collected.
+* Evidence is not approval.
+* PASS is not approval.
+* CI PASS is not approval.
+* NOT_RUN is not PASS.
+* UNKNOWN is not OK.
+
+Approval boundary:
+* Human approval cannot be simulated.
+* This prompt does not authorize approval.
+* This prompt does not authorize READY_FOR_EXECUTION.
+* This prompt does not authorize commit.
+* This prompt does not authorize push.
+* This prompt does not authorize release.
+
+Mutation boundary:
+* Do not edit human-only decision.
+* Do not assign Risk Profile.
+* Do not create approval.
+* Do not create READY_FOR_EXECUTION.
+* Do not change lifecycle unless explicitly authorized in a separate human instruction.
+
+Protected/canonical boundary:
+* Do not modify root 00/01/02 without separate human checkpoint.
+* Do not modify protected/canonical files unless task scope explicitly allows it and human checkpoint is present.
+
+Stop condition:
+* Complete only the scoped work.
+* Run validations.
+* Report changed files.
+* Report validation results.
+* Do not commit unless separately authorized.
+* Do not push unless separately authorized.
+* Do not release unless separately authorized."""
+    print(prompt)
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: aos_task_document_check.py [mode]")
@@ -816,6 +939,10 @@ def main():
             cmd_task_readiness(sys.argv[3])
         elif sub == "--readiness-all":
             cmd_task_readiness_all()
+        elif sub == "--handoff-prompt":
+            if len(sys.argv) < 4:
+                sys.exit(1)
+            cmd_task_handoff_prompt(sys.argv[3])
         else:
             print(f"Unknown task sub-command: {sub}")
             sys.exit(1)
