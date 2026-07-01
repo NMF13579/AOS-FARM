@@ -89,6 +89,45 @@ class TestAOSTaskDocumentCheck(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("Next candidate is not approval.", res.stdout)
 
+    def test_queue_next_skips_done_tasks(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            done_task = """---
+task_id: AOS-FARM-TASK-0001
+title: Done task
+status: READY_FOR_EXECUTION
+queue_mode: MANUAL
+queue_position: 1
+queue_status: DONE
+---
+"""
+            next_task = """---
+task_id: AOS-FARM-TASK-0002
+title: Backlog task
+status: DRAFT
+queue_mode: MANUAL
+queue_position: 2
+queue_status: BACKLOG
+---
+"""
+            with open("tasks/AOS-FARM-TASK-0001.md", "w") as f:
+                f.write(done_task)
+            with open("tasks/AOS-FARM-TASK-0002.md", "w") as f:
+                f.write(next_task)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "queue", "--next"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+            self.assertIn("Next task: AOS-FARM-TASK-0002", res.stdout)
+            self.assertNotIn("Next task: AOS-FARM-TASK-0001", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
     def test_queue_explain(self):
         res = self.run_cmd("queue", "--explain", "AOS-FARM-TASK-0001")
         # It might fail if task is not there, but it shouldn't mutate

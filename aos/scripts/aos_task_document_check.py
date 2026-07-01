@@ -9,6 +9,8 @@ QUEUE_STATUSES = {"BACKLOG", "NEXT", "IN_PROGRESS", "BLOCKED", "DONE"}
 QUEUE_MODES = {"AUTO", "MANUAL", "PINNED"}
 QUEUE_PRIORITIES = {"LOW", "NORMAL", "HIGH"}
 TEMPLATE_LEVELS = {"S", "M", "L"}
+NEXT_CANDIDATE_QUEUE_STATUSES = {"BACKLOG", "NEXT", "IN_PROGRESS"}
+NON_NEXT_LIFECYCLE_STATUSES = {"BLOCKED", "CLOSED", "REJECTED"}
 
 REQUIRED_YAML_FIELDS = {
     "task_id", "title", "type", "template_level", "status", "queue_mode",
@@ -216,6 +218,12 @@ def calculate_queue(tasks):
 
     return queue
 
+def is_next_candidate(task):
+    return (
+        task.get("queue_status") in NEXT_CANDIDATE_QUEUE_STATUSES
+        and task.get("status") not in NON_NEXT_LIFECYCLE_STATUSES
+    )
+
 def cmd_queue_list():
     tasks = load_all_tasks()
     queue = calculate_queue(tasks)
@@ -230,10 +238,11 @@ def cmd_queue_list():
 def cmd_queue_next():
     tasks = load_all_tasks()
     queue = calculate_queue(tasks)
-    if queue:
-        print(f"Next task: {queue[0]['task_id']}")
+    candidates = [t for t in queue if is_next_candidate(t)]
+    if candidates:
+        print(f"Next task: {candidates[0]['task_id']}")
     else:
-        print("Queue is empty.")
+        print("No next task candidate.")
     print("Next candidate is not approval.")
     print("Next candidate is not execution authorization.")
     print("Risk Profile must be assigned separately.")

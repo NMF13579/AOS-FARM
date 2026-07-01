@@ -53,10 +53,10 @@ log_status: NOT_RUN
 log_uri: .aos-tmp/tasks/AOS-FARM-TASK-0513/log.txt
 template_level: task
 owner: human
-queue_position: 1
+queue_position: 2
 queue_mode: MANUAL
 queue_priority: NORMAL
-queue_status: IN_PROGRESS
+queue_status: DONE
 human_checkpoint_required: true
 created_at: null
 updated_at: null
