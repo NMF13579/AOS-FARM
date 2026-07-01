@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agentos.pipelines.document_pipeline import ingest_document, ingest_path
+from aos.pipelines.document_pipeline import ingest_document, ingest_path
 
 
 class DocumentPipelineTests(unittest.TestCase):

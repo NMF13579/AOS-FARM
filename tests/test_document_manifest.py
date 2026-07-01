@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agentos.pipelines.document_pipeline import ingest_batch, ingest_directory
-from agentos.pipelines.document_manifest import DocumentManifest
+from aos.pipelines.document_pipeline import ingest_batch, ingest_directory
+from aos.pipelines.document_pipeline import DocumentManifest
 
 
 class DocumentManifestTests(unittest.TestCase):
