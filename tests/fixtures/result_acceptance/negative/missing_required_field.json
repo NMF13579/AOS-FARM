@@ -1,0 +1,17 @@
+{
+  "human_decision": "ACCEPT_RESULT",
+  "result_accepted_by_human": true,
+  "task_quality_status": "PASS",
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false,
+  "next_task_started": false,
+  "lifecycle_mutation_authorized": false,
+  "task_title": "Task 443",
+  "task_quality_package_path": "reports/tq.json",
+  "task_quality_result_path": "reports/tq-result.json",
+  "acceptance_summary_path": "reports/summary.md",
+  "human_decision_reason": "Looks good",
+  "human_acknowledges_known_limits": true
+}

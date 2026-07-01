@@ -1,0 +1,10 @@
+AOS-FARM-TASK-9001 pass_fixture
+AOS-FARM-TASK-9002 missing_result
+AOS-FARM-TASK-9003 false_approval
+AOS-FARM-TASK-9004 ready_for_execution
+AOS-FARM-TASK-9005 pass_without_evidence
+AOS-FARM-TASK-9006 protected_file
+AOS-FARM-TASK-9007 commit_without_authorization
+AOS-FARM-TASK-9008 push_without_authorization
+AOS-FARM-TASK-9009 aos_tmp_source_of_truth
+AOS-FARM-TASK-9010 generated_registry_cache
