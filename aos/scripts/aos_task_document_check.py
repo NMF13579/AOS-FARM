@@ -604,8 +604,12 @@ def check_task_readiness(filepath, all_tasks=None):
         reasons_blocked.append(f"Invalid status: {yaml_data.get('status')}")
 
     if yaml_data.get("status") == "READY_FOR_EXECUTION":
-        if yaml_data.get("approval_status") != "APPROVED":
-             reasons_blocked.append("status READY_FOR_EXECUTION without explicit APPROVED approval_status")
+        if yaml_data.get("approval_status") == "REJECTED":
+            reasons_blocked.append("status READY_FOR_EXECUTION with REJECTED approval_status")
+        if yaml_data.get("risk_profile_assigned_by_human") in (None, "", "null"):
+            reasons_blocked.append("status READY_FOR_EXECUTION without human-assigned risk profile")
+        if yaml_data.get("execution_authorized") is not True:
+            reasons_blocked.append("status READY_FOR_EXECUTION without execution_authorized true")
 
     risk = yaml_data.get("risk_profile")
     if not risk:
