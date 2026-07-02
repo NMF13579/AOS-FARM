@@ -14,17 +14,22 @@ To understand the current state safely, run:
 ```bash
 python3 aos/scripts/aos_install.py --dry-run
 python3 aos/scripts/aos_consumer_self_test.py
+python3 aos/scripts/aos_doctor.py
+python3 aos/scripts/aos_queue_dashboard.py
 ```
 - **dry-run** shows what would be installed;
 - **self-test** checks package integrity and target state;
-- both are Evidence only;
-- neither grants approval.
+- **doctor** provides a read-only validation summary;
+- **queue dashboard** shows a derived view of the current task queue;
+- all of these are Evidence only;
+- none of them grant approval.
 
 ## 3. Expected files
 - `/llms.txt`
 - `/AGENTS.md`
 - `/aos/`
 - `/project/`
+- `/aos/prompt-packs/`
 - `/aos-modules/`
 - `/.aos-tmp/`
 

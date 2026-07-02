@@ -19,6 +19,9 @@ Duplicating large rule sets across multiple environment-specific start files lea
 `llms.txt` directs agents to `/aos/docs/ROUTES.md`, `/aos/docs/STORAGE.md`, `/aos/docs/AUTHORIZATION-COMMANDS.md`, etc. 
 This structure ensures that detailed instructions, governance, workflow, and safety definitions live strictly in their designated documentation files, avoiding bloat in the root entrypoint files.
 
+## Prompt Packs
+Agents may also be provided with specific [Prompt Packs](../prompt-packs/README.md) that contain tailored contexts and commands. These packs also strictly adhere to the rule of pointing to the core governance documents rather than duplicating them.
+
 ## Future Planned Adapters
 In future stages, additional adapters will be implemented following this same model (pointing to `llms.txt`):
 - `CLAUDE.md`

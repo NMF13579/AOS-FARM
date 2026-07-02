@@ -1,6 +1,6 @@
-# Prompt Pack: chatgpt
+# Prompt Pack: codex-cli
 
-This prompt pack is a thin adapter for chatgpt.
+This prompt pack is a thin adapter for codex-cli.
 
 ## Routing
 Before proceeding with any task, you MUST read and follow the instructions in:

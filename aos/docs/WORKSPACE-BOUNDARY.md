@@ -22,7 +22,11 @@ This document explains the folder boundary model for AOS-FARM consumer usage.
 - It is a module boundary only, not part of the core package.
 - **Not for**: Core package files.
 
-## 5. /.aos-tmp/
+## 5. /aos/prompt-packs/
+- **Purpose**: Specific instructions for different agent environments (Prompt Packs).
+- **Not for**: General documentation or product code.
+
+## 6. /.aos-tmp/
 - **Purpose**: Local temporary scratch workspace only.
 - It is ignored by version control and is entirely disposable.
 - **Not for**: Evidence, reports, approvals, checkpoints, or canonical files.
@@ -36,6 +40,7 @@ This document explains the folder boundary model for AOS-FARM consumer usage.
 | `/aos/root/` | root templates | `AGENTS.md`, `llms.txt` | active target runtime state | yes, as templates |
 | `/project/` | project documentation workspace | requirements, plans, decisions | default `src/`, `app/`, `backend/` | yes, for project docs |
 | `/aos-modules/` | module container | module docs/packages | core package files | depends on module |
+| `/aos/prompt-packs/` | agent instructions | agent-specific prompt guidelines | general documentation | yes, for prompts |
 | `/.aos-tmp/` | temporary scratch | transient logs, temporary command output | Evidence, approvals, reports, canonical files | no |
 
 ## Where should an agent write?

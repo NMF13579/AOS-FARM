@@ -1,6 +1,6 @@
-# Prompt Pack: chatgpt
+# Prompt Pack: cursor
 
-This prompt pack is a thin adapter for chatgpt.
+This prompt pack is a thin adapter for cursor.
 
 ## Routing
 Before proceeding with any task, you MUST read and follow the instructions in:

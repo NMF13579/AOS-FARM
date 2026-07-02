@@ -1,6 +1,6 @@
-# Prompt Pack: chatgpt
+# Prompt Pack: claude-code
 
-This prompt pack is a thin adapter for chatgpt.
+This prompt pack is a thin adapter for claude-code.
 
 ## Routing
 Before proceeding with any task, you MUST read and follow the instructions in:

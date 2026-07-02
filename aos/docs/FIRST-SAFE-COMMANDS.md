@@ -80,6 +80,12 @@ python3 aos/scripts/aos_task_document_check.py queue --list
 
 # View next task candidate
 python3 aos/scripts/aos_task_document_check.py queue --next
+
+# Run read-only validation aggregator (AOS Doctor)
+python3 aos/scripts/aos_doctor.py
+
+# View derived queue dashboard
+python3 aos/scripts/aos_queue_dashboard.py
 ```
 
 ---

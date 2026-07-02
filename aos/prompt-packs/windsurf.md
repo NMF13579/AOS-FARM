@@ -1,6 +1,6 @@
-# Prompt Pack: chatgpt
+# Prompt Pack: windsurf
 
-This prompt pack is a thin adapter for chatgpt.
+This prompt pack is a thin adapter for windsurf.
 
 ## Routing
 Before proceeding with any task, you MUST read and follow the instructions in:
