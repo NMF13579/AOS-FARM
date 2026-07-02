@@ -13,8 +13,22 @@ BLOCKED = "BLOCKED"
 UNKNOWN_BLOCKED = "UNKNOWN_BLOCKED"
 HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
 NOT_RUN = "NOT_RUN"
+SESSION_CONSISTENCY_PASS = "SESSION_CONSISTENCY_PASS"
+SESSION_CONSISTENCY_PASS_WITH_WARNINGS = "SESSION_CONSISTENCY_PASS_WITH_WARNINGS"
+SESSION_CONSISTENCY_NOT_READY = "SESSION_CONSISTENCY_NOT_READY"
+SESSION_CONSISTENCY_BLOCKED = "SESSION_CONSISTENCY_BLOCKED"
 
-EXIT_CODES = {PASS: 0, BLOCKED: 1, UNKNOWN_BLOCKED: 1, HUMAN_REVIEW_REQUIRED: 1, NOT_RUN: 1}
+EXIT_CODES = {
+    PASS: 0, 
+    BLOCKED: 1, 
+    UNKNOWN_BLOCKED: 1, 
+    HUMAN_REVIEW_REQUIRED: 1, 
+    NOT_RUN: 1,
+    SESSION_CONSISTENCY_PASS: 0,
+    SESSION_CONSISTENCY_PASS_WITH_WARNINGS: 0,
+    SESSION_CONSISTENCY_NOT_READY: 1,
+    SESSION_CONSISTENCY_BLOCKED: 2,
+}
 DEVELOPMENT_PROTECTED_FILES = {
     "00_AOS_Core_Control.md",
     "01_AOS_Assembly_Pipelines_and_Build_Roadmap.md",
@@ -349,6 +363,179 @@ def postcheck(
     )
 
 
+def _get_raw_text_scanner() -> Any:
+    try:
+        import importlib.util
+        p = Path("aos/scripts/aos_semantic_guard.py").resolve()
+        if p.exists():
+            spec = importlib.util.spec_from_file_location("aos_semantic_guard", p)
+            if spec and spec.loader:
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                return getattr(module, "collect_raw_text_authority_claims", None)
+    except Exception:
+        pass
+    return None
+
+def _safe_load_artifact(context: GuardContext, path_value: str | Path, artifact_name: str) -> tuple[Any, Path | None, GuardResult | None]:
+    try:
+        candidate = Path(path_value)
+        if candidate.is_absolute():
+            resolved = candidate.resolve()
+        else:
+            resolved = (context.project_root / candidate).resolve()
+            
+        if not str(resolved).startswith(str(context.project_root.resolve())):
+            return None, resolved, GuardResult(
+                mode="sessioncheck",
+                status=SESSION_CONSISTENCY_BLOCKED,
+                summary=f"artifact path is outside repo root: {path_value}",
+                blocked_items=[f"{artifact_name} is outside repo root"],
+                details=_context_details(context),
+            )
+            
+        if not resolved.exists():
+            return None, resolved, GuardResult(
+                mode="sessioncheck",
+                status=SESSION_CONSISTENCY_BLOCKED,
+                summary=f"artifact not found: {path_value}",
+                blocked_items=[f"{artifact_name} not found"],
+                details=_context_details(context),
+            )
+            
+        if resolved.is_dir():
+            return None, resolved, GuardResult(
+                mode="sessioncheck",
+                status=SESSION_CONSISTENCY_BLOCKED,
+                summary=f"artifact is a directory: {path_value}",
+                blocked_items=[f"{artifact_name} is a directory"],
+                details=_context_details(context),
+            )
+            
+        doc = _load_structured_document(resolved)
+        return doc, resolved, None
+    except Exception as e:
+        return None, Path(path_value), GuardResult(
+            mode="sessioncheck",
+            status=UNKNOWN_BLOCKED,
+            summary=f"malformed artifact: {path_value}",
+            unknown_items=[f"{artifact_name} is malformed or unparseable: {e}"],
+            details=_context_details(context),
+        )
+
+def sessioncheck(
+    request_path: str | Path,
+    preconditions_path: str | Path,
+    boundary_path: str | Path,
+    record_path: str | Path,
+    project_root: str | Path = ".",
+    aos_root: str | Path = "aos",
+) -> GuardResult:
+    context = GuardContext.from_values(project_root, aos_root)
+    
+    docs = {}
+    paths = {}
+    
+    for name, p in [("request", request_path), ("preconditions", preconditions_path), ("boundary", boundary_path), ("record", record_path)]:
+        doc, resolved, err = _safe_load_artifact(context, p, name)
+        if err:
+            return err
+        if not isinstance(doc, dict):
+            return GuardResult(
+                mode="sessioncheck",
+                status=SESSION_CONSISTENCY_BLOCKED,
+                summary=f"artifact {name} must be a mapping",
+                blocked_items=[f"{name} is not a dictionary"],
+                details=_context_details(context),
+            )
+        docs[name] = doc
+        paths[name] = resolved
+
+    blocked_items = []
+    
+    task_id = docs["request"].get("task_id")
+    request_id = docs["request"].get("request_id")
+    preconditions_id = docs["preconditions"].get("preconditions_id")
+    boundary_id = docs["boundary"].get("boundary_id")
+    
+    if not task_id: blocked_items.append("task_id is missing in request")
+    if not request_id: blocked_items.append("request_id is missing in request")
+    if not preconditions_id: blocked_items.append("preconditions_id is missing in preconditions")
+    if not boundary_id: blocked_items.append("boundary_id is missing in boundary")
+
+    for name in ["preconditions", "boundary", "record"]:
+        if docs[name].get("task_id") != task_id:
+            blocked_items.append(f"task_id mismatch in {name}")
+        if docs[name].get("request_id") != request_id:
+            blocked_items.append(f"request_id mismatch in {name}")
+            
+    if docs["record"].get("preconditions_id") and docs["record"].get("preconditions_id") != preconditions_id:
+        blocked_items.append("preconditions_id mismatch in record")
+        
+    if docs["record"].get("boundary_id") and docs["record"].get("boundary_id") != boundary_id:
+        blocked_items.append("boundary_id mismatch in record")
+        
+    forbidden_claims = [
+        "approval_claimed",
+        "task_completion_claimed",
+        "result_verification_claimed",
+        "execution_completed",
+        "result_verified",
+        "commit_performed",
+        "push_performed",
+        "merge_performed",
+        "release_performed",
+        "lifecycle_mutation_performed",
+        "commit_authorized",
+        "push_authorized",
+        "merge_authorized",
+        "release_authorized",
+        "approval_created",
+        "human_approved"
+    ]
+    
+    scanner = _get_raw_text_scanner()
+    
+    for name, doc in docs.items():
+        for claim in forbidden_claims:
+            if _flag_is_true(doc, claim):
+                blocked_items.append(f"artifact {name} claims {claim}: true")
+                
+        if paths[name]:
+            raw_text = paths[name].read_text(encoding="utf-8")
+            if scanner:
+                raw_claims = scanner(raw_text)
+                for rc in raw_claims:
+                    blocked_items.append(f"artifact {name} contains unsafe claim: {rc}")
+
+    if blocked_items:
+        return GuardResult(
+            mode="sessioncheck",
+            status=SESSION_CONSISTENCY_BLOCKED,
+            summary="session consistency check failed",
+            blocked_items=blocked_items,
+            details=_context_details(context)
+        )
+        
+    record = docs["record"]
+    if not (_flag_is_true(record, "handoff_to_result_verification_required") or _flag_is_true(record, "human_review_required")):
+        return GuardResult(
+            mode="sessioncheck",
+            status=SESSION_CONSISTENCY_NOT_READY,
+            summary="session record is missing handoff boundary",
+            not_run_items=["missing handoff_to_result_verification_required or human_review_required"],
+            details=_context_details(context)
+        )
+        
+    return GuardResult(
+        mode="sessioncheck",
+        status=SESSION_CONSISTENCY_PASS,
+        summary="session artifacts are consistent",
+        pass_items=["task_id matched across artifacts", "request_id matched", "no forbidden claims found", "handoff boundary preserved"],
+        details=_context_details(context)
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Controlled Execution Guard MVP")
     parser.add_argument("--project-root", default=".", help="Host project root that contains the transferable aos/ bundle")
@@ -367,6 +554,12 @@ def build_parser() -> argparse.ArgumentParser:
     scope_parser.add_argument("--package", required=True, help="Path to controlled execution package YAML")
     scope_parser.add_argument("--changed-files", required=True, help="Path to structured changed-files input")
 
+    sessioncheck_parser = subparsers.add_parser("sessioncheck", help="Check execution session consistency")
+    sessioncheck_parser.add_argument("--request", required=True, help="Path to request artifact")
+    sessioncheck_parser.add_argument("--preconditions", required=True, help="Path to preconditions artifact")
+    sessioncheck_parser.add_argument("--boundary", required=True, help="Path to boundary artifact")
+    sessioncheck_parser.add_argument("--record", required=True, help="Path to record artifact")
+
     return parser
 
 
@@ -383,6 +576,15 @@ def main(argv: list[str] | None = None) -> int:
             result = scopecheck(
                 args.package,
                 args.changed_files,
+                project_root=args.project_root,
+                aos_root=args.aos_root,
+            )
+        elif args.command == "sessioncheck":
+            result = sessioncheck(
+                args.request,
+                args.preconditions,
+                args.boundary,
+                args.record,
                 project_root=args.project_root,
                 aos_root=args.aos_root,
             )
@@ -655,15 +857,22 @@ def _load_structured_document(path: Path) -> Any:
     raw_text = path.read_text(encoding="utf-8")
     suffix = path.suffix.lower()
     try:
+        if suffix == ".json":
+            import json
+            return json.loads(raw_text)
         if suffix in {".yaml", ".yml"}:
             return _parse_simple_yaml(raw_text)
         if suffix == ".md":
-            match = re.search(r"```yaml\n(.*?)\n```", raw_text, re.DOTALL)
+            match = re.search(r"```(?:yaml|json)\n(.*?)\n```", raw_text, re.DOTALL)
             if not match:
                 return None
-            return _parse_simple_yaml(match.group(1))
-    except ValueError as exc:
-        raise InputError(f"yaml parse error in {path}: {exc}") from exc
+            try:
+                import json
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                return _parse_simple_yaml(match.group(1))
+    except Exception as exc:
+        raise InputError(f"parse error in {path}: {exc}") from exc
     raise InputError(f"unsupported file type: {path.suffix}")
 
 

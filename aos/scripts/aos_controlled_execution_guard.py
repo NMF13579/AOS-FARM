@@ -20,6 +20,21 @@ def _load_module():
 
 def main(argv: list[str] | None = None) -> int:
     module = _load_module()
+    
+    if argv is None:
+        argv = sys.argv[1:]
+    
+    if "sessioncheck" in argv:
+        print("Session consistency is not approval.")
+        print("Session consistency is not result verification.")
+        print("Session consistency is not task completion.")
+        print("Session consistency does not authorize commit.")
+        print("Session consistency does not authorize push.")
+        print("Session consistency does not authorize merge.")
+        print("Session consistency does not authorize release.")
+        print("Session consistency does not mutate lifecycle.")
+        print()
+
     return module.main(argv)
 
 
