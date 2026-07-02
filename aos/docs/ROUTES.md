@@ -34,7 +34,8 @@ to the human owner.
 |---|---|---|---|---|---|
 | **New user start** | `aos/START_HERE.md` → `aos/docs/user-guide/first-run.md` | `00`, `01`, `02`, `aos/START_HERE.md` | Read only; orient | Any uncertainty about scope | No (reading) |
 | **Russian new user start** | `aos/docs/START-RU.md` | `00`, `01`, `02` | Read only; orient | Any uncertainty about scope | No (reading) |
-| **Installation docs** | `aos/docs/INSTALL.md` | `02` | Read only | N/A | No (reading) |
+| **Installation Guide** | `aos/docs/INSTALL.md` | `02` | Read only | Dry-run only | No (reading) |
+| **First Start Guide** | `aos/docs/FIRST-START.md` | `02` | Read only | N/A | No (reading) |
 | **Storage docs** | `aos/docs/STORAGE.md` | `02` | Read only | N/A | No (reading) |
 | **Agent entrypoints** | `aos/docs/AGENT-ENTRYPOINTS.md` | `02` | Read only | N/A | No (reading) |
 | **Consumer Self-Test** | `aos/docs/SELF-TEST.md` | `02` | Read only | N/A | No (reading) |
