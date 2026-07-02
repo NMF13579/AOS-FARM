@@ -13,6 +13,11 @@ Welcome to AOS. **This is the primary consumer entrypoint.** To ensure safe and 
 
 Before your agent can write any code, you must define the problem and establish technical boundaries. Follow this exact sequence:
 
+### Step 0: Task Intake Wizard
+Classify raw ideas before starting formal intake.
+- **What to do:** Evaluate the idea using `aos/templates/intake/task-intake-classification-template.md`.
+- **What it does:** Classifies the idea into explicit statuses (e.g., `NEEDS_PROBLEM_INTERVIEW`, `READY_FOR_TASK_CANDIDATE`). It enforces a strict medical-domain fast-exit (`HUMAN_REVIEW_REQUIRED`) if the request touches clinical or patient data.
+
 ### Step 1: Problem Intake
 Start by clearly defining what you are trying to build and the problems you are solving.
 - **What to do:** Have your AI agent read the guide at `aos/docs/workflow/first-session-guide.md` and initialize using `aos/prompts/problem-intake.md`.

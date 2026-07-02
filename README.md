@@ -19,7 +19,10 @@ AOS-FARM помогает безопасно работать с AI-помощн
 
 * [Начать](aos/docs/START-RU.md)
 * [Установка](aos/docs/INSTALL.md)
+* [Task Intake Wizard](aos/docs/TASK-INTAKE-WIZARD.md)
 * [Проверить проект](aos/docs/SELF-TEST.md)
+* [Unified Validate](aos/docs/VALIDATION.md)
+* [AOS Validate Script](aos/scripts/aos_validate.py)
 * [AOS Doctor](aos/scripts/aos_doctor.py)
 * [Queue Dashboard](aos/scripts/aos_queue_dashboard.py)
 * [Tutor](aos/docs/TUTOR.md)

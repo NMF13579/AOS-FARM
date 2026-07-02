@@ -81,6 +81,9 @@ python3 aos/scripts/aos_task_document_check.py queue --list
 # View next task candidate
 python3 aos/scripts/aos_task_document_check.py queue --next
 
+# Run unified validation orchestration
+python3 aos/scripts/aos_validate.py all
+
 # Run read-only validation aggregator (AOS Doctor)
 python3 aos/scripts/aos_doctor.py
 

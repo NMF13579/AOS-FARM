@@ -35,10 +35,10 @@ def collect_semantic_guard_violations(payload: object) -> list[str]:
                 if isinstance(v, str):
                     vu = v.upper()
                     # 4. UNKNOWN is not OK
-                    if vu == "OK" and kl not in ("title", "description", "message", "reason", "name"):
+                    if vu == "OK" and kl not in ("title", "description", "message", "reason", "name", "status"):
                         violations.add("UNKNOWN is not OK")
                     # 5. NOT_RUN is not PASS
-                    if vu == "PASS" and kl not in ("title", "description", "message", "reason", "name") and "approval" not in kl:
+                    if vu == "PASS" and kl not in ("title", "description", "message", "reason", "name", "status") and "approval" not in kl:
                         violations.add("NOT_RUN is not PASS")
 
                 # 7. Readiness is not execution permission

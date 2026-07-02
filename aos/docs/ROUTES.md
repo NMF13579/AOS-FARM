@@ -33,6 +33,7 @@ to the human owner.
 | Situation | Route | Read First | Allowed Action | Stop Condition | Human Checkpoint Required? |
 |---|---|---|---|---|---|
 | **New user start** | `aos/START_HERE.md` → `aos/docs/user-guide/first-run.md` | `00`, `01`, `02`, `aos/START_HERE.md` | Read only; orient | Any uncertainty about scope | No (reading) |
+| **Task Intake** | `aos/docs/TASK-INTAKE-WIZARD.md` | `00`, `01`, `02` | Classify raw ideas | Medical domain | No |
 | **Russian new user start** | `aos/docs/START-RU.md` | `00`, `01`, `02` | Read only; orient | Any uncertainty about scope | No (reading) |
 | **Installation Guide** | `aos/docs/INSTALL.md` | `02` | Read only | Dry-run only | No (reading) |
 | **First Start Guide** | `aos/docs/FIRST-START.md` | `02` | Read only | N/A | No (reading) |
@@ -42,6 +43,8 @@ to the human owner.
 | **Workspace Boundary** | `aos/docs/WORKSPACE-BOUNDARY.md` | `02` | Read only | N/A | No (reading) |
 | **Tutor docs** | `aos/docs/TUTOR.md` | `02` | Read only | N/A | No (reading) |
 | **Authorization Commands** | `aos/docs/AUTHORIZATION-COMMANDS.md` | `02` | Read only | N/A | No (reading) |
+| **Unified Validate** | `aos/docs/VALIDATION.md` | `02` (Evidence Gate) | Run validation checks | Command unavailable (report NOT_RUN) | No (validation is not approval) |
+| **AOS Validate Script** | `aos/scripts/aos_validate.py` | `02` | Read only | Validation only | No (validation is not approval) |
 | **AOS Doctor** | `aos/scripts/aos_doctor.py` | `02` | Read only | Validation only | No (validation is not approval) |
 | **Queue Dashboard** | `aos/scripts/aos_queue_dashboard.py` | `02` | Read only | Dashboard view only | No (derived view only) |
 | **Prompt Packs** | `aos/prompt-packs/README.md` | `02` | Read only | Orient prompt context | No (reading) |
