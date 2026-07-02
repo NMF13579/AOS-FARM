@@ -1,0 +1,22 @@
+# AOS Agent Route
+This repository uses AOS.
+Start here:
+1. Read `aos/docs/ROUTES.md`.
+2. Read `aos/docs/STORAGE.md` before writing files.
+3. Read `aos/docs/AUTHORIZATION-COMMANDS.md` before commit or push.
+4. Read `aos/docs/INSTALL.md` before running installer commands.
+5. Read `aos/docs/START-RU.md` if the user works in Russian.
+
+Critical rules:
+- PASS is not approval.
+- Evidence is not approval.
+- CI PASS is not approval.
+- UNKNOWN is not OK.
+- NOT_RUN is not PASS.
+- Human approval cannot be simulated.
+- Commit authorization is not push authorization.
+- Push authorization is not release authorization.
+- Plain-language words such as "комит" or "пуш" are intent only.
+- Exact commands such as `AOS COMMIT OK` and `AOS PUSH OK` are required for commit/push authorization.
+- Do not store user project data in `/aos/`.
+- Do not store Evidence, reports, approvals, checkpoints, or Source of Truth artifacts in `/.aos-tmp/`.
