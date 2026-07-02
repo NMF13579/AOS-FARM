@@ -47,6 +47,7 @@ to the human owner.
 | **Destructive operation request** | Stop → report → wait for human authorization + rollback plan | `02` (DESTRUCTIVE_OR_CANONICAL) | None without explicit authorization | Default: BLOCKED | **Yes** — explicit authorization + rollback plan required |
 | **CI workflow request** | Stop → draft proposal → wait for human | `02` (CI/CD Boundary) | Draft CI config only | Do not enable/disable checks without human approval | **Yes** — HIGH_RISK_PROTECTED |
 | **Validator change request** | Stop → draft proposal → wait for human | `02` (CI/CD Boundary) | Draft validator config only | Do not weaken or bypass validators without human approval | **Yes** — HIGH_RISK_PROTECTED |
+| **Need GitHub advisory CI in a target project?** | Use `/aos/root/.github/workflows/aos-advisory.yml` as the template. Copy it to target project root `.github/workflows/aos-advisory.yml`. Then review it before enabling any branch protection or required checks. | `02` (CI/CD Boundary) | Copy template | Do not describe as mandatory or approval authority | **Yes** — HIGH_RISK_PROTECTED |
 
 ---
 

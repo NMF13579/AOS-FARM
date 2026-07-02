@@ -1,0 +1,51 @@
+name: AOS Advisory Validation
+
+# This file is a template.
+# Copy it to target project root .github/workflows/aos-advisory.yml.
+# Advisory CI PASS is not approval.
+# This template does not enable branch protection or required checks.
+#
+# Advisory validation only.
+# CI PASS is not approval.
+# CI PASS does not authorize execution, commit, push, merge, release, or lifecycle mutation.
+# This workflow must not be configured as a required check by this stage.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - dev
+
+jobs:
+  aos-advisory-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          
+      - name: Python compile checks
+        run: |
+          python3 -m py_compile aos/scripts/aos_semantic_guard.py
+          python3 -m py_compile aos/scripts/aos_task_document_check.py
+          python3 -m py_compile aos/scripts/aos_result_acceptance.py
+          python3 -m py_compile aos/scripts/aos_task_quality_check.py
+          
+      - name: Semantic guard tests
+        run: |
+          python3 -m unittest discover -s tests -p "test_aos_*.py"
+          
+      - name: Task validator validate-all
+        run: |
+          python3 aos/scripts/aos_task_document_check.py task --validate-all
+          
+      - name: Queue list
+        run: |
+          python3 aos/scripts/aos_task_document_check.py queue --list
+          
+      - name: Queue next
+        run: |
+          python3 aos/scripts/aos_task_document_check.py queue --next

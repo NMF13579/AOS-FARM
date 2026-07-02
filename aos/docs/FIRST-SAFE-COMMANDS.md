@@ -112,6 +112,21 @@ Human must explicitly authorize the next task.
 
 ---
 
+## Category 5 — Consumer Advisory CI
+
+Optional advisory CI for GitHub projects is available.
+
+Template path: `/aos/root/.github/workflows/aos-advisory.yml`
+Target copy path: `.github/workflows/aos-advisory.yml`
+
+- Advisory CI is optional
+- CI PASS is not approval
+- It does not replace human review
+- It does not authorize commit/push/merge/release
+- It does not enable required checks by itself
+
+---
+
 ## Mandatory Boundary Statement
 
 ```text
