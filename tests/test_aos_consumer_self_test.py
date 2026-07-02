@@ -50,6 +50,15 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
         self.assertEqual(res["file_states"]["AGENTS.md"], "pending_from_template")
         self.assertEqual(res["file_states"]["advisory_workflow"], "pending_from_template")
 
+    def test_target_install_state_tmp_boundary(self):
+        tmp_dir = self.repo_root / ".aos-tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        (tmp_dir / "execution-report.md").touch()
+        
+        res = aos_consumer_self_test.check_target_install_state(self.repo_root)
+        self.assertEqual(res["status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertIn("execution-report.md", res["unexpected_tmp_files"])
+
     def test_output_contains_safety_statements(self):
         safety = aos_consumer_self_test.get_safety_boundaries()
         self.assertIn("self-test PASS ≠ approval", safety)

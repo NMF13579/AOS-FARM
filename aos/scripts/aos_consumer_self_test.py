@@ -24,6 +24,7 @@ def check_package_integrity(repo_root):
         "aos/docs/AUTHORIZATION-COMMANDS.md",
         "aos/docs/AGENT-ENTRYPOINTS.md",
         "aos/docs/SELF-TEST.md",
+        "aos/docs/WORKSPACE-BOUNDARY.md",
         "aos/scripts/aos_install.py",
         "aos/scripts/aos_consumer_self_test.py",
         "aos/templates/install-plan.md",
@@ -98,12 +99,27 @@ def check_target_install_state(repo_root):
         warnings.append(f"Unexpected product code folders found: {', '.join(found_forbidden)}")
         human_review = True
         
+    # Check .aos-tmp boundary
+    tmp_dir = repo_root / ".aos-tmp"
+    found_in_tmp = []
+    if tmp_dir.exists() and tmp_dir.is_dir():
+        for file in tmp_dir.rglob('*'):
+            if file.is_file():
+                f = file.name.lower()
+                if "report" in f or "evidence" in f or f in ["agents.md", "llms.txt", "task.md", "00_aos_core_control.md"]:
+                    found_in_tmp.append(str(file.relative_to(tmp_dir)))
+                    
+    if found_in_tmp:
+        warnings.append(f"Source of Truth artifacts found in /.aos-tmp/: {', '.join(found_in_tmp)}")
+        human_review = True
+        
     status = "HUMAN_REVIEW_REQUIRED" if human_review else "PASS"
     
     return {
         "status": status,
         "file_states": state,
         "unexpected_project_folders": found_forbidden,
+        "unexpected_tmp_files": found_in_tmp,
         "warnings": warnings
     }
 
@@ -118,7 +134,8 @@ def get_safety_boundaries():
         "CI PASS ≠ approval",
         "UNKNOWN ≠ OK",
         "NOT_RUN ≠ PASS",
-        "Human approval cannot be simulated"
+        "Human approval cannot be simulated",
+        "/.aos-tmp/ is never Source of Truth"
     ]
 
 def run_installer_dry_run(repo_root):
