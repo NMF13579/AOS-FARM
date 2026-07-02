@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_report_as_lifecycle",
+  "description": "Tests that Report treated as lifecycle mutation is blocked",
+  "expected_phrase": "Report is not a lifecycle mutation",
+  "payload": {
+    "lifecycle_mutation": "REPORT_CREATED"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_ci_pass_as_approval",
+  "description": "Tests that CI PASS claimed as approval is blocked",
+  "expected_phrase": "CI PASS is not approval",
+  "payload": {
+    "approval_status": "CI PASS"
+  }
+}

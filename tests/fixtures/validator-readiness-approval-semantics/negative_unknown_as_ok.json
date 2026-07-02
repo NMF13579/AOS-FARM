@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_unknown_as_ok",
+  "description": "Tests that UNKNOWN treated as OK is blocked",
+  "expected_phrase": "UNKNOWN is not OK",
+  "payload": {
+    "validation_status": "OK"
+  }
+}

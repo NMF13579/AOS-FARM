@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_human_approval_simulated",
+  "description": "Tests that Human approval cannot be simulated",
+  "expected_phrase": "Human approval cannot be simulated",
+  "payload": {
+    "approval_status": "AUTO_APPROVED"
+  }
+}

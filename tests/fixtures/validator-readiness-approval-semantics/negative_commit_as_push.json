@@ -1,0 +1,9 @@
+{
+  "case_id": "negative_commit_as_push",
+  "description": "Tests that Commit authorization treated as push authorization is blocked",
+  "expected_phrase": "Commit authorization is not push authorization",
+  "payload": {
+    "push_authorized": true,
+    "push_authorized_reason": "commit_authorized"
+  }
+}

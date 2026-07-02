@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_not_run_as_pass",
+  "description": "Tests that NOT_RUN treated as PASS is blocked",
+  "expected_phrase": "NOT_RUN is not PASS",
+  "payload": {
+    "validator_status": "PASS"
+  }
+}

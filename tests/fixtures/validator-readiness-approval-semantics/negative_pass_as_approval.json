@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_pass_as_approval",
+  "description": "Tests that PASS claimed as approval is blocked",
+  "expected_phrase": "PASS is not approval",
+  "payload": {
+    "approval_status": "PASS"
+  }
+}

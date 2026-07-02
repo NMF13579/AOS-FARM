@@ -1,0 +1,8 @@
+{
+  "case_id": "negative_readiness_as_execution",
+  "description": "Tests that Readiness treated as execution permission is blocked",
+  "expected_phrase": "Readiness is not execution permission",
+  "payload": {
+    "readiness_status": "EXECUTION_PERMISSION"
+  }
+}

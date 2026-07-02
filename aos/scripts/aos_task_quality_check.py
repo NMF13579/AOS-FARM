@@ -3,6 +3,9 @@ import json
 import argparse
 import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations
+
 def check_task_quality(package_path):
     result = {
         "package": package_path,
@@ -38,6 +41,10 @@ def check_task_quality(package_path):
     if not isinstance(data, dict):
         result["blocked_reasons"].append("Root element must be a JSON object")
         return result
+
+    semantic_violations = collect_semantic_guard_violations(data)
+    if semantic_violations:
+        result["blocked_reasons"].extend(semantic_violations)
 
     result["schema_required_fields_present"] = True
 
@@ -234,6 +241,11 @@ def check_result_acceptance(result_path):
         result["status"] = "RESULT_ACCEPTANCE_SCHEMA_INVALID"
         result["blocked_reasons"].append("Root element must be a JSON object")
         return result
+
+    semantic_violations = collect_semantic_guard_violations(data)
+    if semantic_violations:
+        result["blocked_reasons"].extend(semantic_violations)
+        result["status"] = "RESULT_ACCEPTANCE_BLOCKED"
 
     # --- Required field presence checks ---
     required_fields = [

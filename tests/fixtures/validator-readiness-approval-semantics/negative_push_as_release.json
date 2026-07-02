@@ -1,0 +1,9 @@
+{
+  "case_id": "negative_push_as_release",
+  "description": "Tests that Push authorization treated as release authorization is blocked",
+  "expected_phrase": "Push authorization is not release authorization",
+  "payload": {
+    "release_authorized": true,
+    "release_authorized_reason": "push_authorized"
+  }
+}
