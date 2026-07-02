@@ -45,5 +45,21 @@ class TestAOSSemanticGuard(unittest.TestCase):
         violations = collect_semantic_guard_violations(safe_payload)
         self.assertEqual(len(violations), 0, f"Expected 0 violations for safe payload, got: {violations}")
 
+    def test_raw_text_authority_claims(self):
+        from aos.scripts.aos_semantic_guard import collect_raw_text_authority_claims
+        
+        # Unsafe claims
+        self.assertTrue(len(collect_raw_text_authority_claims("execution is approved")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("execution is authorized")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("human approved")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("ready to merge")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("result verified")) > 0)
+        
+        # Allowed explicit boundaries
+        self.assertEqual(len(collect_raw_text_authority_claims("execution_authorized: false")), 0)
+        self.assertEqual(len(collect_raw_text_authority_claims("approval_claimed: false")), 0)
+        self.assertEqual(len(collect_raw_text_authority_claims("Execution readiness does not authorize execution.")), 0)
+        self.assertEqual(len(collect_raw_text_authority_claims("PASS is not approval.")), 0)
+
 if __name__ == "__main__":
     unittest.main()

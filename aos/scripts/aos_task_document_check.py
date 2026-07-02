@@ -5,7 +5,7 @@ import tempfile
 import datetime
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations
+from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations, collect_authority_claim_violations
 
 LIFECYCLE_STATUSES = {"DRAFT", "READY_FOR_EXECUTION", "IN_PROGRESS", "HUMAN_REVIEW_REQUIRED", "BLOCKED", "APPROVED", "REJECTED", "CLOSED"}
 QUEUE_STATUSES = {"BACKLOG", "NEXT", "IN_PROGRESS", "BLOCKED", "DONE"}
@@ -76,7 +76,7 @@ def validate_task_document(file_path):
     messages = []
     is_valid = True
 
-    semantic_violations = collect_semantic_guard_violations(yaml_data)
+    semantic_violations = collect_authority_claim_violations(yaml_data, content)
     if semantic_violations:
         messages.extend(semantic_violations)
         is_valid = False

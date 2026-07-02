@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 import os
-from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations
+from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations, collect_authority_claim_violations
 
 # Add parent directory to path so we can import the tool
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -24,7 +24,7 @@ def main():
     checker = HumanResultAcceptanceChecker()
 
     try:
-        violations = collect_semantic_guard_violations({"decision": args.decision})
+        violations = collect_authority_claim_violations({"decision": args.decision}, args.decision)
         if violations:
             result = {"status": "BLOCKED", "reason": ", ".join(violations)}
         else:

@@ -4,7 +4,7 @@ title: Task Registry Draft Validation and User Example
 type: task
 status: DRAFT
 queue_mode: MANUAL
-queue_position: 9999
+queue_position: 10000
 queue_status: BACKLOG
 queue_priority: NORMAL
 risk_profile: UNKNOWN_BLOCKED

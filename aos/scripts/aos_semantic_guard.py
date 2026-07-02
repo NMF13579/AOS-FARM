@@ -86,3 +86,65 @@ def collect_semantic_guard_violations(payload: object) -> list[str]:
 
     _check(payload)
     return sorted(list(violations))
+
+UNSAFE_CLAIMS = [
+    "execution is approved",
+    "execution is authorized",
+    "human approved",
+    "approval has been created",
+    "task approved",
+    "task complete",
+    "task is complete",
+    "result verified",
+    "result is verified",
+    "ready to merge",
+    "ready to push",
+    "ready to release",
+    "commit authorized",
+    "push authorized",
+    "merge authorized",
+    "release authorized",
+    "lifecycle mutation authorized"
+]
+
+NEGATIVE_BOUNDARY_STATEMENTS = [
+    "not approved",
+    "not authorized",
+    "does not authorize",
+    "does not approve",
+    "approval_claimed: false",
+    "execution_authorized: false",
+    "commit_performed: false",
+    "push_performed: false",
+    "merge_performed: false",
+    "release_performed: false",
+    "task_completion_claimed: false",
+    "result_verification_claimed: false",
+    "is not approval",
+    "does not authorize execution"
+]
+
+def collect_raw_text_authority_claims(text: str) -> list[str]:
+    """
+    Scans raw text for unsafe authority claims.
+    Ignores them if they are part of explicit negative boundary statements.
+    """
+    if not text:
+        return []
+    text_lower = text.lower()
+    for neg in NEGATIVE_BOUNDARY_STATEMENTS:
+        text_lower = text_lower.replace(neg.lower(), "")
+    violations = set()
+    for claim in UNSAFE_CLAIMS:
+        if claim in text_lower:
+            violations.add(f"Unsafe authority claim found: '{claim}'")
+    return sorted(list(violations))
+
+def collect_authority_claim_violations(payload: object, raw_text=None) -> list[str]:
+    """
+    Wrapper that checks both the payload semantics and optionally the raw text.
+    """
+    violations = set(collect_semantic_guard_violations(payload))
+    if raw_text:
+        violations.update(collect_raw_text_authority_claims(raw_text))
+    return sorted(list(violations))
