@@ -494,5 +494,231 @@ APPROVED
             os.chdir(original_cwd)
             shutil.rmtree(temp_dir)
 
+    def test_execution_readiness_clean(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0004"
+title: "Valid execution task"
+type: "task"
+template_level: "S"
+status: "READY_FOR_EXECUTION"
+queue_mode: "AUTO"
+queue_position: null
+queue_status: "BACKLOG"
+queue_priority: "NORMAL"
+risk_profile: "LOW_RISK_FAST"
+risk_assigned_by: "human"
+approval_status: "APPROVED"
+human_checkpoint_required: true
+validator_status: "NOT_RUN"
+evidence_status: "NOT_RUN"
+log_uri: ".aos-tmp/tasks/AOS-FARM-TASK-0004/agent-actions.log"
+log_status: "NOT_STARTED"
+owner: "human"
+created_at: "2024"
+updated_at: "2024"
+---
+## Задача
+goal
+## Out of scope
+none
+## Done когда
+done
+## История
+hist
+## Evidence
+ev
+## ⛔ Решение
+APPROVED
+"""
+            with open("tasks/AOS-FARM-TASK-0004.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--execution-readiness", "tasks/AOS-FARM-TASK-0004.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertIn("EXECUTION_READINESS_CONFIRMED", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
+    def test_execution_readiness_missing_scope(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0004"
+title: "Valid execution task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+risk_profile: "LOW_RISK_FAST"
+risk_assigned_by: "human"
+approval_status: "NOT_APPROVED"
+---
+## Задача
+goal
+## Evidence
+ev
+## ⛔ Решение
+PENDING
+"""
+            with open("tasks/AOS-FARM-TASK-0004.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--execution-readiness", "tasks/AOS-FARM-TASK-0004.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("EXECUTION_READINESS_NOT_CONFIRMED", res.stdout)
+            self.assertIn("Missing explicit out of scope", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
+    def test_execution_readiness_agent_assigned_low_risk(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0004"
+title: "Valid execution task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+risk_profile: "LOW_RISK_FAST"
+risk_assigned_by: "agent"
+approval_status: "NOT_APPROVED"
+---
+## Задача
+goal
+## Out of scope
+none
+## Evidence
+ev
+## ⛔ Решение
+PENDING
+"""
+            with open("tasks/AOS-FARM-TASK-0004.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--execution-readiness", "tasks/AOS-FARM-TASK-0004.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 2)
+            self.assertIn("EXECUTION_READINESS_BLOCKED", res.stdout)
+            self.assertIn("forbidden (agent/self)", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
+    def test_intake_readiness_clean(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0005"
+title: "Valid intake task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+approval_status: "NOT_APPROVED"
+---
+## Задача
+goal
+"""
+            with open("tasks/AOS-FARM-TASK-0005.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--intake-readiness", "tasks/AOS-FARM-TASK-0005.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 1) # Because NOT_APPROVED makes it HUMAN_REVIEW_REQUIRED
+            self.assertIn("TASK_INTAKE_HUMAN_REVIEW_REQUIRED", res.stdout)
+            
+            # Make it confirmed by adding APPROVED and decision section
+            confirmed_content = """---
+task_id: "AOS-FARM-TASK-0005"
+title: "Valid intake task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+approval_status: "APPROVED"
+---
+## Задача
+goal
+## ⛔ Решение
+APPROVED
+"""
+            with open("tasks/AOS-FARM-TASK-0005.md", "w") as f:
+                 f.write(confirmed_content)
+                 
+            res_conf = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--intake-readiness", "tasks/AOS-FARM-TASK-0005.md"], capture_output=True, text=True)
+            self.assertEqual(res_conf.returncode, 0) 
+            self.assertIn("TASK_INTAKE_CONFIRMED", res_conf.stdout)
+
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
+    def test_intake_readiness_outside_tasks(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0005"
+title: "Valid intake task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+---
+"""
+            with open("AOS-FARM-TASK-0005.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--intake-readiness", "AOS-FARM-TASK-0005.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 2)
+            self.assertIn("TASK_INTAKE_BLOCKED", res.stdout)
+            self.assertIn("Task must be under tasks/ directory", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+            
+    def test_intake_readiness_execution_authorized_true(self):
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(temp_dir)
+            os.mkdir("tasks")
+            valid_content = """---
+task_id: "AOS-FARM-TASK-0005"
+title: "Valid intake task"
+status: "DRAFT"
+queue_status: "BACKLOG"
+execution_authorized: true
+---
+"""
+            with open("tasks/AOS-FARM-TASK-0005.md", "w") as f:
+                 f.write(valid_content)
+
+            res = subprocess.run(["python3", os.path.join(original_cwd, SCRIPT), "task", "--intake-readiness", "tasks/AOS-FARM-TASK-0005.md"], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 2)
+            self.assertIn("TASK_INTAKE_BLOCKED", res.stdout)
+            self.assertIn("Task cannot claim execution_authorized: true during intake", res.stdout)
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(temp_dir)
+
 if __name__ == '__main__':
     unittest.main()

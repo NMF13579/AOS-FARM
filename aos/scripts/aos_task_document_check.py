@@ -1080,6 +1080,273 @@ Stop condition:
 * Do not release unless separately authorized."""
     print(prompt)
 
+def check_execution_readiness(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        return "EXECUTION_READINESS_BLOCKED", [f"Failed to read file: {e}"]
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    if not yaml_data:
+        return "EXECUTION_READINESS_BLOCKED", ["Missing or invalid YAML frontmatter."]
+
+    reasons_blocked = []
+    reasons_not_confirmed = []
+    
+    task_id = yaml_data.get("task_id")
+    if not task_id:
+        reasons_blocked.append("Missing task_id")
+        task_id = "UNKNOWN"
+    else:
+        filename = os.path.basename(filepath)
+        if filename != f"{task_id}.md":
+            reasons_blocked.append(f"task_id {task_id} does not match filename {filename}")
+
+    if not yaml_data.get("title"):
+        reasons_not_confirmed.append("Missing title")
+
+    if yaml_data.get("status") not in LIFECYCLE_STATUSES:
+        reasons_blocked.append(f"Invalid status: {yaml_data.get('status')}")
+
+    if yaml_data.get("queue_status") not in QUEUE_STATUSES:
+        reasons_blocked.append(f"Invalid queue_status: {yaml_data.get('queue_status')}")
+
+    risk = yaml_data.get("risk_profile")
+    assigned_by = yaml_data.get("risk_assigned_by")
+    
+    if not risk:
+        reasons_blocked.append("risk_profile is missing")
+    elif risk == "UNKNOWN_BLOCKED":
+        reasons_blocked.append("UNKNOWN risk profile does not pass")
+
+    if not assigned_by or assigned_by == "none":
+        reasons_blocked.append("risk_assigned_by is missing or none")
+    elif assigned_by.lower() in ("agent", "self", "ai"):
+        reasons_blocked.append(f"risk_assigned_by: {assigned_by} is forbidden (agent/self)")
+
+    approval = yaml_data.get("approval_status")
+    bad_approval_values = ["PASS", "Evidence", "CI PASS", "queue rank", "queue_position", "queue_priority", "queue_status", "validator PASS"]
+    if not approval:
+        reasons_blocked.append("approval_status is missing")
+    elif approval in bad_approval_values:
+        reasons_blocked.append(f"Invalid approval_status (cannot treat '{approval}' as approval)")
+
+    v_status = yaml_data.get("validator_status")
+    if v_status in ["APPROVED", "PASS", "CI PASS"]:
+        reasons_blocked.append("validator_status cannot equal approval")
+
+    e_status = yaml_data.get("evidence_status")
+    if e_status in ["APPROVED", "PASS", "CI PASS"]:
+        reasons_blocked.append("evidence_status cannot equal approval")
+
+    body = '\n'.join(content.split('\n')[end_idx+1:])
+    
+    def has_content(section_name):
+        idx = body.find(section_name)
+        if idx == -1: return False
+        start_idx = idx + len(section_name)
+        end_idx = body.find("## ", start_idx)
+        if end_idx == -1:
+            end_idx = len(body)
+        section_text = body[start_idx:end_idx].strip()
+        return bool(section_text)
+
+    if not has_content("## Задача"):
+        reasons_not_confirmed.append("Missing or empty goal/Задача section")
+        
+    if not (has_content("## Out of scope") or has_content("## Forbidden") or has_content("## ⛔ Запрещено")):
+        reasons_not_confirmed.append("Missing explicit out of scope / forbidden changes section")
+        
+    if not has_content("## Evidence"):
+        reasons_not_confirmed.append("Missing Evidence section")
+        
+    if not has_content("## ⛔ Решение"):
+        reasons_not_confirmed.append("Missing human decision / final boundary section")
+
+    semantic_violations = collect_authority_claim_violations(yaml_data, content)
+    if semantic_violations:
+        reasons_blocked.extend(semantic_violations)
+
+    if reasons_blocked:
+        return "EXECUTION_READINESS_BLOCKED", reasons_blocked + reasons_not_confirmed
+    if reasons_not_confirmed:
+        return "EXECUTION_READINESS_NOT_CONFIRMED", reasons_not_confirmed
+        
+    return "EXECUTION_READINESS_CONFIRMED", ["Execution readiness structurally confirmed"]
+
+def cmd_task_execution_readiness(filepath):
+    if not os.path.exists(filepath) and not filepath.endswith(".md"):
+        filepath = os.path.join("tasks", f"{filepath}.md")
+    
+    if not os.path.exists(filepath):
+        print(f"FAIL: {filepath} not found")
+        sys.exit(2)
+
+    status, reasons = check_execution_readiness(filepath)
+    
+    print(f"Execution Readiness: {status}")
+    for r in reasons:
+        print(f"- {r}")
+        
+    print("\nExecution readiness is not approval.")
+    print("Execution readiness is not execution authorization.")
+    print("Execution readiness does not authorize commit.")
+    print("Execution readiness does not authorize push.")
+    print("Execution readiness does not authorize merge.")
+    print("Execution readiness does not authorize release.")
+    
+    if status in ["EXECUTION_READINESS_CONFIRMED", "EXECUTION_READINESS_CONFIRMED_WITH_LIMITATIONS"]:
+        sys.exit(0)
+    elif status == "EXECUTION_READINESS_NOT_CONFIRMED":
+        sys.exit(1)
+    else:
+        sys.exit(2)
+
+def check_intake_readiness(filepath):
+    reasons_blocked = []
+    reasons_human = []
+    
+    from pathlib import Path
+    try:
+        repo_root = Path(".").resolve()
+        task_path = Path(filepath).resolve()
+        tasks_dir = (repo_root / "tasks").resolve()
+        aos_tmp_dir = (repo_root / ".aos-tmp").resolve()
+        reports_dir = (repo_root / "reports").resolve()
+        
+        try:
+            task_path.relative_to(repo_root)
+        except ValueError:
+            reasons_blocked.append("Task path is outside repo root")
+            
+        try:
+            task_path.relative_to(tasks_dir)
+        except ValueError:
+            reasons_blocked.append("Task must be under tasks/ directory")
+            
+        try:
+            task_path.relative_to(aos_tmp_dir)
+            reasons_blocked.append("Task cannot be under .aos-tmp/")
+        except ValueError:
+            pass
+            
+        try:
+            task_path.relative_to(reports_dir)
+            reasons_blocked.append("Task cannot be under reports/")
+        except ValueError:
+            pass
+            
+    except Exception as e:
+        reasons_blocked.append(f"Path resolution error: {e}")
+        
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        return "TASK_INTAKE_BLOCKED", reasons_blocked + [f"Failed to read file: {e}"]
+
+    yaml_data, end_idx = parse_yaml_frontmatter(content)
+    if not yaml_data:
+        return "TASK_INTAKE_BLOCKED", reasons_blocked + ["Missing or invalid YAML frontmatter."]
+
+    task_id = yaml_data.get("task_id")
+    if task_id:
+        filename = os.path.basename(filepath)
+        if filename != f"{task_id}.md":
+            reasons_blocked.append(f"task_id {task_id} does not match filename {filename}")
+
+    if yaml_data.get("status") not in LIFECYCLE_STATUSES:
+        reasons_blocked.append(f"Invalid status: {yaml_data.get('status')}")
+
+    if yaml_data.get("queue_status") not in QUEUE_STATUSES:
+        reasons_blocked.append(f"Invalid queue_status: {yaml_data.get('queue_status')}")
+
+    if yaml_data.get("queue_status") == "NEXT" and yaml_data.get("status") == "READY_FOR_EXECUTION":
+        reasons_blocked.append("queue_status NEXT does not imply READY_FOR_EXECUTION")
+
+    approval = yaml_data.get("approval_status")
+    body = '\n'.join(content.split('\n')[end_idx+1:])
+    if approval == "APPROVED":
+        idx = body.find("## ⛔ Решение")
+        if idx != -1:
+            start_idx = idx + len("## ⛔ Решение")
+            end_idx_dec = body.find("## ", start_idx)
+            if end_idx_dec == -1: end_idx_dec = len(body)
+            decision_text = body[start_idx:end_idx_dec].strip()
+            if "APPROVED" not in decision_text:
+                reasons_blocked.append("approval_status is APPROVED but human decision section does not contain APPROVED")
+        else:
+            reasons_blocked.append("approval_status is APPROVED but human decision section is missing")
+
+    assigned_by = yaml_data.get("risk_assigned_by")
+    if assigned_by and assigned_by.lower() in ("agent", "self", "ai"):
+        reasons_blocked.append(f"Risk Profile must not be assigned by agent/self/AI (found: {assigned_by})")
+
+    claims = ["execution_authorized", "approval_created", "lifecycle_mutation_authorized", 
+              "commit_authorized", "push_authorized", "merge_authorized", "release_authorized"]
+    for claim in claims:
+        if yaml_data.get(claim) is True:
+            reasons_blocked.append(f"Task cannot claim {claim}: true during intake")
+
+    semantic_violations = collect_authority_claim_violations(yaml_data, content)
+    if semantic_violations:
+        reasons_blocked.extend(semantic_violations)
+        
+    if not approval or approval == "NOT_APPROVED":
+        reasons_human.append("approval_status is NOT_APPROVED or missing")
+
+    if reasons_blocked:
+        return "TASK_INTAKE_BLOCKED", reasons_blocked + reasons_human
+    if reasons_human:
+        return "TASK_INTAKE_HUMAN_REVIEW_REQUIRED", reasons_human
+        
+    return "TASK_INTAKE_CONFIRMED", ["Task intake structurally confirmed"]
+
+def cmd_task_intake_readiness(filepath):
+    if not os.path.exists(filepath) and not filepath.endswith(".md"):
+        filepath = os.path.join("tasks", f"{filepath}.md")
+        
+    if not os.path.exists(filepath):
+        print(f"FAIL: {filepath} not found")
+        sys.exit(2)
+
+    status, reasons = check_intake_readiness(filepath)
+    
+    print(f"Intake Readiness: {status}")
+    for r in reasons:
+        print(f"- {r}")
+        
+    print("\nTask intake readiness is not approval.")
+    print("Task intake readiness is not execution authorization.")
+    print("Task intake readiness does not mutate lifecycle.")
+    print("Task intake readiness does not authorize commit.")
+    print("Task intake readiness does not authorize push.")
+    
+    if status == "TASK_INTAKE_CONFIRMED":
+        sys.exit(0)
+    elif status == "TASK_INTAKE_HUMAN_REVIEW_REQUIRED":
+        sys.exit(1)
+    else:
+        sys.exit(2)
+
+def cmd_help():
+    print("Usage: aos_task_document_check.py task [sub-command]")
+    print("Sub-commands:")
+    print("  --new")
+    print("  --new-batch")
+    print("  --set-queue")
+    print("  --validate-all")
+    print("  --renumber-preview")
+    print("  --readiness <task>")
+    print("  --readiness-all")
+    print("  --result-review <task>")
+    print("  --handoff-prompt <task>")
+    print("  --execution-readiness <task>")
+    print("  --intake-readiness <task>")
+    print("  --help")
+    sys.exit(0)
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: aos_task_document_check.py [mode]")
@@ -1137,6 +1404,16 @@ def main():
             if len(sys.argv) < 4:
                 sys.exit(1)
             cmd_task_handoff_prompt(sys.argv[3])
+        elif sub == "--execution-readiness":
+            if len(sys.argv) < 4:
+                sys.exit(1)
+            cmd_task_execution_readiness(sys.argv[3])
+        elif sub == "--intake-readiness":
+            if len(sys.argv) < 4:
+                sys.exit(1)
+            cmd_task_intake_readiness(sys.argv[3])
+        elif sub == "--help":
+            cmd_help()
         else:
             print(f"Unknown task sub-command: {sub}")
             sys.exit(1)
