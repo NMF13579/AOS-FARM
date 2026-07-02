@@ -33,6 +33,11 @@ to the human owner.
 | Situation | Route | Read First | Allowed Action | Stop Condition | Human Checkpoint Required? |
 |---|---|---|---|---|---|
 | **New user start** | `aos/START_HERE.md` → `aos/docs/user-guide/first-run.md` | `00`, `01`, `02`, `aos/START_HERE.md` | Read only; orient | Any uncertainty about scope | No (reading) |
+| **Russian new user start** | `aos/docs/START-RU.md` | `00`, `01`, `02` | Read only; orient | Any uncertainty about scope | No (reading) |
+| **Installation docs** | `aos/docs/INSTALL.md` | `02` | Read only | N/A | No (reading) |
+| **Storage docs** | `aos/docs/STORAGE.md` | `02` | Read only | N/A | No (reading) |
+| **Tutor docs** | `aos/docs/TUTOR.md` | `02` | Read only | N/A | No (reading) |
+| **Authorization Commands** | `aos/docs/AUTHORIZATION-COMMANDS.md` | `02` | Read only | N/A | No (reading) |
 | **Agent startup** | `aos/root/AGENTS.md` → read canonical sources → check branch state | `00`, `01`, `02`, `aos/root/AGENTS.md` | Read only; inspect branch | Dirty protected files, unknown branch, missing task brief | No (reading) |
 | **Task drafting** | `aos/docs/workflow/task-brief-compiler.md` → `aos/templates/task-briefs/` | `02` (Risk Profile rules) | Draft task brief | Scope unclear, Risk Profile unknown | No (drafting only) |
 | **Task review** | `aos/templates/reports/evidence-review-template.md` | `02` (Evidence Gate) | Prepare Evidence report | Missing Evidence, UNKNOWN state | **Yes** — human reviews Evidence |

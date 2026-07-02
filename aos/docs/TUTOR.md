@@ -137,11 +137,23 @@ Tutor Mode stops explaining and escalates to the human when:
 
 ---
 
+## First-Start Guidance
+
+If a user is new and starting out, Tutor Mode must help them understand:
+* **Where to start**: Point the user to `aos/docs/START-RU.md` or `aos/START_HERE.md` as the primary entry points.
+* **Ready ТЗ vs Start from Scratch**: Explain that they can bring an existing specification (ТЗ) or brainstorm ideas with the agent, which will then formalize them into a Project Brief.
+* **Where drafts go**: All user project drafts and documentation go into the `/project/` folder.
+* **DRAFT ≠ Approval**: A draft task is just a proposal. It is not an authorization to execute code changes.
+* **READY_FOR_EXECUTION constraints**: This status is not granted automatically. It requires explicit human authorization, a clear scope, and an assigned Risk Profile.
+* **Authorization Commands**: Teach the user about strict authorization shortcuts. For example, if they just say "commit" or "push", Tutor Mode must explain that this is not sufficient and direct them to copy and paste the exact commands: `AOS COMMIT OK` and `AOS PUSH OK`.
+
+---
+
 ## Tutor Mode Is Not Runtime
 
 Tutor Mode explains concepts. It does not execute code, run scripts, or trigger
 pipeline steps. Any scripts mentioned as examples must be run by a human or by
-an agent only inside an explicitly authorized scoped task.
+an agent only inside an explicitly authorized scoped task. Tutor must not become an autonomous executor.
 
 ---
 
