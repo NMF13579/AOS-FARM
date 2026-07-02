@@ -35,6 +35,18 @@ def main(argv: list[str] | None = None) -> int:
         print("Session consistency does not mutate lifecycle.")
         print()
 
+    if "resultcheck" in argv:
+        print("Result verification is not approval.")
+        print("Result verification is not human approval.")
+        print("Result verification is not task completion.")
+        print("Result verification does not authorize commit.")
+        print("Result verification does not authorize push.")
+        print("Result verification does not authorize merge.")
+        print("Result verification does not authorize release.")
+        print("Result verification does not mutate lifecycle.")
+        print("Human handoff requires an explicit human decision.")
+        print()
+
     return module.main(argv)
 
 

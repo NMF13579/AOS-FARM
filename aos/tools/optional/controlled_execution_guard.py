@@ -17,6 +17,10 @@ SESSION_CONSISTENCY_PASS = "SESSION_CONSISTENCY_PASS"
 SESSION_CONSISTENCY_PASS_WITH_WARNINGS = "SESSION_CONSISTENCY_PASS_WITH_WARNINGS"
 SESSION_CONSISTENCY_NOT_READY = "SESSION_CONSISTENCY_NOT_READY"
 SESSION_CONSISTENCY_BLOCKED = "SESSION_CONSISTENCY_BLOCKED"
+RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW = "RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW"
+RESULT_VERIFICATION_READY_WITH_LIMITATIONS = "RESULT_VERIFICATION_READY_WITH_LIMITATIONS"
+RESULT_VERIFICATION_NOT_READY = "RESULT_VERIFICATION_NOT_READY"
+RESULT_VERIFICATION_BLOCKED = "RESULT_VERIFICATION_BLOCKED"
 
 EXIT_CODES = {
     PASS: 0, 
@@ -28,6 +32,10 @@ EXIT_CODES = {
     SESSION_CONSISTENCY_PASS_WITH_WARNINGS: 0,
     SESSION_CONSISTENCY_NOT_READY: 1,
     SESSION_CONSISTENCY_BLOCKED: 2,
+    RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW: 0,
+    RESULT_VERIFICATION_READY_WITH_LIMITATIONS: 0,
+    RESULT_VERIFICATION_NOT_READY: 1,
+    RESULT_VERIFICATION_BLOCKED: 2,
 }
 DEVELOPMENT_PROTECTED_FILES = {
     "00_AOS_Core_Control.md",
@@ -439,6 +447,7 @@ def sessioncheck(
     for name, p in [("request", request_path), ("preconditions", preconditions_path), ("boundary", boundary_path), ("record", record_path)]:
         doc, resolved, err = _safe_load_artifact(context, p, name)
         if err:
+            err.mode = "sessioncheck"
             return err
         if not isinstance(doc, dict):
             return GuardResult(
@@ -536,6 +545,148 @@ def sessioncheck(
     )
 
 
+def resultcheck(
+    session_record_path: str | Path,
+    result_package_path: str | Path,
+    project_root: str | Path = ".",
+    aos_root: str | Path = "aos",
+) -> GuardResult:
+    context = GuardContext.from_values(project_root, aos_root)
+    
+    docs = {}
+    paths = {}
+    
+    for name, p in [("session-record", session_record_path), ("result-package", result_package_path)]:
+        doc, resolved, err = _safe_load_artifact(context, p, name)
+        if err:
+            err.mode = "resultcheck"
+            if err.status == SESSION_CONSISTENCY_BLOCKED:
+                err.status = RESULT_VERIFICATION_BLOCKED
+            return err
+        if not isinstance(doc, dict):
+            return GuardResult(
+                mode="resultcheck",
+                status=RESULT_VERIFICATION_BLOCKED,
+                summary=f"artifact {name} must be a mapping",
+                blocked_items=[f"{name} is not a dictionary"],
+                details=_context_details(context),
+            )
+        docs[name] = doc
+        paths[name] = resolved
+
+    session_record = docs["session-record"]
+    result_package = docs["result-package"]
+
+    blocked_items = []
+    not_ready_items = []
+    not_run_items = []
+    
+    # Consistency Checks
+    task_id_sr = session_record.get("task_id")
+    task_id_rp = result_package.get("task_id")
+    
+    if not task_id_sr: blocked_items.append("task_id missing in session-record")
+    if not task_id_rp: blocked_items.append("task_id missing in result-package")
+    if task_id_sr and task_id_rp and str(task_id_sr) != str(task_id_rp):
+        blocked_items.append("task_id mismatch between session-record and result-package")
+        
+    req_id_sr = session_record.get("request_id")
+    req_id_rp = result_package.get("request_id")
+    if req_id_sr and req_id_rp and str(req_id_sr) != str(req_id_rp):
+        blocked_items.append("request_id mismatch between session-record and result-package")
+        
+    bound_id_sr = session_record.get("boundary_id")
+    bound_id_rp = result_package.get("boundary_id")
+    if bound_id_sr and bound_id_rp and str(bound_id_sr) != str(bound_id_rp):
+        blocked_items.append("boundary_id mismatch between session-record and result-package")
+
+    if not result_package.get("result_package_id"):
+        not_ready_items.append("result_package_id missing in result-package")
+        
+    if not (_flag_is_true(session_record, "handoff_to_result_verification_required") or _flag_is_true(session_record, "human_review_required")):
+        blocked_items.append("session-record missing handoff marker (handoff_to_result_verification_required or human_review_required)")
+
+    # Result package fields
+    required_fields = ["task_id", "result_package_id", "changed_files", "commands_run", "validation_results", 
+                       "not_run", "known_unknowns", "blockers", "evidence_summary", "human_review_required", "approval_status"]
+    
+    for rf in required_fields:
+        if rf not in result_package:
+            not_ready_items.append(f"missing field in result-package: {rf}")
+
+    # Authority-claim checks
+    forbidden_claims = [
+        "approval_claimed", "task_completion_claimed", "result_verified", "result_verification_approved",
+        "execution_completed", "task_completed", "commit_performed", "push_performed", "merge_performed",
+        "release_performed", "lifecycle_mutation_performed", "commit_authorized", "push_authorized", 
+        "merge_authorized", "release_authorized", "approval_created", "human_approved"
+    ]
+    
+    scanner = _get_raw_text_scanner()
+    
+    for claim in forbidden_claims:
+        if _flag_is_true(result_package, claim):
+            blocked_items.append(f"result-package claims {claim}: true")
+            
+    if paths["result-package"]:
+        raw_text = paths["result-package"].read_text(encoding="utf-8")
+        if scanner:
+            raw_claims = scanner(raw_text)
+            for rc in raw_claims:
+                blocked_items.append(f"result-package contains unsafe claim: {rc}")
+
+    # approval_status
+    approval_status = str(result_package.get("approval_status", "")).strip().upper()
+    if approval_status in ["APPROVED", "AUTO_APPROVED", "PASS_APPROVED", "CI_APPROVED"]:
+        blocked_items.append(f"invalid approval_status: {approval_status}")
+    
+    # known_unknowns / blockers
+    if result_package.get("blockers"):
+        blocked_items.append("result-package contains unresolved blockers")
+    if result_package.get("known_unknowns"):
+        not_ready_items.append("result-package contains unresolved known_unknowns")
+        
+    # not_run
+    nr = result_package.get("not_run", [])
+    if nr:
+        if isinstance(nr, list):
+            not_run_items.extend([str(x) for x in nr])
+        else:
+            not_run_items.append(str(nr))
+            
+    if result_package.get("human_review_required") is not True:
+        not_ready_items.append("human_review_required must be true")
+
+    if blocked_items:
+        return GuardResult(
+            mode="resultcheck",
+            status=RESULT_VERIFICATION_BLOCKED,
+            summary="result verification blocked due to boundary or structural violations",
+            blocked_items=blocked_items,
+            details=_context_details(context)
+        )
+        
+    if not_ready_items:
+        return GuardResult(
+            mode="resultcheck",
+            status=RESULT_VERIFICATION_NOT_READY,
+            summary="result package is structurally incomplete or not ready",
+            blocked_items=not_ready_items,
+            not_run_items=not_run_items,
+            details=_context_details(context)
+        )
+        
+    status = RESULT_VERIFICATION_READY_WITH_LIMITATIONS if not_run_items else RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW
+    return GuardResult(
+        mode="resultcheck",
+        status=status,
+        summary="result package is structurally ready for human review",
+        pass_items=["result package meets structural and boundary requirements"],
+        not_run_items=not_run_items,
+        details=_context_details(context)
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Controlled Execution Guard MVP")
     parser.add_argument("--project-root", default=".", help="Host project root that contains the transferable aos/ bundle")
@@ -559,6 +710,10 @@ def build_parser() -> argparse.ArgumentParser:
     sessioncheck_parser.add_argument("--preconditions", required=True, help="Path to preconditions artifact")
     sessioncheck_parser.add_argument("--boundary", required=True, help="Path to boundary artifact")
     sessioncheck_parser.add_argument("--record", required=True, help="Path to record artifact")
+
+    resultcheck_parser = subparsers.add_parser("resultcheck", help="Verify execution result and prepare human handoff")
+    resultcheck_parser.add_argument("--session-record", required=True, help="Path to session record artifact")
+    resultcheck_parser.add_argument("--result-package", required=True, help="Path to result package artifact")
 
     return parser
 
@@ -585,6 +740,13 @@ def main(argv: list[str] | None = None) -> int:
                 args.preconditions,
                 args.boundary,
                 args.record,
+                project_root=args.project_root,
+                aos_root=args.aos_root,
+            )
+        elif args.command == "resultcheck":
+            result = resultcheck(
+                args.session_record,
+                args.result_package,
                 project_root=args.project_root,
                 aos_root=args.aos_root,
             )
