@@ -37,6 +37,7 @@ to the human owner.
 | **Installation docs** | `aos/docs/INSTALL.md` | `02` | Read only | N/A | No (reading) |
 | **Storage docs** | `aos/docs/STORAGE.md` | `02` | Read only | N/A | No (reading) |
 | **Agent entrypoints** | `aos/docs/AGENT-ENTRYPOINTS.md` | `02` | Read only | N/A | No (reading) |
+| **Consumer Self-Test** | `aos/docs/SELF-TEST.md` | `02` | Read only | N/A | No (reading) |
 | **Tutor docs** | `aos/docs/TUTOR.md` | `02` | Read only | N/A | No (reading) |
 | **Authorization Commands** | `aos/docs/AUTHORIZATION-COMMANDS.md` | `02` | Read only | N/A | No (reading) |
 | **Agent startup** | `aos/root/AGENTS.md` → read canonical sources → check branch state | `00`, `01`, `02`, `aos/root/AGENTS.md` | Read only; inspect branch | Dirty protected files, unknown branch, missing task brief | No (reading) |
