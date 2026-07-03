@@ -10,6 +10,41 @@ Task files, registries, and canonical docs remain Source of Truth.
 
 Candidate conversion notes, checklists, reports, and generated summaries are derived review aids only.
 
+## Task Registry Draft Review Protocol
+
+Task Registry Draft artifacts are review inputs, not lifecycle-active tasks.
+
+Before a Task Candidate is converted into a task file, human review must confirm:
+
+1. the candidate is still relevant to the current AOS-FARM state;
+2. the candidate traces to a known source report, task, registry item, or human decision;
+3. the proposed task objective is narrow enough for one controlled execution slice;
+4. the proposed scope and non-goals are explicit;
+5. the allowed file areas and forbidden file areas are explicit;
+6. any protected/canonical impact is declared;
+7. the validation and Evidence expectations are stated without treating either as approval;
+8. the Risk Profile is assigned by human or the task remains `HUMAN_REVIEW_REQUIRED`;
+9. execution, approval, commit, push, merge, and release flags remain false by default;
+10. no derived rank, dashboard output, validator output, or Evidence claim is treated as approval.
+
+Human review may accept a candidate for task drafting, request changes, defer it, or reject it. Acceptance for drafting does not authorize execution.
+
+## Conversion Boundary
+
+Converting a Task Candidate into a task file is a Source-of-Truth mutation and requires an explicit human checkpoint.
+
+The conversion may create or update only the task file named by the checkpoint. It must not:
+
+- silently create unrelated task files;
+- mutate queue state outside the authorized task file;
+- mark the task `READY_FOR_EXECUTION`;
+- set approval, commit, push, merge, or release authorization to true;
+- create Evidence;
+- write reports, checkpoints, lifecycle decisions, or Evidence into `.aos-tmp`;
+- edit protected/canonical sources unless a separate protected/canonical checkpoint explicitly authorizes that change.
+
+If the candidate cannot satisfy the checklist below, the safe result is `BLOCKED` or `UNKNOWN_BLOCKED`.
+
 ## Checklist
 
 A Task Candidate may move to human review only if all required items are present or explicitly blocked:
@@ -48,6 +83,8 @@ A Task Candidate may move to human review only if all required items are present
 ## Human Review Boundary
 
 Human review may decide whether the candidate should become a real task draft. Human review is not automatic approval. Human review does not authorize execution unless the human checkpoint explicitly says so.
+
+After conversion, the resulting task remains non-executable until a separate execution authorization prompt grants execution. A later execution prompt must restate allowed files, forbidden files, validation commands, Evidence/report permissions, and commit/push boundaries.
 
 ## Execution Boundary
 
