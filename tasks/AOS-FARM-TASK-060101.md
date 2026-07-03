@@ -2,28 +2,34 @@
 task_id: AOS-FARM-TASK-060101
 title: Task Registry Review and Conversion Boundary
 type: task
-status: DRAFT
+status: HUMAN_REVIEW_REQUIRED
 queue_mode: MANUAL
 queue_position: 9999
 queue_status: BACKLOG
 queue_priority: NORMAL
-risk_profile: UNKNOWN_BLOCKED
-risk_assigned_by: none
+risk_profile: HIGH_RISK_PROTECTED
+risk_assigned_by: human
 approval_status: NOT_APPROVED
 human_checkpoint_required: true
 validator_status: NOT_RUN
 evidence_status: NOT_RUN
+execution_authorized: false
+approval_granted: false
+commit_authorized: false
+push_authorized: false
+merge_authorized: false
+release_authorized: false
 log_uri: .aos-tmp/tasks/AOS-FARM-TASK-060101/log.txt
 log_status: NOT_RUN
 owner: human
 template_level: S
 created_at: 2026-07-02T12:00:00Z
-updated_at: 2026-07-02T12:00:00Z
+updated_at: 2026-07-03T15:41:04Z
 ---
 # AOS-FARM.601-01 — Task Registry Review and Conversion Boundary
 
 ## 1. Status
-DRAFT / HUMAN_REVIEW_REQUIRED
+HUMAN_REVIEW_REQUIRED / READY_FOR_HUMAN_REVIEW_PREPARED
 
 ## 2. Source
 - Source report:
@@ -47,7 +53,7 @@ Define and document the boundary for human review of Task Registry Draft artifac
 - This task file draft ≠ approval.
 - This task file draft ≠ execution authorization.
 - This task file draft ≠ queue placement.
-- This task file draft does not assign final Risk Profile.
+- Risk Profile was assigned by human as HIGH_RISK_PROTECTED.
 - Human review is required before execution.
 
 ## 7. Files or areas likely affected
@@ -58,12 +64,16 @@ Define and document the boundary for human review of Task Registry Draft artifac
 
 ## 9. Human decisions required
 - Human review is required before task execution.
+- Execution authorization is not granted.
+- Approval is not granted.
+- Commit, push, merge, and release authorization are not granted.
 
 ## 10. Authorization status
 approval_claimed: false
 execution_authorized: false
 queue_mutation_authorized: false
-risk_profile_assigned: false
+risk_profile_assigned: true
+risk_profile_assigned_by: human
 commit_authorized: false
 push_authorized: false
 merge_authorized: false
