@@ -1,0 +1,22 @@
+checkpoint_id: AOS-FARM.441-PUSH-AUTHORIZATION
+related_package: reports/aos-farm-441-push-authorization-package.md
+related_commit: 2440c47cc89d074f459d39f687bb9ef15c9f2b4d
+human_decision_required: false
+push_authorized: true
+authorized_push_command: git push origin HEAD:dev
+authorized_push_target: origin/dev
+authorized_push_type: normal
+push_performed: false
+force_push_authorized: false
+force_push_performed: false
+tag_push_authorized: false
+tag_push_performed: false
+merge_authorized: false
+merge_performed: false
+release_authorized: false
+release_performed: false
+next_task_authorized: false
+next_task_started: false
+aos_farm_442_authorized: false
+aos_farm_442_started: false
+final_status: HUMAN_REVIEW_REQUIRED
