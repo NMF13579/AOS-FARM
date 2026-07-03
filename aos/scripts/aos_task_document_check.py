@@ -232,6 +232,12 @@ def is_next_candidate(task):
         and task.get("status") not in NON_NEXT_LIFECYCLE_STATUSES
     )
 
+def select_next_candidate(queue):
+    for task in queue:
+        if is_next_candidate(task):
+            return task
+    return None
+
 def cmd_queue_list():
     tasks = load_all_tasks()
     queue = calculate_queue(tasks)
@@ -246,9 +252,9 @@ def cmd_queue_list():
 def cmd_queue_next():
     tasks = load_all_tasks()
     queue = calculate_queue(tasks)
-    candidates = [t for t in queue if is_next_candidate(t)]
-    if candidates:
-        print(f"Next task: {candidates[0]['task_id']}")
+    candidate = select_next_candidate(queue)
+    if candidate:
+        print(f"Next task: {candidate['task_id']}")
     else:
         print("No next task candidate.")
     print("Next candidate is not approval.")

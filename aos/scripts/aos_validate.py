@@ -18,7 +18,8 @@ VALIDATION_COMMANDS = [
     ["python3", "aos/scripts/aos_task_document_check.py", "queue", "--next"],
     ["python3", "aos/scripts/aos_task_document_check.py", "task", "--readiness-all"],
     ["python3", "aos/scripts/aos_doctor.py"],
-    ["python3", "aos/scripts/aos_queue_dashboard.py"]
+    ["python3", "aos/scripts/aos_queue_dashboard.py"],
+    ["python3", "aos/scripts/aos_next_task_selection.py", "--json"]
 ]
 
 def run_command(cmd):

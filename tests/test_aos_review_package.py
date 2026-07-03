@@ -33,5 +33,10 @@ class TestAosReviewPackage(unittest.TestCase):
         self.assertNotEqual(data.get("validation_status"), "NOT_RUN")
         self.assertIn(data.get("package_status"), ["READY_FOR_HUMAN_REVIEW", "CHANGES_REQUIRED", "UNKNOWN_BLOCKED"])
 
+    def test_output_help_warns_about_file_write(self):
+        result = subprocess.run(["python3", "aos/scripts/aos_review_package.py", "--help"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("WARNING: --output writes a file", result.stdout)
+
 if __name__ == '__main__':
     unittest.main()

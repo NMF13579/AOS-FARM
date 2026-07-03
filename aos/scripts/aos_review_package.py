@@ -92,7 +92,10 @@ def main():
     parser.add_argument("--execution-report", help="Path to the execution report reviewed")
     parser.add_argument("--evidence-report", help="Path to the evidence report reviewed")
     parser.add_argument("--guard-output", action="append", default=[], help="Path to a guard output artifact reviewed; may be repeated")
-    parser.add_argument("--output", help="Write a markdown Review & Handoff Package to this path")
+    parser.add_argument(
+        "--output",
+        help="Write a markdown Review & Handoff Package to this path. WARNING: --output writes a file. Do not use --output during read-only audit unless file creation is explicitly authorized.",
+    )
     args = parser.parse_args()
 
     # Git inspection

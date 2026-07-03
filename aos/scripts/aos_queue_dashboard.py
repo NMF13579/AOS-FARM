@@ -13,7 +13,7 @@ import argparse
 # Import task logic from aos_task_document_check
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 try:
-    from aos.scripts.aos_task_document_check import load_all_tasks, calculate_queue, check_task_readiness
+    from aos.scripts.aos_task_document_check import load_all_tasks, calculate_queue, check_task_readiness, select_next_candidate
 except ImportError:
     print("Error: Could not import aos_task_document_check.py")
     sys.exit(1)
@@ -42,7 +42,11 @@ def get_dashboard_data():
     ]
     
     if queue:
-        next_candidate_task = queue[0]
+        next_candidate_task = select_next_candidate(queue)
+    else:
+        next_candidate_task = None
+
+    if next_candidate_task:
         next_candidate = next_candidate_task.get('task_id')
         risk_profile = next_candidate_task.get('risk_profile', 'UNKNOWN')
         evidence_status = next_candidate_task.get('evidence_status', 'UNKNOWN')
@@ -70,6 +74,11 @@ def get_dashboard_data():
             next_safe_action = "Ready for execution if human has authorized"
         else:
             next_safe_action = "Resolve blockers"
+    elif queue:
+        next_reason = "No eligible candidate after applying lifecycle boundary"
+        readiness_status = "UNKNOWN_BLOCKED"
+        blockers = ["No eligible next candidate; ranked queue contains only non-candidate states."]
+        next_safe_action = "Human review required"
             
     return {
         "active_task_count": len(active_tasks),
