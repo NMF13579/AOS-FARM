@@ -1,0 +1,11 @@
+{
+  "task_id": "REPLACE_WITH_TASK_ID",
+  "request_id": "REPLACE_WITH_REQUEST_ID",
+  "preconditions_id": "REPLACE_WITH_PRECONDITIONS_ID",
+  "controlled_task_brief_present": true,
+  "human_execution_authorization_present": true,
+  "risk_profile_assigned_by_human": true,
+  "approval_claimed": false,
+  "commit_performed": false,
+  "push_performed": false
+}

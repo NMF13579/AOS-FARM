@@ -1,0 +1,22 @@
+{
+  "task_id": "AOS-FARM-OTHER",
+  "request_id": "REQ-601",
+  "boundary_id": "BOUND-601",
+  "result_package_id": "RES-601",
+  "changed_files": ["aos/example.md"],
+  "commands_run": ["python3 -m unittest discover"],
+  "validation_results": {"unit_tests": "PASS"},
+  "not_run": [],
+  "known_unknowns": [],
+  "blockers": [],
+  "evidence_summary": "Example result package with a task_id mismatch.",
+  "human_review_required": true,
+  "approval_status": "PENDING_HUMAN_REVIEW",
+  "approval_claimed": false,
+  "task_completed": false,
+  "result_verified": false,
+  "commit_performed": false,
+  "push_performed": false,
+  "merge_performed": false,
+  "release_performed": false
+}

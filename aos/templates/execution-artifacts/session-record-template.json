@@ -1,0 +1,15 @@
+{
+  "task_id": "REPLACE_WITH_TASK_ID",
+  "request_id": "REPLACE_WITH_REQUEST_ID",
+  "preconditions_id": "REPLACE_WITH_PRECONDITIONS_ID",
+  "boundary_id": "REPLACE_WITH_BOUNDARY_ID",
+  "handoff_to_result_verification_required": true,
+  "human_review_required": true,
+  "approval_claimed": false,
+  "task_completion_claimed": false,
+  "result_verification_claimed": false,
+  "commit_performed": false,
+  "push_performed": false,
+  "merge_performed": false,
+  "release_performed": false
+}

@@ -34,10 +34,14 @@ Hard rules:
 
 If anything is missing, ambiguous, UNKNOWN, NOT_RUN in a blocking way, outside scope, or requires scope expansion, stop with BLOCKED.
 
-If Controlled Execution Guard precheck, scopecheck, or postcheck returns:
+If Controlled Execution Guard precheck, scopecheck, sessioncheck, resultcheck, or postcheck returns:
 - BLOCKED: stop.
 - UNKNOWN_BLOCKED: stop and ask for human/project-owner review.
 - HUMAN_REVIEW_REQUIRED: stop because a required human checkpoint or boundary decision is missing or incomplete.
+
+If sessioncheck returns SESSION_CONSISTENCY_NOT_READY or SESSION_CONSISTENCY_BLOCKED, stop.
+If resultcheck returns RESULT_VERIFICATION_NOT_READY or RESULT_VERIFICATION_BLOCKED, stop.
+If resultcheck returns RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW or RESULT_VERIFICATION_READY_WITH_LIMITATIONS, continue only to the next already-authorized review step.
 
 Status handling:
 - PASS: continue only to the next already-authorized step. PASS is not approval.
@@ -48,6 +52,9 @@ Status handling:
 
 Guard PASS does not authorize commit.
 Guard PASS does not authorize push.
+Session consistency does not authorize commit.
+Result verification does not authorize commit.
+Result verification does not authorize push.
 Evidence does not authorize commit.
 CI PASS does not authorize push.
 Commit requires a separate human commit authorization.
@@ -56,6 +63,7 @@ Push requires a separate human push authorization.
 For copyable guard examples, see aos/reports/examples/README.md.
 
 During execution:
+- list planned files and planned commands before editing and compare them with the authorized scope;
 - change only files inside the authorized scope;
 - do not commit;
 - do not push;
@@ -66,9 +74,11 @@ During execution:
 After execution, return:
 1. an Execution Report;
 2. an Evidence summary;
-3. validation results with clear separation between PASS, NOT_RUN, and UNKNOWN;
-4. any blockers or unresolved questions;
-5. a reminder that commit and push still require separate human authorization.
+3. session artifacts if required by the task;
+4. a result package if required by the task;
+5. validation results with clear separation between PASS, NOT_RUN, and UNKNOWN;
+6. any blockers or unresolved questions;
+7. a reminder that commit and push still require separate human authorization.
 
 This prompt authorizes only this exact execution task.
 It does not authorize future tasks.

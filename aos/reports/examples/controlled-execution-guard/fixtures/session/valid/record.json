@@ -1,0 +1,15 @@
+{
+  "task_id": "AOS-FARM-601-EXAMPLE",
+  "request_id": "REQ-601",
+  "preconditions_id": "PRE-601",
+  "boundary_id": "BOUND-601",
+  "handoff_to_result_verification_required": true,
+  "human_review_required": true,
+  "approval_claimed": false,
+  "task_completion_claimed": false,
+  "result_verification_claimed": false,
+  "commit_performed": false,
+  "push_performed": false,
+  "merge_performed": false,
+  "release_performed": false
+}

@@ -1,0 +1,8 @@
+{
+  "task_id": "AOS-FARM-OTHER",
+  "request_id": "REQ-601",
+  "preconditions_id": "PRE-601",
+  "controlled_task_brief_present": true,
+  "human_execution_authorization_present": true,
+  "risk_profile_assigned_by_human": true
+}

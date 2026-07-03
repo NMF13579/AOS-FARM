@@ -1,7 +1,9 @@
 # First Controlled Execution
 
 ## Purpose
-This guide explains the first safe path from a finished `Controlled Task Brief` to `Human Execution Authorization`, then to Controlled Execution Guard `precheck`, then to `Controlled Execution`, then to `scopecheck`, `postcheck`, and `Evidence Review`.
+This guide explains the first safe path from a finished `Controlled Task Brief`
+to Human Execution Authorization, Controlled Execution Guard checks, Evidence
+Review, Human Review Package, and User Acceptance Decision.
 
 It is written for a non-programmer or vibe-coder user.
 
@@ -36,6 +38,26 @@ At this stage:
 - push is not authorized.
 
 ## Step-By-Step Flow
+
+Canonical order:
+
+```text
+Controlled Task Brief
+-> Human Execution Authorization
+-> Controlled Execution Package
+-> precheck
+-> scoped code change
+-> changed-files artifact
+-> scopecheck
+-> session artifacts
+-> sessioncheck
+-> result package
+-> resultcheck
+-> Execution Report / Evidence Report
+-> postcheck
+-> Human Review Package
+-> User Acceptance Decision
+```
 
 ### Step 1: Pick Exactly One Task
 Choose one task from the queue that is ready for execution authorization.
@@ -202,7 +224,8 @@ Before editing files, the agent must verify:
 - any package, report, or evidence paths named in the brief are present or clearly expected;
 - the current branch and repository state are safe enough for the task;
 - allowed and forbidden scope are explicit;
-- nothing requires scope expansion.
+- nothing requires scope expansion;
+- planned files and planned commands are inside the authorized scope.
 
 The agent must not:
 - approve anything as human;
@@ -219,6 +242,12 @@ Expected output:
 - one `Execution Report`
 - collected Evidence
 
+Advisory pre-mutation planned scope check:
+- list the files and commands the agent plans to touch before editing;
+- compare them with the Controlled Execution Package `scope`;
+- stop with `BLOCKED` or `HUMAN_REVIEW_REQUIRED` if the plan is outside scope;
+- treat this as advisory only, not physical runtime enforcement and not a runner.
+
 ### Step 8: Run Controlled Execution Guard Scopecheck
 After execution and before Evidence Review, verify the changed-file boundary.
 
@@ -233,8 +262,50 @@ Important:
 - `UNKNOWN_BLOCKED` means stop and ask for human/project-owner review.
 - `HUMAN_REVIEW_REQUIRED` means a required human checkpoint or boundary decision is missing or incomplete.
 
-### Step 9: Create The Execution Report
-Create the `Execution Report` before final evidence review.
+### Step 9: Create Session Artifacts And Run Sessioncheck
+Before result verification, create the session artifacts and verify that they
+refer to the same task, request, preconditions, boundary, and handoff state.
+
+Templates:
+- `aos/templates/execution-artifacts/session-request-template.json`
+- `aos/templates/execution-artifacts/session-preconditions-template.json`
+- `aos/templates/execution-artifacts/session-boundary-template.json`
+- `aos/templates/execution-artifacts/session-record-template.json`
+
+Example:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos sessioncheck --request <request.json> --preconditions <preconditions.json> --boundary <boundary.json> --record <record.json>
+```
+
+Important:
+- `SESSION_CONSISTENCY_PASS` is not approval.
+- `SESSION_CONSISTENCY_NOT_READY` means result handoff is not ready.
+- `SESSION_CONSISTENCY_BLOCKED` means stop.
+- `UNKNOWN_BLOCKED` means stop and ask for human/project-owner review.
+
+### Step 10: Create Result Package And Run Resultcheck
+Create a result package that summarizes changed files, commands run, validation
+results, NOT_RUN items, known unknowns, blockers, and Evidence summary.
+
+Template:
+- `aos/templates/execution-artifacts/result-package-template.json`
+
+Example:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py --project-root . --aos-root aos resultcheck --session-record <session-record.json> --result-package <result-package.json>
+```
+
+Important:
+- `RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW` is not approval.
+- `RESULT_VERIFICATION_READY_WITH_LIMITATIONS` is not approval.
+- `RESULT_VERIFICATION_NOT_READY` means fix the package or ask for human review.
+- `RESULT_VERIFICATION_BLOCKED` means stop.
+- resultcheck does not authorize commit, push, merge, release, or lifecycle mutation.
+
+### Step 11: Create The Execution Report And Evidence Report
+Create the `Execution Report` and `Evidence Report` before final evidence review.
 
 Use:
 - `aos/templates/reports/execution-report-template.md`
@@ -245,7 +316,7 @@ The report should reflect:
 - PASS / NOT_RUN / UNKNOWN separation;
 - whether scope stayed inside authorization.
 
-### Step 10: Run Controlled Execution Guard Postcheck
+### Step 12: Run Controlled Execution Guard Postcheck
 Before finalizing Evidence Review, verify the evidence/report boundary.
 
 Example:
@@ -262,7 +333,22 @@ Important:
 - `UNKNOWN_BLOCKED` means stop and ask for human/project-owner review.
 - `HUMAN_REVIEW_REQUIRED` means a required human checkpoint or boundary decision is missing or incomplete.
 
-### Step 11: Review The Execution Report And Evidence
+### Step 13: Generate Human Review Package
+Generate or assemble a Human Review Package after resultcheck and postcheck.
+
+Example:
+
+```bash
+python3 aos/scripts/aos_review_package.py --task-brief <task-brief.md> --execution-package <package.yaml> --session-record <session-record.json> --result-package <result-package.json> --execution-report <execution-report.md> --evidence-report <evidence-report.md> --guard-output <guard-output.json> --output <human-review-package.md>
+```
+
+Important:
+- Human Review Package is not approval.
+- Human Review Package is not commit authorization.
+- Human Review Package is not push authorization.
+- Human Review Package is not release authorization.
+
+### Step 14: Review The Execution Report And Evidence
 After execution, review what the agent claims it changed and what Evidence it provides.
 
 Use:
@@ -287,8 +373,18 @@ Important:
 - Evidence Review is not push approval.
 - Guard PASS is not commit approval.
 - Guard PASS is not push approval.
+- resultcheck READY_FOR_HUMAN_REVIEW is not approval.
+- postcheck PASS is not approval.
 
-### Step 12: Separate Commit And Push Decisions
+### Step 15: User Acceptance Decision
+After Human Review, the user may accept, reject, or request changes.
+
+Important:
+- User acceptance of the result is not commit authorization unless explicitly stated.
+- User acceptance is not push, merge, or release authorization unless explicitly stated.
+- Commit, push, merge, and release remain separate scoped human decisions.
+
+### Step 16: Separate Commit And Push Decisions
 Only after human review of the Evidence:
 - prepare commit authorization;
 - after commit and post-commit verification, prepare push authorization.
@@ -301,7 +397,7 @@ These are separate decisions.
 - merge;
 - release.
 
-### Step 13: Capture Post-Execution Learning
+### Step 17: Capture Post-Execution Learning
 After Evidence Review and any available closure evidence, use the
 Evidence-to-Backlog Loop to record lessons learned, possible hardening backlog
 items, and a Next Task Candidate for human review.
@@ -324,6 +420,8 @@ Important:
 - [ ] A human assigned the Risk Profile.
 - [ ] A human created explicit execution authorization.
 - [ ] I ran Controlled Execution Guard `precheck`.
+- [ ] I understand that planned-file review is advisory and not runtime enforcement.
+- [ ] I understand that sessioncheck/resultcheck/postcheck are still not approval.
 - [ ] I am using the controlled execution prompt.
 - [ ] I understand that commit and push are still not authorized.
 
@@ -343,6 +441,8 @@ Evidence Review should answer:
 - What remains `UNKNOWN`?
 - Are there unresolved questions?
 - Did `scopecheck` stay inside authorized changed-file boundaries?
+- Did `sessioncheck` preserve the handoff boundary?
+- Did `resultcheck` prepare the result for human review without claiming approval?
 - Did `postcheck` confirm the Evidence boundary disclosures?
 
 Evidence Review must say clearly:
@@ -350,6 +450,8 @@ Evidence Review must say clearly:
 - Evidence is not commit approval.
 - the next step is commit authorization only if the human approves.
 - Guard PASS is not approval.
+- resultcheck READY_FOR_HUMAN_REVIEW is not approval.
+- postcheck PASS is not approval.
 
 ## Status Handling
 
@@ -363,6 +465,8 @@ Evidence Review must say clearly:
 
 Guard PASS does not authorize commit.
 Guard PASS does not authorize push.
+resultcheck READY_FOR_HUMAN_REVIEW does not authorize commit.
+postcheck PASS does not authorize push.
 Evidence does not authorize commit.
 CI PASS does not authorize push.
 Commit requires a separate human commit authorization.
@@ -373,9 +477,7 @@ Stop with `BLOCKED` if:
 - the brief is missing or ambiguous;
 - Human Execution Authorization is missing;
 - Risk Profile assignment is missing;
-- guard `precheck`, `scopecheck`, or `postcheck` returns `BLOCKED`;
-- guard `precheck`, `scopecheck`, or `postcheck` returns `UNKNOWN_BLOCKED`;
-- guard `precheck`, `scopecheck`, or `postcheck` returns `HUMAN_REVIEW_REQUIRED`;
+- guard `precheck`, `scopecheck`, `sessioncheck`, `resultcheck`, or `postcheck` returns a blocked or unknown status;
 - scope is unclear;
 - the task requires extra files not in scope;
 - validation status is missing and cannot be clarified;

@@ -1,0 +1,7 @@
+{
+  "task_id": "AOS-FARM-601-EXAMPLE",
+  "request_id": "REQ-601",
+  "boundary_id": "BOUND-601",
+  "authorized_scope_declared": true,
+  "forbidden_scope_declared": true
+}

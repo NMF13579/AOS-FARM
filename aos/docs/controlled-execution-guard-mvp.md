@@ -8,6 +8,8 @@ The Controlled Execution Guard MVP is an optional transferable AOS tool for dete
 
 - `precheck` fails closed unless the execution package declares human authorization, human-assigned Risk Profile, scoped files, forbidden files, validation plan, expected evidence, and execution boundaries that keep commit, push, merge, release, next-task execution, and approval claims disabled.
 - `scopecheck` validates that changed files are known, stay inside `authorized_files`, do not touch `forbidden_files`, and do not modify protected development/canonical files without a separate human checkpoint.
+- `sessioncheck` validates that request, preconditions, boundary, and record artifacts describe the same task/request and preserve the handoff boundary.
+- `resultcheck` validates that a result package is structurally ready for human review and does not claim approval, task completion, result verification, commit, push, merge, release, or lifecycle mutation.
 - `postcheck` validates that the execution or evidence report discloses changed files, diff summary, commands run, PASS, NOT_RUN, UNKNOWN, and BLOCKED lists, forbidden actions not performed, and the final `human_review_required: true` boundary.
 
 ## What The Guard Does Not Do
@@ -18,6 +20,8 @@ The Controlled Execution Guard MVP is an optional transferable AOS tool for dete
 - It does not assign Risk Profile.
 - It does not claim approval.
 - It is not a runner and it is not an autonomous task system.
+- It does not physically enforce runtime file mutation boundaries.
+- Planned-file checks are advisory until a separate runtime enforcement stage is explicitly authorized.
 
 ## CLI Usage
 
@@ -52,11 +56,33 @@ python aos/scripts/aos_controlled_execution_guard.py scopecheck \
   --changed-files aos/reports/examples/controlled-execution-guard/fixtures/changed_file_outside_scope.yaml
 ```
 
+Sessioncheck:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py sessioncheck \
+  --project-root . \
+  --aos-root aos \
+  --request aos/reports/examples/controlled-execution-guard/fixtures/session/valid/request.json \
+  --preconditions aos/reports/examples/controlled-execution-guard/fixtures/session/valid/preconditions.json \
+  --boundary aos/reports/examples/controlled-execution-guard/fixtures/session/valid/boundary.json \
+  --record aos/reports/examples/controlled-execution-guard/fixtures/session/valid/record.json
+```
+
+Resultcheck:
+
+```bash
+python3 aos/scripts/aos_controlled_execution_guard.py resultcheck \
+  --project-root . \
+  --aos-root aos \
+  --session-record aos/reports/examples/controlled-execution-guard/fixtures/result/valid/session-record.json \
+  --result-package aos/reports/examples/controlled-execution-guard/fixtures/result/valid/result-package.json
+```
+
 ## Path Model
 
 - `--project-root` points to the host project root.
 - `--aos-root` points to the embedded transferable `aos/` folder inside that host project.
-- Relative package, report, and changed-files paths are resolved against `project_root` first and `aos_root` second.
+- Relative package, report, changed-files, session, and result-package paths are resolved against `project_root` first and `aos_root` second.
 
 This allows a host project shape such as:
 
@@ -80,6 +106,18 @@ Those files are AOS-FARM development authority only. The guard may still detect 
 - NOT_RUN is not PASS. If a command was not run, the guard requires that it stays disclosed as `NOT_RUN`.
 - UNKNOWN is blocked. Unknown state cannot be silently accepted as OK.
 - Commit and push remain separate human-authorized gates even when the guard returns PASS.
+- `SESSION_CONSISTENCY_PASS` is not approval.
+- `RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW` is not approval.
+- `RESULT_VERIFICATION_READY_WITH_LIMITATIONS` is not approval.
+- postcheck PASS is not approval.
+
+## Related Task Quality Tooling
+
+- Current entrypoint: `python3 aos/scripts/aos_task_quality_check.py`.
+- Legacy compatibility entrypoint: `python3 aos/scripts/aos_task_quality.py`.
+- `aos_task_quality_check.py` covers functional intent checks, forbidden evidence mappings, and result acceptance package structure.
+- `aos_task_quality.py` remains for older TaskQualityChecker JSON packages and is not the current user-facing recommendation.
+- Neither script grants approval, result acceptance, commit authorization, push authorization, merge authorization, or release authorization.
 
 ## Boundary Notes
 

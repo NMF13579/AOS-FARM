@@ -128,6 +128,38 @@ unless 00 explicitly says otherwise.
 6. PASS output does not authorize any lifecycle transition.
 ```
 
+---
+
+## Controlled Execution Guard Flow
+
+When a task is explicitly authorized for controlled execution, follow the
+workflow in `aos/docs/workflow/first-controlled-execution.md`.
+
+Guard order:
+
+```text
+precheck
+scoped code change
+scopecheck
+sessioncheck
+resultcheck
+postcheck
+Human Review Package
+User Acceptance Decision
+```
+
+Before editing, perform an advisory planned-scope check by comparing planned
+files and commands with the authorized scope. This is not runtime enforcement,
+does not physically block edits, and does not create a runner.
+
+Boundary reminders:
+- `SESSION_CONSISTENCY_PASS` is not approval.
+- `RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW` is not approval.
+- postcheck PASS is not approval.
+- Human Review Package is not approval.
+- User acceptance is not commit, push, merge, or release authorization unless explicitly stated.
+- Commit authorization and push authorization are separate human checkpoints.
+
 Required validation commands for this project:
 
 ```bash

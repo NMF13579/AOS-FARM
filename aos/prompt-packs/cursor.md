@@ -27,4 +27,12 @@ Before proceeding with any task, you MUST read and follow the instructions in:
 - Do not assign Risk Profile.
 - Do not treat this prompt pack as Source of Truth.
 
+## Controlled Execution Guard Flow
+- Follow `aos/docs/workflow/first-controlled-execution.md` for controlled execution.
+- Use `precheck`, `scopecheck`, `sessioncheck`, `resultcheck`, and `postcheck` when the task requires the controlled execution guard.
+- Human Review Package is not approval.
+- `RESULT_VERIFICATION_READY_FOR_HUMAN_REVIEW` is not approval.
+- Commit authorization and push authorization remain separate human checkpoints.
+- This prompt pack remains guidance only and is not Source of Truth.
+
 This prompt pack does NOT grant lifecycle mutation authority, execution authority, commit/push authority, nor does it define new approval semantics.

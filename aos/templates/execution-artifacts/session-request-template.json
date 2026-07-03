@@ -1,0 +1,10 @@
+{
+  "task_id": "REPLACE_WITH_TASK_ID",
+  "request_id": "REPLACE_WITH_REQUEST_ID",
+  "requested_action": "REPLACE_WITH_REQUESTED_ACTION",
+  "approval_claimed": false,
+  "commit_authorized": false,
+  "push_authorized": false,
+  "merge_authorized": false,
+  "release_authorized": false
+}

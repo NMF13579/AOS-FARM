@@ -3,6 +3,19 @@ import json
 import argparse
 import os
 
+"""
+Current task quality tooling entrypoint.
+
+This script is the user-facing checker for functional intent, forbidden
+evidence mappings, and task execution result acceptance package structure.
+`aos/scripts/aos_task_quality.py` remains a legacy compatibility entrypoint for
+older TaskQualityChecker JSON packages.
+
+No task quality status grants approval, result acceptance, commit
+authorization, push authorization, merge authorization, or release
+authorization.
+"""
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations
 
@@ -427,7 +440,9 @@ def check_result_acceptance(result_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Task Quality Checker with Functional Intent Gate")
+    parser = argparse.ArgumentParser(
+        description="Current Task Quality Checker with Functional Intent, Forbidden Evidence, and Result Acceptance gates"
+    )
     parser.add_argument(
         "action",
         choices=["validate", "summarize", "validate-forbidden-evidence", "validate-result-acceptance"],
