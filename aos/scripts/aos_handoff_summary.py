@@ -12,7 +12,12 @@ def main():
     parser = argparse.ArgumentParser(description="AOS Handoff Summary Helper")
     parser.add_argument("--markdown", action="store_true", help="Output in Markdown format")
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
+    parser.add_argument("--compact", action="store_true", help="Compact output mode")
+    parser.add_argument("--summary", action="store_true", help="Summary output mode")
     parser.add_argument("--write", help="Write Markdown to a file under reports/")
+    parser.add_argument("--task-id", help="Task ID for semantic context")
+    parser.add_argument("--stage-title", help="Stage title for semantic context")
+    parser.add_argument("--context", help="Additional semantic context")
     args = parser.parse_args()
 
     if not args.json and not args.markdown and not args.write:
@@ -48,7 +53,8 @@ def main():
         "UNKNOWN is not OK.",
         "NOT_RUN is not PASS.",
         "PASS is not approval.",
-        "Evidence is not approval."
+        "Evidence is not approval.",
+        "Local trace boundary: /.aos-tmp/logs/ is local-only, ignored, disposable, not Evidence, not approval, not Source of Truth."
     ]
 
     analysis_status = "HANDOFF_COLLECTED"
@@ -72,9 +78,26 @@ def main():
         "notes": notes
     }
 
-    markdown_out = f"""# AOS Handoff Summary
+    if args.task_id:
+        data["task_id"] = args.task_id
+    if args.stage_title:
+        data["stage_title"] = args.stage_title
+    if args.context:
+        data["semantic_context"] = args.context
 
-## Current State
+    markdown_out = f"# AOS Handoff Summary\n\n"
+
+    if args.task_id or args.stage_title or args.context:
+        markdown_out += "## Semantic Context\n"
+        if args.task_id:
+            markdown_out += f"- Task ID: {args.task_id}\n"
+        if args.stage_title:
+            markdown_out += f"- Stage: {args.stage_title}\n"
+        if args.context:
+            markdown_out += f"- Context: {args.context}\n"
+        markdown_out += "\n"
+
+    markdown_out += f"""## Current State
 {data['current_state']}
 
 ## Last Completed Work
@@ -117,12 +140,45 @@ None
     markdown_out += f"\n## Analysis Status\n**{data['analysis_status']}**\n"
     markdown_out += "\nGenerated handoff summary is not approval.\n"
     markdown_out += "Generated handoff summary is not Source of Truth.\n"
-    
+    markdown_out += "Semantic context is not Source of Truth.\n"
+
+    if args.compact:
+        compact_out = f"**AOS Handoff: {data['analysis_status']}**\n"
+        if args.task_id:
+            compact_out += f"Task: {args.task_id}\n"
+        compact_out += f"State: {data['current_state']}\n"
+        compact_out += f"Done: {data['what_was_done'][0]}\n"
+        compact_out += f"Next: {data['next_safe_step']}\n"
+        compact_out += "Safety Notes:\n"
+        for n in data['notes']:
+            compact_out += f"- {n}\n"
+        markdown_out = compact_out
+
+    if args.summary:
+        summary_out = f"# AOS Handoff Summary: {data['analysis_status']}\n\n"
+        if args.task_id or args.stage_title or args.context:
+            summary_out += "## Semantic Context\n"
+            if args.task_id:
+                summary_out += f"- Task ID: {args.task_id}\n"
+            if args.stage_title:
+                summary_out += f"- Stage: {args.stage_title}\n"
+            if args.context:
+                summary_out += f"- Context: {args.context}\n"
+            summary_out += "\n"
+        summary_out += f"**State:** {data['current_state']}\n"
+        summary_out += f"**Done:** {data['what_was_done'][0]}\n"
+        summary_out += f"**Next Safe Step:** {data['next_safe_step']}\n"
+        summary_out += "\n**Forbidden Actions:** " + ", ".join(data['forbidden_actions']) + "\n"
+        summary_out += "\n**Safety Notes:**\n"
+        for n in data['notes']:
+            summary_out += f"- {n}\n"
+        markdown_out = summary_out
+
     if args.json:
         print(json.dumps(data, indent=2))
     if args.markdown:
         print(markdown_out)
-        
+
     if args.write:
         with open(args.write, "w") as f:
             f.write(markdown_out)

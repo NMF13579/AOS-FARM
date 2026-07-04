@@ -18,6 +18,8 @@ def main():
     parser = argparse.ArgumentParser(description="AOS Baseline Summary Helper")
     parser.add_argument("--markdown", action="store_true", help="Output in Markdown format")
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
+    parser.add_argument("--compact", action="store_true", help="Compact output mode")
+    parser.add_argument("--summary", action="store_true", help="Summary output mode")
     parser.add_argument("--target-branch", default="dev", help="Target branch for comparison")
     args = parser.parse_args()
 
@@ -110,7 +112,8 @@ def main():
         "NOT_RUN is not PASS.",
         "PASS is not approval.",
         "No commit was performed.",
-        "No push was performed."
+        "No push was performed.",
+        "Local trace boundary: /.aos-tmp/logs/ is local-only, ignored, disposable, not Evidence, not approval, not Source of Truth."
     ]
     
     analysis_status = "BASELINE_COLLECTED"
@@ -148,6 +151,28 @@ def main():
     
     if args.json:
         print(json.dumps(data, indent=2))
+    elif args.compact:
+        print(f"**AOS Baseline: {data['analysis_status']}**")
+        print(f"Current: {data['current_branch']} | HEAD: {data['head_sha']}")
+        print(f"Target: {data['target_branch']} | origin/dev: {data['origin_dev_sha']}")
+        print("Safety Notes:")
+        for n in data['notes']:
+            print(f"- {n}")
+    elif args.summary:
+        print(f"# AOS Baseline Summary: {data['analysis_status']}\n")
+        print(f"**Branch:** {data['current_branch']} | **HEAD:** {data['head_sha']}")
+        print(f"**Target:** {data['target_branch']} | **origin/dev:** {data['origin_dev_sha']}")
+        print(f"**Ahead/Behind:** origin/dev...HEAD: {data['origin_dev_head_ahead_behind']}")
+        print(f"**Working Tree Clean:** {data['working_tree_clean']}")
+        if data['untracked_files_summary']:
+            print(f"**Untracked:** {len(data['untracked_files_summary'])} files")
+        if data['warnings']:
+            print("\n**Warnings:**")
+            for w in data['warnings']:
+                print(f"- {w}")
+        print("\n**Safety Notes:**")
+        for n in data['notes']:
+            print(f"- {n}")
     elif args.markdown:
         print("# AOS Baseline Summary\n")
         

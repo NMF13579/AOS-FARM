@@ -19,6 +19,8 @@ def main():
     parser = argparse.ArgumentParser(description="AOS Lifecycle Status Helper")
     parser.add_argument("--markdown", action="store_true", help="Output in Markdown format")
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
+    parser.add_argument("--compact", action="store_true", help="Compact output mode")
+    parser.add_argument("--summary", action="store_true", help="Summary output mode")
     parser.add_argument("--next", action="store_true", help="Output next safe checkpoint guidance")
     args = parser.parse_args()
 
@@ -77,7 +79,8 @@ def main():
         "UNKNOWN is not OK.",
         "NOT_RUN is not PASS.",
         "PASS is not approval.",
-        "Evidence is not approval."
+        "Evidence is not approval.",
+        "Local trace boundary: /.aos-tmp/logs/ is local-only, ignored, disposable, not Evidence, not approval, not Source of Truth."
     ]
     
     analysis_status = "STATUS_COLLECTED"
@@ -125,6 +128,26 @@ def main():
         print("\nNext safe checkpoint is guidance only.")
         print("It is not authorization.")
         print("Action executed: no.")
+        return
+
+    if args.compact:
+        print(f"**AOS Lifecycle Status: {data['analysis_status']}**")
+        print(f"Branch: {data['branch']} | Phase: {data['detected_lifecycle_phase']}")
+        print(f"Task: {data['detected_task']}")
+        print("Safety Notes:")
+        for n in data['notes']:
+            print(f"- {n}")
+        return
+
+    if args.summary:
+        print(f"# AOS Lifecycle Summary: {data['analysis_status']}\n")
+        print(f"**Branch:** {data['branch']} | **HEAD:** {data['head']}")
+        print(f"**Phase:** {data['detected_lifecycle_phase']}")
+        print(f"**Task:** {data['detected_task']}")
+        print(f"**Last Completed Task:** {data['last_completed_task']}")
+        print("\n**Safety Notes:**")
+        for n in data['notes']:
+            print(f"- {n}")
         return
 
     if args.markdown:
