@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AOS Handoff Summary",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "project",
+    "current_state",
+    "last_completed_work",
+    "what_was_done",
+    "what_was_not_done",
+    "evidence_reports",
+    "validation_snapshot",
+    "open_unknowns",
+    "current_workspace",
+    "next_safe_step",
+    "forbidden_actions",
+    "human_checkpoint_required",
+    "analysis_status",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "project": { "type": "string" },
+    "current_state": { "type": "string" },
+    "last_completed_work": { "type": "string" },
+    "what_was_done": { "type": "array", "items": { "type": "string" } },
+    "what_was_not_done": { "type": "array", "items": { "type": "string" } },
+    "evidence_reports": { "type": "array", "items": { "type": "string" } },
+    "validation_snapshot": { "type": "string" },
+    "open_unknowns": { "type": "array", "items": { "type": "string" } },
+    "current_workspace": { "type": "string" },
+    "next_safe_step": { "type": "string" },
+    "forbidden_actions": { "type": "array", "items": { "type": "string" } },
+    "human_checkpoint_required": { "type": "string" },
+    "analysis_status": { 
+      "type": "string",
+      "enum": ["STATUS_COLLECTED", "HANDOFF_COLLECTED", "UNKNOWN_BLOCKED", "BLOCKED"]
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}
