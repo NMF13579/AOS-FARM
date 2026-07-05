@@ -2,16 +2,16 @@
 
 AOS is a self-contained consumer kit. The `aos/` directory is the installable and removable unit.
 
-## Installation
-1. **Copy AOS Folder:** Copy the entire `aos/` folder into your target project root.
-2. **Copy AGENTS.md Template:** Copy the template file `/aos/root/AGENTS.md` into your project root as `AGENTS.md`. This is the primary required root entrypoint for AI agents.
-3. **Copy .gitignore Template:** If your project lacks a `.gitignore`, copy `aos/root/.gitignore.template` to your root as `.gitignore` to ensure `/.aos-tmp/` is ignored. If you already have one, just add `/.aos-tmp/` to it.
-4. (Optional) Add marker blocks in your project root `README.md` to point users and agents to `/aos/START_HERE.md`.
-5. (Optional) Update your `.gitignore` to ignore active reports if desired.
+For full installation and transfer instructions, please read [aos/docs/INSTALL-AND-TRANSFER.md](docs/INSTALL-AND-TRANSFER.md).
+
+## Quick Reference
+- Installer `--apply` is **NOT_IMPLEMENTED**.
+- Manual transfer is the current supported path.
+- Dry-run validates and reports; it does not deploy.
 
 ## Uninstallation
 1. **Remove AOS Folder:** Delete the entire `aos/` folder from your project root.
-2. **Remove AGENTS.md:** Delete `AGENTS.md` from your project root.
+2. **Remove AGENTS.md:** Delete `AGENTS.md` and `llms.txt` from your project root.
 3. **Remove Markers:** Remove any AOS marker blocks from your `README.md` and `.gitignore`.
 
 **AOS Core Rules & Boundaries:**

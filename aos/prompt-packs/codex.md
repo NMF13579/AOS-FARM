@@ -46,8 +46,17 @@ You are **not**:
 
 ## Required Reading Order
 
-Before acting on any task, read the following in this order:
+**For Consumer Target Repositories:**
+Before acting on any task, route through the deployed runtime entrypoints:
+1. `/AGENTS.md` (deployed root file)
+2. `/llms.txt` (deployed root file)
+3. `/aos/START_HERE.md` — consumer entry point
+4. `/aos/docs/INSTALL-AND-TRANSFER.md` — install/transfer and status interpretation
 
+*Note: Consumer target repos do NOT require `00`, `01`, `02` root files. Do not point to `/aos/root/AGENTS.md` as the active runtime file.*
+
+**For AOS-FARM Development Repository ONLY:**
+If developing AOS-FARM itself, read the canonical root sources in this order:
 1. `00_AOS_Core_Control.md` — highest authority
 2. `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md` — assembly pipelines and roadmap
 3. `02_AOS_Governance_Control_Module_and_Safety_Rules.md` — safety rules, Risk Profiles, gates

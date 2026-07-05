@@ -4,13 +4,24 @@ This prompt pack is a thin adapter for cursor.
 
 ## Routing
 Before proceeding with any task, you MUST read and follow the instructions in:
-- `aos/root/AGENTS.md`
-- `aos/root/llms.txt`
+
+**For Consumer Target Repositories:**
+- `/AGENTS.md` (deployed root file)
+- `/llms.txt` (deployed root file)
+- `aos/START_HERE.md`
+- `aos/docs/INSTALL-AND-TRANSFER.md`
 - `aos/docs/ROUTES.md`
 - `aos/docs/STORAGE.md`
 - `aos/docs/AUTHORIZATION-COMMANDS.md`
 - `aos/docs/FIRST-SAFE-COMMANDS.md`
 - `aos/docs/WORKSPACE-BOUNDARY.md`
+
+*Note: Consumer target repos do NOT require `00`, `01`, `02` root files. Do not point to `/aos/root/AGENTS.md` as the active runtime file.*
+
+**For AOS-FARM Development Repository ONLY:**
+- `00_AOS_Core_Control.md`
+- `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md`
+- `02_AOS_Governance_Control_Module_and_Safety_Rules.md`
 
 ## Mandatory Boundaries
 - PASS ≠ approval.

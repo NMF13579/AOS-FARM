@@ -31,24 +31,24 @@ def check_package_integrity(repo_root):
         "aos/root/llms.txt",
         "aos/root/AGENTS.md"
     ]
-    
+
     missing = []
     for f in required_files:
         if not (repo_root / f).exists():
             missing.append(f)
-            
+
     advisory_template = "aos/root/.github/workflows/aos-advisory.yml"
     advisory_present = (repo_root / advisory_template).exists()
-    
+
     status = "PASS"
     warnings = []
-    
+
     if missing:
         status = "BLOCKED"
     elif not advisory_present:
         warnings.append(f"{advisory_template} is missing (optional)")
         status = "PASS_WITH_WARNINGS"
-        
+
     return {
         "status": status,
         "missing_required": missing,
@@ -60,7 +60,7 @@ def check_target_install_state(repo_root):
     state = {}
     warnings = []
     human_review = False
-    
+
     # Check advisory workflow
     adv_target = repo_root / ".github/workflows/aos-advisory.yml"
     adv_template = repo_root / "aos/root/.github/workflows/aos-advisory.yml"
@@ -70,7 +70,7 @@ def check_target_install_state(repo_root):
         state["advisory_workflow"] = "pending_from_template"
     else:
         state["advisory_workflow"] = "missing_template"
-        
+
     # Check llms.txt
     if (repo_root / "llms.txt").exists():
         state["llms.txt"] = "deployed"
@@ -78,7 +78,7 @@ def check_target_install_state(repo_root):
         state["llms.txt"] = "pending_from_template"
     else:
         state["llms.txt"] = "missing_template"
-        
+
     # Check AGENTS.md
     if (repo_root / "AGENTS.md").exists():
         state["AGENTS.md"] = "deployed"
@@ -86,7 +86,7 @@ def check_target_install_state(repo_root):
         state["AGENTS.md"] = "pending_from_template"
     else:
         state["AGENTS.md"] = "missing_template"
-        
+
     # Check project workspace boundary
     forbidden_project_folders = ["src", "tests", "app", "pages", "public", "lib", "backend", "frontend"]
     found_forbidden = []
@@ -94,11 +94,11 @@ def check_target_install_state(repo_root):
         for f in forbidden_project_folders:
             if (repo_root / "project" / f).exists():
                 found_forbidden.append(f"project/{f}")
-                
+
     if found_forbidden:
         warnings.append(f"Unexpected product code folders found: {', '.join(found_forbidden)}")
         human_review = True
-        
+
     # Check .aos-tmp boundary
     tmp_dir = repo_root / ".aos-tmp"
     found_in_tmp = []
@@ -108,19 +108,30 @@ def check_target_install_state(repo_root):
                 f = file.name.lower()
                 if "report" in f or "evidence" in f or f in ["agents.md", "llms.txt", "task.md", "00_aos_core_control.md"]:
                     found_in_tmp.append(str(file.relative_to(tmp_dir)))
-                    
+
     if found_in_tmp:
         warnings.append(f"Source of Truth artifacts found in /.aos-tmp/: {', '.join(found_in_tmp)}")
         human_review = True
-        
+
+    pending_entrypoints = []
+    if state.get("AGENTS.md") != "deployed":
+        pending_entrypoints.append("AGENTS.md")
+    if state.get("llms.txt") != "deployed":
+        pending_entrypoints.append("llms.txt")
+
+    if pending_entrypoints:
+        warnings.append(f"Required root entrypoints are not deployed: {', '.join(pending_entrypoints)}")
+        human_review = True
+
     status = "HUMAN_REVIEW_REQUIRED" if human_review else "PASS"
-    
+
     return {
         "status": status,
         "file_states": state,
         "unexpected_project_folders": found_forbidden,
         "unexpected_tmp_files": found_in_tmp,
-        "warnings": warnings
+        "warnings": warnings,
+        "pending_entrypoints": pending_entrypoints
     }
 
 def get_safety_boundaries():
@@ -142,7 +153,7 @@ def run_installer_dry_run(repo_root):
     installer_script = repo_root / "aos/scripts/aos_install.py"
     if not installer_script.exists():
         return {"status": "NOT_RUN", "evidence": "Installer script missing"}
-        
+
     try:
         # Run safely as read-only subprocess
         result = subprocess.run(
@@ -156,7 +167,7 @@ def run_installer_dry_run(repo_root):
         for line in output.split('\n'):
             if "install_status:" in line:
                 status_line = line.split("install_status:")[1].strip()
-                
+
         return {
             "status": "COMPLETED",
             "dry_run_install_status": status_line,
@@ -178,14 +189,30 @@ def calculate_final_status(pkg_status, tgt_status):
 
 def main():
     repo_root = get_repo_root()
-    
+
     pkg_res = check_package_integrity(repo_root)
     tgt_res = check_target_install_state(repo_root)
     dry_run_res = run_installer_dry_run(repo_root)
     safety = get_safety_boundaries()
-    
+
     final_status = calculate_final_status(pkg_res["status"], tgt_res["status"])
-    
+
+    # Calculate installation readiness and next action
+    if tgt_res.get("pending_entrypoints"):
+        installation_readiness = "MANUAL_TRANSFER_REQUIRED"
+        next_safe_action = "deploy required root entrypoints manually, then rerun self-test"
+    else:
+        installation_readiness = final_status
+        if final_status == "HUMAN_REVIEW_REQUIRED":
+            if tgt_res.get("unexpected_tmp_files"):
+                next_safe_action = "review local /.aos-tmp/ Source of Truth artifact warning; do not remove without Human authorization"
+            elif tgt_res.get("unexpected_project_folders"):
+                next_safe_action = "review unexpected product code folders; resolve conflicts"
+            else:
+                next_safe_action = "review warnings manually"
+        else:
+            next_safe_action = "none"
+
     report = {
         "stage": "AOS-FARM.581",
         "command": "Consumer Self-Test",
@@ -193,9 +220,13 @@ def main():
         "target_install_state": tgt_res,
         "installer_dry_run": dry_run_res,
         "safety_boundaries": safety,
-        "final_status": final_status
+        "final_status": final_status,
+        "installation_readiness": installation_readiness,
+        "approval_claimed": False,
+        "execution_authorized": False,
+        "next_safe_action": next_safe_action
     }
-    
+
     # 1. Human readable summary
     print("=== AOS Consumer Self-Test ===")
     print(f"Package Integrity: {pkg_res['status']}")
@@ -204,28 +235,33 @@ def main():
     if pkg_res['warnings']:
         for w in pkg_res['warnings']:
             print(f"  Warning: {w}")
-            
+
     print(f"\nTarget Install State: {tgt_res['status']}")
     for f, state in tgt_res['file_states'].items():
         print(f"  {f}: {state}")
     if tgt_res['warnings']:
         for w in tgt_res['warnings']:
             print(f"  Warning: {w}")
-            
+
+    print(f"\nInstallation Readiness: {installation_readiness}")
+    print(f"approval_claimed: false")
+    print(f"execution_authorized: false")
+    print(f"next_safe_action: {next_safe_action}")
+
     print(f"\nInstaller Dry-Run (Evidence Only): {dry_run_res.get('dry_run_install_status', 'NOT_RUN')}")
-    
+
     print("\nSafety Boundaries:")
     for s in safety:
         print(f"  {s}")
-        
+
     print(f"\nFinal Status: {final_status}")
     print("==============================\n")
-    
+
     # 2. Machine-readable block
     print("--- JSON REPORT ---")
     print(json.dumps(report, indent=2))
     print("-------------------")
-    
+
     # Return non-zero if blocked
     if final_status in ["BLOCKED", "UNKNOWN_BLOCKED"]:
         sys.exit(1)

@@ -12,7 +12,7 @@ def get_repo_root():
         if current_dir.parent == current_dir:
             break
         current_dir = current_dir.parent
-    
+
     # Fallback to current working directory if .git is not found
     return Path.cwd().resolve()
 
@@ -23,15 +23,15 @@ def check_path_safety(target_path: Path, repo_root: Path):
             return False, "target path escapes repo root"
     except ValueError:
         return False, "target path escapes repo root or ambiguous"
-    
+
     # Prevent writing into .git/
     if ".git" in target_path.parts:
         return False, "target path points into .git/"
-        
+
     # Prevent writing into .aos-tmp/
     if ".aos-tmp" in target_path.parts:
         return False, "target path points into /.aos-tmp/"
-        
+
     # Prevent product code inside /project/
     # /project/ is documentation workspace
     if "project" in target_path.parts:
@@ -41,7 +41,7 @@ def check_path_safety(target_path: Path, repo_root: Path):
             forbidden_project_folders = {"src", "tests", "app", "pages", "public", "lib", "backend", "frontend"}
             if sub_folder in forbidden_project_folders:
                 return False, f"planned product code inside /project/ ({sub_folder})"
-                
+
     return True, ""
 
 def format_install_plan(status, apply_status, source_root, target_root, planned_creates, existing_targets, conflicts, warnings, blocked_reasons):
@@ -57,7 +57,7 @@ def format_install_plan(status, apply_status, source_root, target_root, planned_
     plan.append("Dry-run PASS is not approval.")
     plan.append("Human approval cannot be simulated.\n")
     plan.append("---")
-    
+
     plan.append("\n### planned_creates")
     if planned_creates:
         for p in planned_creates:
@@ -103,15 +103,15 @@ def format_install_plan(status, apply_status, source_root, target_root, planned_
 def run_dry_run():
     repo_root = get_repo_root()
     aos_root = repo_root / "aos" / "root"
-    
+
     planned_creates = []
     existing_targets = []
     conflicts = []
     warnings = []
     blocked_reasons = []
-    
+
     status = "UNKNOWN_BLOCKED"
-    
+
     if not aos_root.exists() or not aos_root.is_dir():
         blocked_reasons.append("/aos/root/ is missing or not a directory")
         status = "BLOCKED"
@@ -120,13 +120,33 @@ def run_dry_run():
             for file in files:
                 source_file = Path(root) / file
                 relative_path = source_file.relative_to(aos_root)
+                relative_str = str(relative_path).replace("\\", "/") # handle Windows if any
+
+                if relative_str in ["ROOT_INSTALL_GUIDE.md", "ROOT_FILES_MANIFEST.md"]:
+                    continue # Do not plan creation, these are just reference templates.
+
+                if relative_str == "gitignore.snippet":
+                    if (repo_root / ".gitignore").exists():
+                        planned_creates.append("aos/root/gitignore.snippet -> existing /.gitignore manual merge")
+                    continue
+
+                if relative_str == ".gitignore.template":
+                    target_file = repo_root / ".gitignore"
+                    if not target_file.exists():
+                        planned_creates.append("aos/root/.gitignore.template -> /.gitignore")
+                    # If it exists, the snippet logic handles it
+                    continue
+
+                if relative_str == "README_AOS_SECTION.md":
+                    planned_creates.append("aos/root/README_AOS_SECTION.md -> optional README insertion")
+                    continue
+
                 target_file = repo_root / relative_path
-                
                 safe, reason = check_path_safety(target_file, repo_root)
                 if not safe:
                     blocked_reasons.append(f"Unsafe path {relative_path}: {reason}")
                     continue
-                
+
                 if target_file.exists():
                     existing_targets.append(f"/{relative_path}")
                     conflicts.append({
@@ -135,7 +155,10 @@ def run_dry_run():
                         "reason": "target file already exists"
                     })
                 else:
-                    planned_creates.append(f"aos/root/{relative_path} -> /{relative_path}")
+                    if relative_str == ".github/workflows/aos-advisory.yml":
+                        planned_creates.append(f"aos/root/{relative_path} -> optional advisory workflow")
+                    else:
+                        planned_creates.append(f"aos/root/{relative_path} -> /{relative_path}")
 
         if blocked_reasons:
             status = "BLOCKED"
@@ -163,9 +186,9 @@ def main():
     parser = argparse.ArgumentParser(description="AOS Installer")
     parser.add_argument("--dry-run", action="store_true", help="Perform a dry-run install")
     parser.add_argument("--apply", action="store_true", help="Apply the install plan")
-    
+
     args = parser.parse_args()
-    
+
     if args.apply:
         print("install_status: BLOCKED")
         print("apply_status: NOT_IMPLEMENTED")

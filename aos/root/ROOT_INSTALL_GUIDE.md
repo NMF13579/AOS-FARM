@@ -1,14 +1,18 @@
-# AOS Consumer Kit
+# AOS Root Install Guide
 
-AOS is a self-contained consumer kit. `aos/` is the installable and removable unit.
-The root `AGENTS.md` is the primary required root entrypoint. Optional marker blocks may be placed in the project root `README.md` and `.gitignore`.
+This guide explains the manual transfer process for deploying AOS into your target repository.
 
-**AOS Core Rules & Boundaries:**
-- PASS ≠ approval.
-- Evidence ≠ approval.
-- CI PASS ≠ approval.
-- UNKNOWN ≠ OK.
-- NOT_RUN ≠ PASS.
-- Human approval cannot be simulated.
-- Commit, push, merge, release, and destructive operations require explicit human authorization.
-- Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+## Manual Transfer Steps
+1. Copy `/aos/` into target repo root.
+2. Copy `aos/root/AGENTS.md` to `/AGENTS.md`.
+3. Copy `aos/root/llms.txt` to `/llms.txt`.
+4. If no `/.gitignore` exists, copy `.gitignore.template` as `/.gitignore`.
+5. If `/.gitignore` exists, merge `gitignore.snippet` manually.
+6. Optional: copy `README_AOS_SECTION.md` content into target `README.md`.
+7. Optional: copy advisory workflow only after review.
+8. Run dry-run: `python3 aos/scripts/aos_install.py --dry-run`
+9. Run self-test: `python3 aos/scripts/aos_consumer_self_test.py`
+10. Run doctor: `python3 aos/scripts/aos_doctor.py`
+11. Read `aos/START_HERE.md`.
+
+*Note: Installer `--apply` is NOT_IMPLEMENTED.*

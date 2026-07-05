@@ -18,7 +18,7 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.TemporaryDirectory()
         self.repo_root = Path(self.test_dir.name)
-        
+
     def tearDown(self):
         self.test_dir.cleanup()
 
@@ -38,23 +38,36 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
         aos_root.mkdir(parents=True, exist_ok=True)
         (aos_root / "llms.txt").touch()
         (aos_root / "AGENTS.md").touch()
-        
+
         # Advisory workflow
         workflows = aos_root / ".github" / "workflows"
         workflows.mkdir(parents=True, exist_ok=True)
         (workflows / "aos-advisory.yml").touch()
-        
+
         res = aos_consumer_self_test.check_target_install_state(self.repo_root)
-        
+
         self.assertEqual(res["file_states"]["llms.txt"], "pending_from_template")
         self.assertEqual(res["file_states"]["AGENTS.md"], "pending_from_template")
         self.assertEqual(res["file_states"]["advisory_workflow"], "pending_from_template")
+
+    def test_consumer_self_test_pending_root_entrypoints_is_not_fully_installed(self):
+        # Create fake templates but no deployed files
+        aos_root = self.repo_root / "aos" / "root"
+        aos_root.mkdir(parents=True, exist_ok=True)
+        (aos_root / "llms.txt").touch()
+        (aos_root / "AGENTS.md").touch()
+
+        res = aos_consumer_self_test.check_target_install_state(self.repo_root)
+        self.assertEqual(res["status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertIn("AGENTS.md", res["pending_entrypoints"])
+        self.assertIn("llms.txt", res["pending_entrypoints"])
+        self.assertTrue(any("Required root entrypoints are not deployed" in w for w in res["warnings"]))
 
     def test_target_install_state_tmp_boundary(self):
         tmp_dir = self.repo_root / ".aos-tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
         (tmp_dir / "execution-report.md").touch()
-        
+
         res = aos_consumer_self_test.check_target_install_state(self.repo_root)
         self.assertEqual(res["status"], "HUMAN_REVIEW_REQUIRED")
         self.assertIn("execution-report.md", res["unexpected_tmp_files"])
@@ -68,14 +81,14 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
     def test_no_mutation_during_checks(self):
         # Record state before
         before_files = set(self.repo_root.rglob('*'))
-        
+
         # Run checks
         aos_consumer_self_test.check_package_integrity(self.repo_root)
         aos_consumer_self_test.check_target_install_state(self.repo_root)
-        
+
         # Record state after
         after_files = set(self.repo_root.rglob('*'))
-        
+
         self.assertEqual(before_files, after_files)
 
 if __name__ == '__main__':

@@ -10,6 +10,8 @@ This guide explains what to do when AOS is present in a target project for the f
 - If both are absent, run the installer dry-run from the AOS package if available.
 
 ## 2. First safe commands
+Read `aos/docs/INSTALL-AND-TRANSFER.md` for installation instructions.
+
 To understand the current state safely, run:
 ```bash
 python3 aos/scripts/aos_install.py --dry-run
