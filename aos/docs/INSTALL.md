@@ -27,9 +27,11 @@ Dry-run:
 **ВАЖНО:** Dry-run `PASS` не является approval.
 
 ## Установка (Apply)
-*Статус: NOT_IMPLEMENTED*
+*Статус: РЕАЛИЗОВАН БЕЗОПАСНЫЙ РЕЖИМ (Safe Apply MVP)*
 
 Команда для применения установки:
-`python3 aos/scripts/aos_install.py --apply`
+`python3 aos/scripts/aos_install.py --apply --safe-create-and-gitignore-append --confirm "AOS INSTALL SAFE CREATE OK" --tutor`
 
-Эта команда в данный момент заблокирована (возвращает `NOT_IMPLEMENTED`). Перенос файлов должен осуществляться вручную, как описано в [INSTALL-AND-TRANSFER.md](INSTALL-AND-TRANSFER.md).
+Этот режим строго ограничен. Он может только безопасно копировать отсутствующие файлы и аккуратно добавлять блок AOS в `.gitignore`.
+Любые конфликты (существующие файлы `AGENTS.md`, `llms.txt`, `/aos/`) блокируют установку с необходимостью участия человека (`HUMAN_REVIEW_REQUIRED`).
+Ручной перенос файлов по-прежнему поддерживается, как описано в [INSTALL-AND-TRANSFER.md](INSTALL-AND-TRANSFER.md).

@@ -5,9 +5,9 @@ AOS is a self-contained consumer kit. The `aos/` directory is the installable an
 For full installation and transfer instructions, please read [aos/docs/INSTALL-AND-TRANSFER.md](docs/INSTALL-AND-TRANSFER.md).
 
 ## Quick Reference
-- Installer `--apply` is **NOT_IMPLEMENTED**.
-- Manual transfer is the current supported path.
-- Dry-run validates and reports; it does not deploy.
+- Installer safe `--apply` is available but highly restricted.
+- Manual transfer remains a supported path.
+- Dry-run validates and reports; it remains the default.
 
 ## Uninstallation
 1. **Remove AOS Folder:** Delete the entire `aos/` folder from your project root.

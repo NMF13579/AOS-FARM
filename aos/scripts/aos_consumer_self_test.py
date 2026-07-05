@@ -199,10 +199,10 @@ def main():
 
     # Calculate installation readiness and next action
     if tgt_res.get("pending_entrypoints"):
-        installation_readiness = "MANUAL_TRANSFER_REQUIRED"
-        next_safe_action = "deploy required root entrypoints manually, then rerun self-test"
+        installation_readiness = "INSTALLATION_INCOMPLETE"
+        next_safe_action = "deploy required root entrypoints using safe apply or manually, then rerun self-test"
     else:
-        installation_readiness = final_status
+        installation_readiness = "READY_FOR_FIRST_START" if final_status == "PASS" else final_status
         if final_status == "HUMAN_REVIEW_REQUIRED":
             if tgt_res.get("unexpected_tmp_files"):
                 next_safe_action = "review local /.aos-tmp/ Source of Truth artifact warning; do not remove without Human authorization"

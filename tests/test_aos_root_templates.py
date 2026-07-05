@@ -34,5 +34,9 @@ class TestAOSRootTemplates(unittest.TestCase):
         self.assertIn("Copy `/aos/`", guide)
         self.assertIn("Manual Transfer Steps", guide)
 
+    def test_gitignore_template_exists_and_contains_aos_block(self):
+        template = (self.aos_root / ".gitignore.template").read_text()
+        self.assertIn("/.aos-tmp/", template)
+
 if __name__ == '__main__':
     unittest.main()

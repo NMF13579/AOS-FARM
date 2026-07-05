@@ -15,11 +15,13 @@ Read `aos/docs/INSTALL-AND-TRANSFER.md` for installation instructions.
 To understand the current state safely, run:
 ```bash
 python3 aos/scripts/aos_install.py --dry-run
+python3 aos/scripts/aos_install.py --dry-run --tutor
 python3 aos/scripts/aos_consumer_self_test.py
 python3 aos/scripts/aos_doctor.py
 python3 aos/scripts/aos_queue_dashboard.py
 ```
 - **dry-run** shows what would be installed;
+- **dry-run with tutor** explains the plan safely;
 - **self-test** checks package integrity and target state;
 - **doctor** provides a read-only validation summary;
 - **queue dashboard** shows a derived view of the current task queue;
@@ -70,8 +72,8 @@ Plain-language commands such as `commit`, `комит`, `push`, `пуш`, `за�
 - Push authorization ≠ release authorization
 
 ## 8. What not to do
-- do not run apply;
-- do not overwrite root files;
+- do not run `--apply` without explicit Human exact confirmation and `--safe-create-and-gitignore-append`;
+- do not overwrite root files (AGENTS.md, llms.txt, etc.);
 - do not cleanup duplicate folders;
 - do not move project code;
 - do not store Evidence/reports/approvals/checkpoints in `/.aos-tmp/`;

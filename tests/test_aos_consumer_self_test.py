@@ -3,6 +3,7 @@ import sys
 import json
 import tempfile
 import unittest
+import io
 from pathlib import Path
 from unittest.mock import patch
 
@@ -90,6 +91,32 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
         after_files = set(self.repo_root.rglob('*'))
 
         self.assertEqual(before_files, after_files)
+
+    @patch('aos_consumer_self_test.get_repo_root')
+    def test_consumer_self_test_reports_ready_for_first_start_when_installed(self, mock_get_repo_root):
+        mock_get_repo_root.return_value = self.repo_root
+        aos_root = self.repo_root / "aos" / "root"
+        aos_root.mkdir(parents=True, exist_ok=True)
+        (aos_root / "llms.txt").touch()
+        (aos_root / "AGENTS.md").touch()
+
+        (self.repo_root / "llms.txt").touch()
+        (self.repo_root / "AGENTS.md").touch()
+
+        # Mock the installer run since it might fail if the environment isn't fully mocked
+        with patch('aos_consumer_self_test.run_installer_dry_run') as mock_run:
+            mock_run.return_value = {"status": "COMPLETED", "dry_run_install_status": "PASS", "evidence_note": ""}
+            with patch('aos_consumer_self_test.check_package_integrity') as mock_pkg:
+                mock_pkg.return_value = {"status": "PASS", "missing_required": [], "advisory_template_present": True, "warnings": []}
+
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    try:
+                        aos_consumer_self_test.main()
+                    except SystemExit:
+                        pass
+                    output = fake_out.getvalue()
+
+                self.assertIn("Installation Readiness: READY_FOR_FIRST_START", output)
 
 if __name__ == '__main__':
     unittest.main()

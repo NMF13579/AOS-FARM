@@ -36,9 +36,11 @@ The `/aos/root/` directory contains templates for files that must live in the ro
 - `/aos/root/.github/workflows/aos-advisory.yml` → optional advisory workflow
 
 *Rules:*
-- No silent overwrite.
-- No automatic `.gitignore` merge.
-- No root-file deployment by `--apply`.
+- Manual install remains fully supported.
+- No silent overwrite in any mode.
+- Existing `.gitignore` receives only controlled AOS block append in safe mode.
+- No automatic `AGENTS.md` or `llms.txt` merge or append; these are never modified automatically.
+- No automatic `README.md` or workflow mutation.
 
 ## 9. Dry-run command
 To verify what needs to be installed or transferred without changing files, run:
@@ -48,7 +50,15 @@ python3 aos/scripts/aos_install.py --dry-run
 Dry-run validates and reports; it does not deploy.
 
 ## 10. After dry-run PASS
-After a successful dry-run without conflicts, manually perform the transfer using the map above. Installer `--apply` is **NOT_IMPLEMENTED**. Manual transfer is the current supported path.
+After a successful dry-run without conflicts, you can either perform manual transfer or use the safe apply mode.
+
+To safely apply:
+```bash
+python3 aos/scripts/aos_install.py --apply --safe-create-and-gitignore-append --confirm "AOS INSTALL SAFE CREATE OK" --tutor
+```
+**Safe apply is strictly limited.** It requires exact Human confirmation.
+Apply DONE is not approval, and READY_FOR_FIRST_START is not execution authorization.
+Tutor mode provides explanation only and does not claim approval.
 
 ## 11. Conflict handling
 If target files like `README.md` or `AGENTS.md` already exist, do not overwrite them. Manually merge the required content.
@@ -113,7 +123,10 @@ Read `aos/START_HERE.md` to begin the AOS workflow.
 - Self-test PASS ≠ approval
 - Doctor PASS ≠ approval
 - Queue NEXT ≠ execution authorization
+- Apply DONE ≠ approval
+- READY_FOR_FIRST_START ≠ execution authorization
+- Tutor output ≠ approval
 
-Installer `--apply` is NOT_IMPLEMENTED.
-Manual transfer is the current supported path.
-Dry-run validates and reports; it does not deploy.
+Manual transfer remains a supported path.
+Safe apply requires exact confirmation and is limited to non-destructive creation and controlled `.gitignore` appending.
+Dry-run validates and reports; it remains the default.

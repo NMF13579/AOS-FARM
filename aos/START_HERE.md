@@ -70,3 +70,8 @@ The following invariants govern all agent behavior in this repository:
 - Human approval cannot be simulated.
 - Commit, push, merge, release, and destructive operations require explicit human authorization.
 - Exclusions: No runner, CI, DB/RAG/vector, Spec Kit, release artifacts, production use, or autonomous execution are included by default. Historical AOS-FARM reports and internal development sources are strictly excluded.
+- Installer safe `--apply` is limited to creation and `.gitignore` append; manual transfer remains supported; dry-run is default.
+- Existing `AGENTS.md`, `llms.txt`, `README.md`, and workflows are never modified automatically.
+- Tutor output is explanation only and is not approval.
+- Apply DONE is not approval.
+- READY_FOR_FIRST_START is not execution authorization.
