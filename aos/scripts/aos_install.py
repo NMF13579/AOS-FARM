@@ -238,6 +238,7 @@ def print_tutor_explanation(plan, apply_mode_requested, apply_status):
         print("  Nothing to create.")
 
     print("\nWhy apply is allowed or blocked:")
+    print("  Safe apply is for first deployment from an AOS package into a target repo where /aos/ does not already exist.")
     if plan["status"] == "PASS":
         if apply_mode_requested:
             print(f"  Apply was blocked ({apply_status}) because exact confirmation or required flags were missing.")
@@ -245,6 +246,8 @@ def print_tutor_explanation(plan, apply_mode_requested, apply_status):
             print("  Apply is allowed because there are no existing target files. Run with --apply, --safe-create-and-gitignore-append, and exact --confirm to execute.")
     else:
         print(f"  Apply is blocked (install_status: {plan['status']}) due to conflicts or blockers. HUMAN_REVIEW_REQUIRED.")
+        print("  If /aos/ already exists, safe apply stops rather than merge or overwrite. Use self-test, Doctor, and manual root template review instead.")
+        print("  Note: manual copy ≠ safe apply, dry-run PASS ≠ installed, safe apply conflict ≠ failure to approve.")
 
     print("\nWhy AGENTS.md and llms.txt are not modified automatically:")
     print("  These are canonical safety and control boundaries. Only a Human is authorized to merge or approve changes to them.")

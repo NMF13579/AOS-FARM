@@ -40,11 +40,13 @@ python3 aos/scripts/aos_queue_dashboard.py
 Note that some root files (like `AGENTS.md` or `llms.txt`) may be pending from `/aos/root/`.
 
 ## 4. Conflict handling
-If dry-run reports existing root files in the target project:
-- do not overwrite silently;
-- do not apply automatically;
-- stop with `HUMAN_REVIEW_REQUIRED`;
-- the user must decide.
+Safe apply is for first deployment from an AOS package into a target repo where `/aos/` does not already exist.
+If `/aos/` already exists, safe apply is expected to stop rather than merge or overwrite. Use self-test, Doctor, and manual root template review instead.
+The user must clearly understand:
+- manual copy ≠ safe apply
+- dry-run PASS ≠ installed
+- safe apply conflict ≠ failure to approve
+- existing `/aos/` → HUMAN_REVIEW_REQUIRED
 
 ## 5. Folder placement summary
 For a detailed explanation of where to put files, see the [Workspace Boundary](WORKSPACE-BOUNDARY.md) documentation.

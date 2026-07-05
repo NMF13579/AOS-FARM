@@ -15,4 +15,4 @@ This guide explains the manual transfer process for deploying AOS into your targ
 10. Run doctor: `python3 aos/scripts/aos_doctor.py`
 11. Read `aos/START_HERE.md`.
 
-*Note: Installer `--apply` is NOT_IMPLEMENTED.*
+*Note: Installer `--apply` exists only as a constrained safe apply for first deployment into a target repo where `/aos/` is absent. It does not overwrite existing `/aos/`. If `/aos/` already exists, apply will stop with conflict / HUMAN_REVIEW_REQUIRED.*

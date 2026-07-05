@@ -21,12 +21,12 @@ COMMANDS_TO_AGGREGATE = [
     ["python3", "aos/scripts/aos_task_document_check.py", "queue", "--list"],
     ["python3", "aos/scripts/aos_task_document_check.py", "queue", "--next"],
     ["python3", "aos/scripts/aos_task_document_check.py", "task", "--readiness-all"],
-    ["python3", "-m", "unittest", "discover"]
+    ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"]
 ]
 
 def run_command(cmd):
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         return {
             "command": " ".join(cmd),
             "status": "PASS" if result.returncode == 0 else "FAILED",
@@ -62,8 +62,14 @@ def determine_overall_status(results):
         stdout = r.get("stdout", "")
         stderr = r.get("stderr", "")
         
-        # Check for specific outputs in stdout/stderr if we want to be more granular,
-        # but relying on return code for basic PASS/FAILED.
+        # If unittest returned PASS but ran 0 tests, do not treat as strong PASS
+        if "unittest" in r.get("command", "") and status == "PASS":
+            if "Ran 0 tests" in stdout or "Ran 0 tests" in stderr:
+                has_failed = True
+                r["status"] = "FAILED"
+                r["reason"] = "Ran 0 tests is not a strong PASS"
+                status = "FAILED"
+                
         if status == "FAILED":
             if "UNKNOWN_BLOCKED" in stdout or "UNKNOWN_BLOCKED" in stderr:
                 return "UNKNOWN_BLOCKED"

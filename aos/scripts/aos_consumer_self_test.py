@@ -106,11 +106,13 @@ def check_target_install_state(repo_root):
         for file in tmp_dir.rglob('*'):
             if file.is_file():
                 f = file.name.lower()
-                if "report" in f or "evidence" in f or f in ["agents.md", "llms.txt", "task.md", "00_aos_core_control.md"]:
+                strong = ["approval", "checkpoint", "evidence", "handoff", "review", "report"]
+                weak = ["result", "acceptance"]
+                if any(ind in f for ind in strong + weak) or f in ["agents.md", "llms.txt", "task.md", "00_aos_core_control.md"]:
                     found_in_tmp.append(str(file.relative_to(tmp_dir)))
 
     if found_in_tmp:
-        warnings.append(f"Source of Truth artifacts found in /.aos-tmp/: {', '.join(found_in_tmp)}")
+        warnings.append(f"/.aos-tmp/ contains review/report/handoff/evidence/checkpoint-like files. /.aos-tmp/ is local-only, ignored, disposable, and not Source of Truth. Review manually before deleting.")
         human_review = True
 
     pending_entrypoints = []
@@ -166,7 +168,13 @@ def run_installer_dry_run(repo_root):
         status_line = "UNKNOWN"
         for line in output.split('\n'):
             if "install_status:" in line:
-                status_line = line.split("install_status:")[1].strip()
+                raw_status = line.split("install_status:")[1].strip()
+                clean_status = raw_status.replace('*', '').replace('`', '').strip()
+                known_statuses = {"PASS", "HUMAN_REVIEW_REQUIRED", "UNKNOWN_BLOCKED", "BLOCKED", "NOT_RUN", "PASS_WITH_WARNINGS"}
+                if clean_status in known_statuses:
+                    status_line = clean_status
+                else:
+                    status_line = "UNKNOWN_BLOCKED"
 
         return {
             "status": "COMPLETED",

@@ -118,5 +118,39 @@ class TestAOSConsumerSelfTest(unittest.TestCase):
 
                 self.assertIn("Installation Readiness: READY_FOR_FIRST_START", output)
 
+    def test_installer_status_normalization(self):
+        # Create fake installer script so check passes
+        script_dir = self.repo_root / "aos" / "scripts"
+        script_dir.mkdir(parents=True, exist_ok=True)
+        (script_dir / "aos_install.py").touch()
+        
+        # Test status extraction from raw string
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value.stdout = "install_status: ** HUMAN_REVIEW_REQUIRED"
+            mock_run.return_value.stderr = ""
+            mock_run.return_value.returncode = 0
+            res = aos_consumer_self_test.run_installer_dry_run(self.repo_root)
+            self.assertEqual(res.get("dry_run_install_status"), "HUMAN_REVIEW_REQUIRED")
+            
+            mock_run.return_value.stdout = "**install_status:** `PASS`"
+            mock_run.return_value.stderr = ""
+            res = aos_consumer_self_test.run_installer_dry_run(self.repo_root)
+            self.assertEqual(res.get("dry_run_install_status"), "PASS")
+
+            mock_run.return_value.stdout = "install_status: garbage"
+            mock_run.return_value.stderr = ""
+            res = aos_consumer_self_test.run_installer_dry_run(self.repo_root)
+            self.assertEqual(res.get("dry_run_install_status"), "UNKNOWN_BLOCKED")
+
+    def test_target_install_state_tmp_hygiene_diagnostics(self):
+        tmp_dir = self.repo_root / ".aos-tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        (tmp_dir / "review-note.txt").touch()
+
+        res = aos_consumer_self_test.check_target_install_state(self.repo_root)
+        self.assertEqual(res["status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertIn("review-note.txt", res["unexpected_tmp_files"])
+        self.assertTrue(any("contains review/report/handoff/evidence/checkpoint-like files" in w for w in res["warnings"]))
+
 if __name__ == '__main__':
     unittest.main()

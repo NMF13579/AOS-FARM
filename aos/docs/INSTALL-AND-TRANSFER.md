@@ -53,6 +53,7 @@ Dry-run validates and reports; it does not deploy.
 After a successful dry-run without conflicts, you can either perform manual transfer or use the safe apply mode.
 
 To safely apply:
+*(Note: Safe apply is for first deployment from an AOS package into a target repo where `/aos/` does not already exist. If `/aos/` already exists, safe apply is expected to stop rather than merge or overwrite. Use self-test, Doctor, and manual root template review instead. Manual copy ≠ safe apply, dry-run PASS ≠ installed, safe apply conflict ≠ failure to approve, existing `/aos/` → HUMAN_REVIEW_REQUIRED.)*
 ```bash
 python3 aos/scripts/aos_install.py --apply --safe-create-and-gitignore-append --confirm "AOS INSTALL SAFE CREATE OK" --tutor
 ```
