@@ -109,7 +109,8 @@ def find_positive_authority(text):
         "execution_authorized: true",
         "commit_authorized: true",
         "push_authorized: true",
-        "release_authorized: true"
+        "release_authorized: true",
+        "default_stack: true"
     ]
     for i, line in enumerate(lines):
         for auth in authorities:
@@ -266,7 +267,7 @@ def validate_registry(text):
             
     has_active = False
     for line in text.splitlines():
-        if re.search(r'\bACTIVE\b', line) and not is_negative_invariant_line(line):
+        if re.search(r'^\s*(?:-\s*)?status\s*[:=]\s*ACTIVE\b', line) and not is_negative_invariant_line(line):
             has_active = True
             break
             

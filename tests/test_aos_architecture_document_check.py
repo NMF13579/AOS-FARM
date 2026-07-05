@@ -259,5 +259,77 @@ approval_status: NOT_APPROVED
         self.assertIsNotNone(report)
         self.assertEqual(report.get("status"), "CLI_USAGE_ERROR")
 
+    def run_registry_test(self, content):
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["registry", "--file", temp_path])
+            return res, report
+        finally:
+            os.remove(temp_path)
+
+    # 10. Registry Semantics
+    def test_registry_semantics_proposed_passes(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+
+    def test_registry_semantics_proposed_not_approved_passes(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\napproval_status: NOT_APPROVED\nhuman_review_required: true\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+
+    def test_registry_semantics_prose_active_ignored(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\nThey require human review before promotion to ACTIVE.\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+
+    def test_registry_semantics_status_active_blocked_no_checkpoint(self):
+        content = "id: PATTERN-001\nstatus: ACTIVE\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_registry_semantics_list_status_active_blocked_no_checkpoint(self):
+        content = "id: PATTERN-001\n- status: ACTIVE\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_registry_semantics_active_with_checkpoint(self):
+        content = "id: PATTERN-001\nstatus: ACTIVE\nhuman_checkpoint: true\napproved_by: User\napproved_at: 2026-07-06\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "HUMAN_REVIEW_REQUIRED")
+
+    def test_registry_semantics_approved_blocked(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\napproval_status: APPROVED\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_registry_semantics_execution_authorized_blocked(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\nexecution_authorized: true\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_registry_semantics_release_authorized_blocked(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\nrelease_authorized: true\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_registry_semantics_default_stack_blocked(self):
+        content = "id: PATTERN-001\nstatus: PROPOSED\ndefault_stack: true\n"
+        res, report = self.run_registry_test(content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
 if __name__ == '__main__':
     unittest.main()
