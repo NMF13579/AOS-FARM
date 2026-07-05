@@ -1,82 +1,22 @@
 # AOS First Start Guide
 
-This guide explains what to do when AOS is present in a target project for the first time.
+**Purpose**: This is the first run and orientation page when AOS is present in a target project.
 
-## 1. What is the first file an agent should read?
-- Read `AGENTS.md` if present.
-- `AGENTS.md` points to `llms.txt`.
-- `llms.txt` points to AOS docs and safety rules.
-- If `AGENTS.md` is absent but `llms.txt` exists, read `llms.txt`.
-- If both are absent, run the installer dry-run from the AOS package if available.
+## Pointers
+- **Primary workflow entrypoint**: [../START_HERE.md](../START_HERE.md)
+- **Install/transfer authority**: [./INSTALL-AND-TRANSFER.md](./INSTALL-AND-TRANSFER.md)
 
-## 2. First safe commands
-Read `aos/docs/INSTALL-AND-TRANSFER.md` for installation instructions.
-
-To understand the current state safely, run:
+## Minimal Verification Commands
+Run these read-only checks to understand the current state:
 ```bash
 python3 aos/scripts/aos_install.py --dry-run
-python3 aos/scripts/aos_install.py --dry-run --tutor
 python3 aos/scripts/aos_consumer_self_test.py
-python3 aos/scripts/aos_doctor.py
-python3 aos/scripts/aos_queue_dashboard.py
+python3 aos/scripts/aos_doctor.py --json
 ```
-- **dry-run** shows what would be installed;
-- **dry-run with tutor** explains the plan safely;
-- **self-test** checks package integrity and target state;
-- **doctor** provides a read-only validation summary;
-- **queue dashboard** shows a derived view of the current task queue;
-- all of these are Evidence only;
-- none of them grant approval.
 
-## 3. Expected files
-- `/llms.txt`
-- `/AGENTS.md`
-- `/aos/`
-- `/project/`
-- `/aos/prompt-packs/`
-- `/aos-modules/`
-- `/.aos-tmp/`
-
-Note that some root files (like `AGENTS.md` or `llms.txt`) may be pending from `/aos/root/`.
-
-## 4. Conflict handling
-Safe apply is for first deployment from an AOS package into a target repo where `/aos/` does not already exist.
-If `/aos/` already exists, safe apply is expected to stop rather than merge or overwrite. Use self-test, Doctor, and manual root template review instead.
-The user must clearly understand:
-- manual copy ≠ safe apply
-- dry-run PASS ≠ installed
-- safe apply conflict ≠ failure to approve
-- existing `/aos/` → HUMAN_REVIEW_REQUIRED
-
-## 5. Folder placement summary
-For a detailed explanation of where to put files, see the [Workspace Boundary](WORKSPACE-BOUNDARY.md) documentation.
-
-## 6. Authorization summary
-For full details, see the [Authorization Commands](AUTHORIZATION-COMMANDS.md) document.
-
-Exact authorization commands are:
-- `AOS COMMIT OK`
-- `AOS PUSH OK`
-- `AOS MICRO COMMIT+PUSH OK`
-
-Plain-language commands such as `commit`, `комит`, `push`, `пуш`, `залей`, `отправь` are intent only. Exact authorization is required.
-
-## 7. Safety invariants
+## Safety Invariants
 - PASS ≠ approval
 - Evidence ≠ approval
-- CI PASS ≠ approval
-- self-test PASS ≠ approval
-- dry-run PASS ≠ approval
 - UNKNOWN ≠ OK
 - NOT_RUN ≠ PASS
-- Human approval cannot be simulated
-- Commit authorization ≠ push authorization
-- Push authorization ≠ release authorization
-
-## 8. What not to do
-- do not run `--apply` without explicit Human exact confirmation and `--safe-create-and-gitignore-append`;
-- do not overwrite root files (AGENTS.md, llms.txt, etc.);
-- do not cleanup duplicate folders;
-- do not move project code;
-- do not store Evidence/reports/approvals/checkpoints in `/.aos-tmp/`;
-- do not treat `/project/` as default product source root.
+- HUMAN_REVIEW_REQUIRED means stop for human review
