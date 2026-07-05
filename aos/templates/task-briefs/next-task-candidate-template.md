@@ -33,3 +33,23 @@ status: DRAFT
 ## Next Safe Step
 Human review is required before this candidate can become a real Task Brief,
 receive a human-assigned Risk Profile, or move toward execution authorization.
+
+## Architecture Traceability Fields
+
+origin_technical_assignment:
+origin_architecture_brief:
+origin_adr:
+origin_pattern:
+origin_stack_preset:
+origin_unknown_resolution:
+origin_conflict_resolution:
+
+Without architecture traceability, a task may be TASK_CANDIDATE_DRAFT.
+Without architecture traceability, a task must not become APPROVED.
+READY_FOR_QUEUE_REVIEW ≠ APPROVED.
+READY_FOR_QUEUE_REVIEW ≠ READY_FOR_EXECUTION.
+Traceability does not grant approval.
+Traceability does not authorize execution.
+Traceability does not authorize commit.
+Traceability does not authorize push.
+Traceability does not authorize release.

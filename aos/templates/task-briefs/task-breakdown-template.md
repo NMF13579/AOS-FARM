@@ -46,3 +46,23 @@ This matrix answers: Which TA section justifies this task? Which task has no cle
 - **Evidence requirements ≠ collected Evidence.**
 - **Risk Profile proposal ≠ human-assigned Risk Profile.**
 - **Task draft ≠ approved task.**
+
+## Architecture Traceability Fields
+
+origin_technical_assignment:
+origin_architecture_brief:
+origin_adr:
+origin_pattern:
+origin_stack_preset:
+origin_unknown_resolution:
+origin_conflict_resolution:
+
+Without architecture traceability, a task may be TASK_CANDIDATE_DRAFT.
+Without architecture traceability, a task must not become APPROVED.
+READY_FOR_QUEUE_REVIEW ≠ APPROVED.
+READY_FOR_QUEUE_REVIEW ≠ READY_FOR_EXECUTION.
+Traceability does not grant approval.
+Traceability does not authorize execution.
+Traceability does not authorize commit.
+Traceability does not authorize push.
+Traceability does not authorize release.
