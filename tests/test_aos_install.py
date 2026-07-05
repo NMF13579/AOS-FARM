@@ -18,7 +18,7 @@ class TestAOSInstall(unittest.TestCase):
         self.repo_root = Path(self.test_dir.name)
         self.aos_root = self.repo_root / "aos" / "root"
         self.aos_root.mkdir(parents=True, exist_ok=True)
-        
+
     def tearDown(self):
         self.test_dir.cleanup()
 
@@ -27,11 +27,11 @@ class TestAOSInstall(unittest.TestCase):
         mock_get_repo_root.return_value = self.repo_root
         (self.aos_root / "AGENTS.md").touch()
         (self.aos_root / "llms.txt").touch()
-        
+
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             aos_install.run_dry_run()
             output = fake_out.getvalue()
-            
+
         self.assertIn("**install_status:** PASS", output)
         self.assertIn("planned_creates", output)
         self.assertIn("aos/root/AGENTS.md -> /AGENTS.md", output)
@@ -40,14 +40,14 @@ class TestAOSInstall(unittest.TestCase):
     def test_install_dry_run_existing_agents_conflict(self, mock_get_repo_root):
         mock_get_repo_root.return_value = self.repo_root
         (self.aos_root / "AGENTS.md").touch()
-        
+
         # Create conflict
         (self.repo_root / "AGENTS.md").touch()
-        
+
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             aos_install.run_dry_run()
             output = fake_out.getvalue()
-            
+
         self.assertIn("**install_status:** HUMAN_REVIEW_REQUIRED", output)
         self.assertIn("aos/root/AGENTS.md -> AGENTS.md (target file already exists)", output)
 
@@ -55,14 +55,14 @@ class TestAOSInstall(unittest.TestCase):
     def test_install_dry_run_existing_llms_conflict(self, mock_get_repo_root):
         mock_get_repo_root.return_value = self.repo_root
         (self.aos_root / "llms.txt").touch()
-        
+
         # Create conflict
         (self.repo_root / "llms.txt").touch()
-        
+
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             aos_install.run_dry_run()
             output = fake_out.getvalue()
-            
+
         self.assertIn("**install_status:** HUMAN_REVIEW_REQUIRED", output)
 
     @patch('aos_install.get_repo_root')
@@ -110,22 +110,22 @@ class TestAOSInstall(unittest.TestCase):
         workflows = self.aos_root / ".github" / "workflows"
         workflows.mkdir(parents=True)
         (workflows / "aos-advisory.yml").touch()
-        
+
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             aos_install.run_dry_run()
             output = fake_out.getvalue()
-            
+
         self.assertIn("**install_status:** PASS", output)
-        
+
         # Conflict
         target_workflows = self.repo_root / ".github" / "workflows"
         target_workflows.mkdir(parents=True, exist_ok=True)
         (target_workflows / "aos-advisory.yml").touch()
-        
+
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             aos_install.run_dry_run()
             output = fake_out.getvalue()
-            
+
         self.assertIn("**install_status:** HUMAN_REVIEW_REQUIRED", output)
 
     def test_install_dry_run_blocks_git_path(self):

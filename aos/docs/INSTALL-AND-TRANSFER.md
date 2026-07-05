@@ -51,7 +51,7 @@ Dry-run validates and reports; it does not deploy.
 After a successful dry-run without conflicts, manually perform the transfer using the map above. Installer `--apply` is **NOT_IMPLEMENTED**. Manual transfer is the current supported path.
 
 ## 11. Conflict handling
-If target files like `README.md` or `AGENTS.md` already exist, do not overwrite them. Manually merge the required content. 
+If target files like `README.md` or `AGENTS.md` already exist, do not overwrite them. Manually merge the required content.
 
 ## 12. .gitignore handling
 If you have an existing `.gitignore`, manually append the contents of `aos/root/gitignore.snippet` to it. If you do not have one, copy `aos/root/.gitignore.template` to `/.gitignore`.

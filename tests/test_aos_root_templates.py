@@ -13,7 +13,7 @@ class TestAOSRootTemplates(unittest.TestCase):
         manifest = (self.aos_root / "ROOT_FILES_MANIFEST.md").read_text()
         section = (self.aos_root / "README_AOS_SECTION.md").read_text()
         snippet = (self.aos_root / "gitignore.snippet").read_text()
-        
+
         self.assertNotEqual(guide, manifest)
         self.assertNotEqual(guide, section)
         self.assertNotEqual(manifest, section)
