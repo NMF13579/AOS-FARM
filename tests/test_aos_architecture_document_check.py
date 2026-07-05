@@ -170,7 +170,83 @@ human_checkpoints: required
         finally:
             os.remove(temp_path)
 
-    # 8. Help / Unknown commands
+    # 8. Unsafe Status Tokens tests
+    def test_unsafe_status_not_approved_allowed(self):
+        content = """adr_id: ADR-TEST
+title: Test
+status: PROPOSED
+decided_by: User
+technical_assignment_ref: none
+architecture_brief_ref: none
+related_patterns: none
+related_unknowns: none
+related_conflicts: none
+approval_status: NOT_APPROVED
+"""
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["adr", "--file", temp_path])
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual(report.get("status"), "PASS")
+        finally:
+            os.remove(temp_path)
+
+    def test_unsafe_status_approved_blocked(self):
+        content = """adr_id: ADR-TEST\ntitle: Test\nstatus: APPROVED\ndecided_by: User\ntechnical_assignment_ref: none\narchitecture_brief_ref: none\nrelated_patterns: none\nrelated_unknowns: none\nrelated_conflicts: none\napproval_status: NOT_APPROVED\n"""
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["adr", "--file", temp_path])
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(report.get("status"), "BLOCKED")
+        finally:
+            os.remove(temp_path)
+
+    def test_unsafe_status_approval_status_approved_blocked(self):
+        content = """adr_id: ADR-TEST\ntitle: Test\nstatus: PROPOSED\ndecided_by: User\ntechnical_assignment_ref: none\narchitecture_brief_ref: none\nrelated_patterns: none\nrelated_unknowns: none\nrelated_conflicts: none\napproval_status: APPROVED\n"""
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["adr", "--file", temp_path])
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(report.get("status"), "BLOCKED")
+        finally:
+            os.remove(temp_path)
+
+    def test_unsafe_status_ready_for_execution_blocked(self):
+        content = """adr_id: ADR-TEST\ntitle: Test\nstatus: READY_FOR_EXECUTION\ndecided_by: User\ntechnical_assignment_ref: none\narchitecture_brief_ref: none\nrelated_patterns: none\nrelated_unknowns: none\nrelated_conflicts: none\napproval_status: NOT_APPROVED\n"""
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["adr", "--file", temp_path])
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(report.get("status"), "BLOCKED")
+        finally:
+            os.remove(temp_path)
+
+    def test_unsafe_status_release_ready_blocked(self):
+        content = """adr_id: ADR-TEST\ntitle: Test\nstatus: RELEASE_READY\ndecided_by: User\ntechnical_assignment_ref: none\narchitecture_brief_ref: none\nrelated_patterns: none\nrelated_unknowns: none\nrelated_conflicts: none\napproval_status: NOT_APPROVED\n"""
+        tmp_dir = ".aos-tmp" if os.path.isdir(".aos-tmp") else None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md", dir=tmp_dir) as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli(["adr", "--file", temp_path])
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(report.get("status"), "BLOCKED")
+        finally:
+            os.remove(temp_path)
+
+    # 9. Help / Unknown commands
     def test_help_command(self):
         cmd = [sys.executable, self.script_path, "--help"]
         result = subprocess.run(cmd, capture_output=True, text=True)

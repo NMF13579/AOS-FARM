@@ -126,9 +126,10 @@ def find_unsafe_status_language(text):
         "READY_FOR_EXECUTION",
         "RELEASE_READY"
     ]
+    import re
     for i, line in enumerate(lines):
         for token in unsafe_tokens:
-            if token in line:
+            if re.search(rf'(?<![a-zA-Z0-9_]){token}(?![a-zA-Z0-9_])', line):
                 if not is_negative_invariant_line(line):
                     findings.append(f"Line {i+1}: contains unsafe status '{token}' - {line.strip()}")
     return findings

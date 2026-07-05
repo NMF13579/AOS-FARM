@@ -71,3 +71,12 @@ python3 aos/scripts/aos_architecture_document_check.py task-breakdown --file <pa
 - 0 = PASS
 - 1 = BLOCKED / UNKNOWN_BLOCKED / CONFLICT_BLOCKED / VALIDATION_NOT_RUN_BLOCKED / HUMAN_REVIEW_REQUIRED
 - 2 = CLI_USAGE_ERROR
+
+## Stack Choice Map reference
+When stack questions arise during Architecture Fixed Interview or architecture decision review, use:
+- `aos/docs/architecture/stack-choice-map.md`
+This reference explains stack elements in plain language.
+Stack Choice Map is not approval.
+Stack Choice Map does not select a default stack.
+Stack Choice Map does not authorize implementation.
+Human review is required before any stack preset becomes ACTIVE or default.
