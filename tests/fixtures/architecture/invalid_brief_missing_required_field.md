@@ -1,0 +1,7 @@
+architecture_brief_id: AB-001
+version: 0.1
+status: DRAFT
+technical_assignment_ref: TA-001
+unknown_records: none
+conflict_records: none
+human_checkpoints: required

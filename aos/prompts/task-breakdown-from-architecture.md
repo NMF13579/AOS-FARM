@@ -72,3 +72,15 @@ origin_conflict_resolution:
 - Task breakdown does not authorize commit.
 - Task breakdown does not authorize push.
 - Task breakdown does not authorize release.
+- Task breakdown may not proceed to queue review unless Architecture Validator has been run successfully against required architecture inputs and task breakdown traceability.
+- Architecture Validator must be called before task breakdown is allowed to proceed to queue review.
+- Validator NOT_RUN blocks progression.
+- Validator PASS is required before queue review.
+- Validator PASS ≠ approval.
+- Validator PASS ≠ READY_FOR_EXECUTION.
+- Validator PASS does not authorize execution, commit, push, or release.
+- HUMAN_REVIEW_REQUIRED does not mean approval exists.
+- Validator NOT_RUN -> VALIDATION_NOT_RUN_BLOCKED
+- Validator PASS -> may proceed to human queue review, but does not create approval
+- Validator HUMAN_REVIEW_REQUIRED -> blocks progression until human review
+- Validator BLOCKED / UNKNOWN_BLOCKED / CONFLICT_BLOCKED -> blocks progression

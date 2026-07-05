@@ -1,0 +1,10 @@
+adr_id: ADR-001
+title: Example
+status: PROPOSED
+decided_by: none
+technical_assignment_ref: TA-001
+architecture_brief_ref: AB-001
+related_patterns: [PATTERN-001]
+related_unknowns: none
+related_conflicts: none
+execution_authorized: true
