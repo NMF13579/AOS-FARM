@@ -331,5 +331,209 @@ approval_status: NOT_APPROVED
         self.assertEqual(res.returncode, 1)
         self.assertEqual(report.get("status"), "BLOCKED")
 
+    def run_temp_cli(self, command, content):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".md") as f:
+            f.write(content)
+            temp_path = f.name
+        try:
+            res, report = self.run_cli([command, "--file", temp_path])
+            return res, report
+        finally:
+            os.remove(temp_path)
+
+    def valid_evidence_packet(self):
+        return """---
+task_id: AOS-FARM.621
+document_type: architecture_decision_evidence_packet
+packet_status: READY_FOR_HUMAN_REVIEW
+recommendation_status: CANDIDATE_ONLY
+approval_status: NOT_REQUESTED
+is_approval: false
+is_execution_authorized: false
+is_implementation_authorized: false
+is_release_authorized: false
+recommendation_confidence: MEDIUM
+human_review_required: true
+---
+"""
+
+    def valid_review_matrix(self):
+        return """---
+task_id: AOS-FARM.621
+document_type: stack_fit_matrix
+matrix_status: INCOMPLETE_WEIGHTS
+approval_status: NOT_REQUESTED
+human_weight_required: true
+human_review_required: true
+default_stack_selected: false
+---
+
+## Criteria weights
+
+| Criterion | Weight | Human weight required | Evidence source |
+|---|---|---|---|
+| Markdown-first compatibility | UNASSIGNED_BY_HUMAN | true | ADR-0001 |
+"""
+
+    def valid_criteria_document(self):
+        return """---
+task_id: AOS-FARM.621
+document_type: architecture_decision_criteria
+criteria_status: READY_FOR_HUMAN_WEIGHTING
+approval_status: NOT_REQUESTED
+human_weight_required: true
+human_review_required: true
+is_approval: false
+---
+
+### Markdown-first compatibility
+
+weight: UNASSIGNED_BY_HUMAN
+source: ADR-0001 / registry / project constraint
+human_weight_required: true
+"""
+
+    # 11. Recommendation Drift Guard: evidence semantics
+    def test_evidence_candidate_only_recommendation_passes(self):
+        res, report = self.run_temp_cli("evidence", self.valid_evidence_packet())
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+        self.assertEqual(report.get("document_type"), "architecture_decision_evidence_packet")
+        self.assertEqual(report.get("authority_findings"), [])
+
+    def test_evidence_missing_is_approval_false_blocked(self):
+        content = self.valid_evidence_packet().replace("is_approval: false\n", "")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_missing_recommendation_confidence_requires_human_review(self):
+        content = self.valid_evidence_packet().replace("recommendation_confidence: MEDIUM\n", "")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "HUMAN_REVIEW_REQUIRED")
+        self.assertNotEqual(report.get("status"), "PASS")
+
+    def test_evidence_is_approval_true_blocked(self):
+        content = self.valid_evidence_packet().replace("is_approval: false", "is_approval: true")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_execution_authorized_alias_blocked(self):
+        content = self.valid_evidence_packet() + "execution_authorized: true\n"
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_is_execution_authorized_true_blocked(self):
+        content = self.valid_evidence_packet().replace("is_execution_authorized: false", "is_execution_authorized: true")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_implementation_authorized_alias_blocked(self):
+        content = self.valid_evidence_packet() + "implementation_authorized: true\n"
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_is_implementation_authorized_true_blocked(self):
+        content = self.valid_evidence_packet().replace("is_implementation_authorized: false", "is_implementation_authorized: true")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_release_authorized_alias_blocked(self):
+        content = self.valid_evidence_packet() + "release_authorized: true\n"
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_evidence_is_release_authorized_true_blocked(self):
+        content = self.valid_evidence_packet().replace("is_release_authorized: false", "is_release_authorized: true")
+        res, report = self.run_temp_cli("evidence", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    # 12. Recommendation Drift Guard: matrix semantics
+    def test_review_matrix_unassigned_human_weight_passes(self):
+        res, report = self.run_temp_cli("matrix", self.valid_review_matrix())
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+        self.assertEqual(report.get("document_type"), "stack_fit_matrix")
+        self.assertEqual(report.get("authority_findings"), [])
+
+    def test_review_matrix_criterion_without_weight_blocked(self):
+        content = self.valid_review_matrix().replace(
+            "| Markdown-first compatibility | UNASSIGNED_BY_HUMAN | true | ADR-0001 |",
+            "| Markdown-first compatibility | true | ADR-0001 |"
+        )
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_weight_must_blocked(self):
+        content = self.valid_review_matrix().replace("UNASSIGNED_BY_HUMAN", "MUST")
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_weight_should_blocked(self):
+        content = self.valid_review_matrix().replace("UNASSIGNED_BY_HUMAN", "SHOULD")
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_weight_nice_to_have_blocked(self):
+        content = self.valid_review_matrix().replace("UNASSIGNED_BY_HUMAN", "NICE_TO_HAVE")
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_complete_status_blocked(self):
+        content = self.valid_review_matrix().replace("matrix_status: INCOMPLETE_WEIGHTS", "matrix_status: COMPLETE")
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_default_stack_true_blocked(self):
+        content = self.valid_review_matrix() + "default_stack: true\n"
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_approval_status_approved_blocked(self):
+        content = self.valid_review_matrix().replace("approval_status: NOT_REQUESTED", "approval_status: APPROVED")
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_review_matrix_status_active_blocked(self):
+        content = self.valid_review_matrix() + "status: ACTIVE\n"
+        res, report = self.run_temp_cli("matrix", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    # 13. Recommendation Drift Guard: criteria semantics
+    def test_criteria_unassigned_human_weight_passes(self):
+        res, report = self.run_temp_cli("criteria", self.valid_criteria_document())
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(report.get("status"), "PASS")
+        self.assertEqual(report.get("document_type"), "architecture_decision_criteria")
+        self.assertEqual(report.get("authority_findings"), [])
+
+    def test_criteria_weight_must_blocked(self):
+        content = self.valid_criteria_document().replace("weight: UNASSIGNED_BY_HUMAN", "weight: MUST")
+        res, report = self.run_temp_cli("criteria", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
+    def test_criteria_approval_status_approved_blocked(self):
+        content = self.valid_criteria_document().replace("approval_status: NOT_REQUESTED", "approval_status: APPROVED")
+        res, report = self.run_temp_cli("criteria", content)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(report.get("status"), "BLOCKED")
+
 if __name__ == '__main__':
     unittest.main()

@@ -7,10 +7,12 @@ import re
 def emit_report(status, target_type, file_path, errors=None, warnings=None,
                 blocked_reasons=None, authority_findings=None,
                 traceability_findings=None, unknown_findings=None,
-                conflict_findings=None, human_review_findings=None):
+                conflict_findings=None, human_review_findings=None,
+                document_type=None):
     report = {
         "status": status,
         "target_type": target_type,
+        "document_type": document_type or target_type,
         "file": file_path,
         "errors": errors or [],
         "warnings": warnings or [],
@@ -48,6 +50,12 @@ def build_parser():
 
     matrix_parser = subparsers.add_parser("matrix", help="Check an architecture matrix")
     matrix_parser.add_argument("--file", required=True, help="Path to matrix file")
+
+    evidence_parser = subparsers.add_parser("evidence", help="Check an architecture evidence packet")
+    evidence_parser.add_argument("--file", required=True, help="Path to evidence packet file")
+
+    criteria_parser = subparsers.add_parser("criteria", help="Check architecture decision criteria")
+    criteria_parser.add_argument("--file", required=True, help="Path to criteria file")
 
     task_parser = subparsers.add_parser("task-breakdown", help="Check a task breakdown")
     task_parser.add_argument("--file", required=True, help="Path to task breakdown file")
@@ -141,6 +149,160 @@ def extract_field_value(text, field):
         return match.group(1).strip()
     return None
 
+FORBIDDEN_AUTHORITY_MARKERS = [
+    "default_stack: true",
+    "status: ACTIVE",
+    "approval_status: APPROVED",
+    "is_approval: true",
+    "is_execution_authorized: true",
+    "execution_authorized: true",
+    "is_implementation_authorized: true",
+    "implementation_authorized: true",
+    "is_release_authorized: true",
+    "release_authorized: true",
+]
+
+FORBIDDEN_WEIGHT_MARKERS = [
+    "weight: MUST",
+    "weight: SHOULD",
+    "weight: NICE_TO_HAVE",
+    "matrix_status: COMPLETE",
+]
+
+def normalize_value(value):
+    if value is None:
+        return None
+    return value.strip().strip('"').strip("'")
+
+def find_exact_markers(text, markers):
+    findings = []
+    for i, line in enumerate(text.splitlines()):
+        for marker in markers:
+            if marker in line:
+                findings.append(f"Line {i+1}: {line.strip()}")
+    return findings
+
+def require_field_value(text, field, expected, errors):
+    actual = normalize_value(extract_field_value(text, field))
+    if actual is None:
+        errors.append(f"Missing required field: {field}")
+    elif actual != expected:
+        errors.append(f"{field} must be {expected}, found {actual}")
+
+def require_field_in_values(text, field, allowed, human_review_findings):
+    actual = normalize_value(extract_field_value(text, field))
+    if actual is None:
+        human_review_findings.append(f"Missing required field: {field}")
+    elif actual not in allowed:
+        human_review_findings.append(f"{field} must be one of {allowed}, found {actual}")
+
+def validate_evidence(text):
+    errors = []
+    blocked_reasons = []
+    human_review_findings = []
+
+    authority_findings = find_exact_markers(text, FORBIDDEN_AUTHORITY_MARKERS)
+    if authority_findings:
+        blocked_reasons.append("Forbidden authority marker found in targeted evidence file.")
+
+    require_field_value(text, "document_type", "architecture_decision_evidence_packet", errors)
+    require_field_value(text, "packet_status", "READY_FOR_HUMAN_REVIEW", errors)
+    require_field_value(text, "recommendation_status", "CANDIDATE_ONLY", errors)
+    require_field_value(text, "approval_status", "NOT_REQUESTED", errors)
+    require_field_value(text, "is_approval", "false", errors)
+    require_field_value(text, "is_execution_authorized", "false", errors)
+    require_field_value(text, "is_implementation_authorized", "false", errors)
+    require_field_value(text, "is_release_authorized", "false", errors)
+    require_field_value(text, "human_review_required", "true", errors)
+    require_field_in_values(text, "recommendation_confidence", ["LOW", "MEDIUM", "HIGH"], human_review_findings)
+
+    if blocked_reasons or errors:
+        return "BLOCKED", errors, blocked_reasons, authority_findings, human_review_findings
+    if human_review_findings:
+        return "HUMAN_REVIEW_REQUIRED", errors, blocked_reasons, authority_findings, human_review_findings
+    return "PASS", errors, blocked_reasons, authority_findings, human_review_findings
+
+def validate_review_matrix(text):
+    errors = []
+    blocked_reasons = []
+
+    authority_findings = find_exact_markers(text, FORBIDDEN_AUTHORITY_MARKERS)
+    weight_findings = find_exact_markers(text, FORBIDDEN_WEIGHT_MARKERS)
+    if authority_findings:
+        blocked_reasons.append("Forbidden authority marker found in targeted matrix file.")
+    if weight_findings:
+        blocked_reasons.append("Forbidden matrix completion or human-weight marker found.")
+
+    document_type = normalize_value(extract_field_value(text, "document_type"))
+    require_field_value(text, "matrix_status", "INCOMPLETE_WEIGHTS", errors)
+    require_field_value(text, "approval_status", "NOT_REQUESTED", errors)
+    require_field_value(text, "human_weight_required", "true", errors)
+    require_field_value(text, "human_review_required", "true", errors)
+
+    if document_type == "stack_fit_matrix":
+        require_field_value(text, "default_stack_selected", "false", errors)
+    elif document_type == "pattern_fit_matrix":
+        require_field_value(text, "active_patterns_selected", "false", errors)
+    else:
+        errors.append(f"Unsupported review matrix document_type: {document_type}")
+
+    criteria_rows = []
+    in_weights_section = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == "## Criteria weights":
+            in_weights_section = True
+            continue
+        if in_weights_section and stripped.startswith("## "):
+            break
+        if in_weights_section and stripped.startswith("|") and "UNASSIGNED_BY_HUMAN" in stripped:
+            criteria_rows.append(stripped)
+        elif in_weights_section and stripped.startswith("|") and stripped not in [
+            "| Criterion | Weight | Human weight required | Evidence source |",
+            "|---|---|---|---|",
+        ]:
+            errors.append(f"Criterion row missing weight field: {stripped}")
+
+    if not criteria_rows:
+        errors.append("No criteria rows with UNASSIGNED_BY_HUMAN found.")
+
+    if blocked_reasons or errors:
+        return "BLOCKED", errors, blocked_reasons, authority_findings + weight_findings
+    return "PASS", errors, blocked_reasons, authority_findings + weight_findings
+
+def validate_criteria(text):
+    errors = []
+    blocked_reasons = []
+
+    authority_findings = find_exact_markers(text, FORBIDDEN_AUTHORITY_MARKERS)
+    weight_findings = find_exact_markers(text, FORBIDDEN_WEIGHT_MARKERS)
+    if authority_findings:
+        blocked_reasons.append("Forbidden authority marker found in targeted criteria file.")
+    if weight_findings:
+        blocked_reasons.append("Forbidden human-weight marker found.")
+
+    require_field_value(text, "document_type", "architecture_decision_criteria", errors)
+    require_field_value(text, "criteria_status", "READY_FOR_HUMAN_WEIGHTING", errors)
+    require_field_value(text, "approval_status", "NOT_REQUESTED", errors)
+    require_field_value(text, "human_weight_required", "true", errors)
+    require_field_value(text, "human_review_required", "true", errors)
+    require_field_value(text, "is_approval", "false", errors)
+
+    criteria_sections = re.findall(r'^###\s+(.+)$', text, re.MULTILINE)
+    if not criteria_sections:
+        errors.append("No criteria sections found.")
+
+    section_blocks = re.split(r'^###\s+.+$', text, flags=re.MULTILINE)[1:]
+    for criterion, block in zip(criteria_sections, section_blocks):
+        if "weight: UNASSIGNED_BY_HUMAN" not in block:
+            errors.append(f"Criterion missing unassigned human weight: {criterion}")
+        if "human_weight_required: true" not in block:
+            errors.append(f"Criterion missing human_weight_required: {criterion}")
+
+    if blocked_reasons or errors:
+        return "BLOCKED", errors, blocked_reasons, authority_findings + weight_findings
+    return "PASS", errors, blocked_reasons, authority_findings + weight_findings
+
 def validate_brief(text):
     errors = []
     blocked_reasons = []
@@ -221,6 +383,10 @@ def validate_adr(text):
     return status_code, errors, blocked_reasons
 
 def validate_matrix(text):
+    document_type = normalize_value(extract_field_value(text, "document_type"))
+    if document_type in ["stack_fit_matrix", "pattern_fit_matrix"]:
+        return validate_review_matrix(text)
+
     errors = []
     blocked_reasons = []
     status_code = "PASS"
@@ -253,7 +419,7 @@ def validate_matrix(text):
             errors.append(f"Unknown decision value: {decision_val}")
             status_code = "BLOCKED"
             
-    return status_code, errors, blocked_reasons
+    return status_code, errors, blocked_reasons, []
 
 def validate_registry(text):
     errors = []
@@ -311,31 +477,36 @@ def validate_task_breakdown(text):
 def process_file_validation(file_path, command):
     text, err = read_text(file_path)
     if err:
-        return "BLOCKED", [f"File missing or unreadable: {file_path}"], [], []
+        return "BLOCKED", [f"File missing or unreadable: {file_path}"], [], [], []
         
     authority_findings = find_positive_authority(text)
     unsafe_status_findings = find_unsafe_status_language(text)
     all_auth_findings = authority_findings + unsafe_status_findings
     
     if all_auth_findings:
-        return "BLOCKED", [], ["Safety scanner blocked positive authority or unsafe status."], all_auth_findings
+        return "BLOCKED", [], ["Safety scanner blocked positive authority or unsafe status."], all_auth_findings, []
         
     status = "PASS"
     errors = []
     blocked_reasons = []
+    human_review_findings = []
     
     if command == "brief":
         status, errors, blocked_reasons = validate_brief(text)
     elif command == "adr":
         status, errors, blocked_reasons = validate_adr(text)
     elif command == "matrix":
-        status, errors, blocked_reasons = validate_matrix(text)
+        status, errors, blocked_reasons, all_auth_findings = validate_matrix(text)
+    elif command == "evidence":
+        status, errors, blocked_reasons, all_auth_findings, human_review_findings = validate_evidence(text)
+    elif command == "criteria":
+        status, errors, blocked_reasons, all_auth_findings = validate_criteria(text)
     elif command == "registry":
         status, errors, blocked_reasons = validate_registry(text)
     elif command == "task-breakdown":
         status, errors, blocked_reasons = validate_task_breakdown(text)
 
-    return status, errors, blocked_reasons, []
+    return status, errors, blocked_reasons, all_auth_findings, human_review_findings
 
 def main():
     parser = build_parser()
@@ -354,7 +525,7 @@ def main():
         all_auth = []
         
         for reg_file in registry_files:
-            status, errors, blocked_reasons, auth_findings = process_file_validation(reg_file, "registry")
+            status, errors, blocked_reasons, auth_findings, _human_review_findings = process_file_validation(reg_file, "registry")
             if status == "BLOCKED":
                 overall_status = "BLOCKED"
             elif status == "HUMAN_REVIEW_REQUIRED" and overall_status == "PASS":
@@ -380,14 +551,20 @@ def main():
         
     file_path = getattr(args, 'file', None)
     if file_path:
-        status, errors, blocked_reasons, auth_findings = process_file_validation(file_path, command)
+        status, errors, blocked_reasons, auth_findings, human_review_findings = process_file_validation(file_path, command)
+        document_type = None
+        text, _err = read_text(file_path)
+        if text:
+            document_type = normalize_value(extract_field_value(text, "document_type"))
         emit_report(
             status=status,
             target_type=command,
             file_path=file_path,
             errors=errors,
             blocked_reasons=blocked_reasons,
-            authority_findings=auth_findings
+            authority_findings=auth_findings,
+            human_review_findings=human_review_findings,
+            document_type=document_type
         )
         exit_for_status(status)
 
