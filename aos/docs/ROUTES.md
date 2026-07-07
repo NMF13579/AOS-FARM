@@ -62,7 +62,7 @@ to the human owner.
 | **Architecture Evidence Review** | `aos/docs/architecture/review/architecture-decision-evidence-packet.md` | Evidence packet + criteria | Read Evidence; prepare human review package | Evidence missing; recommendation treated as approval | **Yes** |
 | **Human Architecture Checkpoint** | `aos/docs/architecture/review/human-architecture-checkpoint-template.md` | Evidence packet + criteria | Human answers checkpoint questions | Human unavailable | **Yes — human only** |
 | **Architecture Validator** | `aos/scripts/aos_architecture_document_check.py` | Architecture docs | Run architecture validation commands | BLOCKED, UNKNOWN_BLOCKED, NOT_RUN | No — validation is not approval |
-| **Architecture-to-Task Breakdown** | Architecture Brief → Task Brief Builder | Technical Assignment + Architecture Brief / ADR where applicable | Draft task breakdown with traceability | Missing architecture refs; unresolved UNKNOWN/conflict | **Yes** — task review required |
+| **Architecture-to-Task Export** | Architecture Decision Layer / Human Architecture Checkpoint → Task Breakdown / Task Brief Builder | architecture decision Evidence, human review status, unresolved UNKNOWN list, constraints / scope boundary | Draft task breakdown with traceability | Missing architecture decision Evidence; missing architecture checkpoint; unresolved UNKNOWN not carried forward; human approval required but unavailable; agent would need to infer approval | **Yes** — task review required |
 | **Architecture UNKNOWN state** | Stop → report UNKNOWN → wait for human | Architecture docs | Report only | Default `UNKNOWN_BLOCKED` | **Yes** |
 | **Architecture promotion request** | Stop → prepare clarification → wait for human | Root canonical sources + architecture Evidence | None without explicit human approval | Default `BLOCKED` | **Yes — HIGH_RISK_PROTECTED** |
 | **Task review** | `aos/templates/reports/evidence-review-template.md` | `02` (Evidence Gate) | Prepare Evidence report | Missing Evidence, UNKNOWN state | **Yes** — human reviews Evidence |
@@ -118,3 +118,14 @@ with a description of the unknown situation and what clarification is needed.
 *This document is navigation only. It does not grant execution, commit, push,
 merge, release, or approval permission. Canonical governance in 00/01/02
 always takes precedence.*
+
+---
+
+## Architecture-to-Task Export Semantics
+
+**Required distinction:**
+- Route existence ≠ execution authorization.
+- Route PASS ≠ approval.
+- Architecture Evidence ≠ Task Brief approval.
+- Task Brief readiness ≠ Build Step authorization.
+- Architecture-to-Task Export route does not authorize implementation, Build Step execution, release, or merge to main.

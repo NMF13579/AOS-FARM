@@ -34,6 +34,30 @@ NOT_RUN ≠ PASS.
 - Validator PASS does not authorize execution, commit, push, or release.
 - HUMAN_REVIEW_REQUIRED does not mean approval exists.
 
+### Architecture-to-Task Export Safety Rules
+
+- Architecture Decision Layer may produce architecture decision Evidence.
+- Architecture decision Evidence is not approval.
+- Architecture decision Evidence must list: selected option, rejected alternatives, unresolved UNKNOWN, downstream task impact, and required human checkpoint.
+- Architecture Decision Layer must not authorize Task Brief creation by itself.
+- Human checkpoint is required before downstream canonical/task conversion when protected/canonical scope is affected.
+
+#### Required Statuses
+
+**`architecture_decision_evidence_status`:**
+- `DRAFT`
+- `READY_FOR_HUMAN_REVIEW`
+- `HUMAN_REVIEW_REQUIRED`
+- `UNKNOWN_BLOCKED`
+- `BLOCKED`
+
+**`not_allowed_as_approval`:**
+- `PASS`
+- `Evidence`
+- `READY_FOR_HUMAN_REVIEW`
+- `validator PASS`
+- `CI PASS`
+
 ## Architecture Validator (AOS-FARM.618 MVP)
 
 AOS-FARM.618 adds an MVP validator for Architecture Brief, Mini ADR, Pattern Fit Matrix, architecture registries, and task breakdown traceability.

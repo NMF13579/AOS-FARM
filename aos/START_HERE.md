@@ -40,26 +40,35 @@ Before breaking the Technical Assignment into tasks, check whether architecture 
 Review the architecture evidence before allowing decisions to cascade.
 - **What to do:** Use the [Human Architecture Checkpoint Template](docs/architecture/review/human-architecture-checkpoint-template.md) to record the decision.
 - **Important:** Human Architecture Checkpoint is required before architecture decisions can affect task breakdown, stack selection, pattern promotion, or implementation planning.
+- **Important:** Missing architecture checkpoint must not be treated as OK.
 
-### Step 5: Task Brief Builder / Task Breakdown
-Decompose the Technical Assignment into granular, traceable tasks.
-- **What to do:** Give your agent the completed `Technical Assignment` (and `Architecture Brief` if applicable) and the prompt `aos/prompts/task-brief-builder.md`.
-- **What it does:** The agent extracts task drafts, traces them back to the Technical Assignment, proposes priorities, and creates a manual task queue. It **does not write code**.
-- **Output:** A `Task Breakdown` and a `Task Queue`.
+### Step 5: Task Breakdown from Architecture
+Decompose the Technical Assignment and architecture decisions into granular, traceable task candidates.
+- **What to do:** Give your agent the completed `Technical Assignment` and `Architecture Brief` (including human checkpoint status) and follow [Task Breakdown from Architecture](docs/workflow/task-breakdown-from-architecture.md).
+- **What it does:** The agent extracts task candidates and traces them back to the Technical Assignment and Architecture Decision.
+- **Important:** Architecture checkpoint must be visible before Task Breakdown.
 
-### Step 6: Human Task Review
+### Step 6: Task Brief Builder
+Draft executable Task Briefs from the broken-down candidates.
+- **What to do:** Give your agent the `Task Breakdown` and the prompt `aos/prompts/task-brief-builder.md`.
+- **What it does:** The agent creates a manual task queue and drafts Task Briefs. It **does not write code**.
+- **Important:** Task Brief Builder must not be presented as directly following TA without architecture checkpoint when architecture stage is applicable.
+- **Important:** Task Brief creation remains separate from Build Step execution.
+- **Output:** A `Task Queue` and Draft Task Briefs.
+
+### Step 7: Human Task Review
 Review the proposed tasks before authorizing any work.
-- **What to do:** Manually review the `Task Queue` generated in Step 5.
+- **What to do:** Manually review the `Task Queue` generated in Step 6.
 - **What it does:** Ensures no tasks were invented by the agent and that everything aligns with the Technical Assignment. Task drafts require human review!
 
-### Step 7: Controlled Execution
+### Step 8: Controlled Execution
 Only after a task is reviewed and selected from the queue can you begin execution.
 - **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task.
 - **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries.
 - **Next step guide:** See [First Controlled Execution](docs/workflow/first-controlled-execution.md) for the safe path from `Controlled Task Brief` to Human Execution Authorization, Controlled Execution Guard `precheck`, controlled execution, `scopecheck`, `postcheck`, and Evidence Review.
 - **Post-execution learning:** After Evidence Review, see the [Evidence-to-Backlog Loop](docs/workflow/evidence-to-backlog-loop.md) to capture lessons learned, backlog candidates, and a Next Task Candidate for human review.
-- **Important:** Controlled execution still requires explicit human authorization. The brief alone is not approval.
-- **Important:** Guard PASS is not approval. Guard PASS does not authorize commit or push.
+- **Important:** Build Step planning/execution only after separate authorization. Controlled execution still requires explicit human authorization. The brief alone is not approval.
+- **Important:** Guard PASS is not approval. Guard PASS does not authorize commit or push. Human approval remains separate from PASS/Evidence.
 - **Important:** Lessons Learned, Pipeline Hardening Backlog Items, and Next Task Candidates do not authorize execution.
 
 ---

@@ -27,3 +27,20 @@ NOT_RUN ≠ PASS.
 - External document is not approval.
 - Stack preset is recommendation, not approval.
 - Reference architecture is reference only.
+
+## Architecture-to-Task Export Requirements
+
+To support safe Task Breakdown:
+- Architecture intake **must preserve explicit user constraints**.
+- Architecture intake **must identify unresolved UNKNOWNs**.
+- Architecture intake **must identify downstream Task Brief impact**.
+- Architecture intake **must not silently resolve missing architecture decisions**.
+- Intake output **must be traceable enough for Task Breakdown**.
+- If architecture inputs are insufficient, output must be `UNKNOWN_BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
+
+## Architecture Intake Fail-Closed Semantics
+
+- Missing architecture input ≠ OK.
+- Missing constraints ≠ OK.
+- Unresolved UNKNOWN cannot be dropped.
+- Agent cannot invent human approval.
