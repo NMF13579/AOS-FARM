@@ -101,5 +101,8 @@ AOS-FARM.633 execution is not claimed
         content = self.get_valid_content() + "\naos-farm.633 execution claimed\n"
         self._assert_status(content, "FAILED")
 
+    def test_lifecycle_promotion_ready_for_execution(self):
+        content = self.get_valid_content() + "\nstatus: READY_FOR_EXECUTION\n"
+        self._assert_status(content, "BLOCKED")
 if __name__ == '__main__':
     unittest.main()
