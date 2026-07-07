@@ -56,6 +56,13 @@ origin_pattern:
 origin_stack_preset:
 origin_unknown_resolution:
 origin_conflict_resolution:
+architecture_decision_evidence:
+human_architecture_checkpoint:
+unresolved_unknowns:
+downstream_scope_boundary:
+risk_profile_handling:
+approval_boundary:
+build_step_boundary:
 
 Without architecture traceability, a task may be TASK_CANDIDATE_DRAFT.
 Without architecture traceability, a task must not become APPROVED.

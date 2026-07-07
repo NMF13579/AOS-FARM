@@ -346,7 +346,7 @@ def validate_brief(text):
     errors = []
     blocked_reasons = []
     status_code = "PASS"
-    
+
     required = [
         "architecture_brief_id",
         "version",
@@ -367,10 +367,10 @@ def validate_brief(text):
             status_code = "CONFLICT_BLOCKED"
         else:
             status_code = "BLOCKED"
-            
+
     status_val = extract_field_value(text, "status")
     if status_val:
-        allowed_statuses = ["DRAFT", "HUMAN_REVIEW_REQUIRED", "READY_FOR_TASK_BREAKDOWN", 
+        allowed_statuses = ["DRAFT", "HUMAN_REVIEW_REQUIRED", "READY_FOR_TASK_BREAKDOWN",
                             "UNKNOWN_BLOCKED", "CONFLICT_BLOCKED", "REJECTED", "SUPERSEDED"]
         if status_val not in allowed_statuses:
             errors.append(f"Unknown status value: {status_val}")
@@ -389,7 +389,7 @@ def validate_adr(text):
     errors = []
     blocked_reasons = []
     status_code = "PASS"
-    
+
     required = [
         "adr_id",
         "title",
@@ -410,15 +410,15 @@ def validate_adr(text):
             status_code = "CONFLICT_BLOCKED"
         else:
             status_code = "BLOCKED"
-            
+
     status_val = extract_field_value(text, "status")
     if status_val:
-        allowed = ["PROPOSED", "HUMAN_REVIEW_REQUIRED", "ACCEPTED_BY_HUMAN", 
+        allowed = ["PROPOSED", "HUMAN_REVIEW_REQUIRED", "ACCEPTED_BY_HUMAN",
                    "REJECTED", "SUPERSEDED", "UNKNOWN_BLOCKED", "CONFLICT_BLOCKED"]
         if status_val not in allowed:
             errors.append(f"Unknown status value: {status_val}")
             status_code = "BLOCKED"
-            
+
     return status_code, errors, blocked_reasons
 
 def validate_matrix(text):
@@ -429,7 +429,7 @@ def validate_matrix(text):
     errors = []
     blocked_reasons = []
     status_code = "PASS"
-    
+
     required = [
         "constraint",
         "candidate_pattern",
@@ -450,32 +450,32 @@ def validate_matrix(text):
             status_code = "CONFLICT_BLOCKED"
         else:
             status_code = "BLOCKED"
-            
+
     decision_val = extract_field_value(text, "decision")
     if decision_val:
         allowed = ["SELECTED", "REJECTED", "NEEDS_HUMAN", "UNKNOWN_BLOCKED", "CONFLICT_BLOCKED"]
         if decision_val not in allowed:
             errors.append(f"Unknown decision value: {decision_val}")
             status_code = "BLOCKED"
-            
+
     return status_code, errors, blocked_reasons, []
 
 def validate_registry(text):
     errors = []
     blocked_reasons = []
     status_code = "PASS"
-    
+
     for line in text.splitlines():
         if "EXECUTION_AUTHORIZED" in line and not is_negative_invariant_line(line):
             errors.append("EXECUTION_AUTHORIZED found")
             status_code = "BLOCKED"
-            
+
     has_active = False
     for line in text.splitlines():
         if re.search(r'^\s*(?:-\s*)?status\s*[:=]\s*ACTIVE\b', line) and not is_negative_invariant_line(line):
             has_active = True
             break
-            
+
     if has_active:
         checkpoint_fields = ["human_checkpoint", "approved_by", "approved_at"]
         missing_markers = contains_required_fields(text, checkpoint_fields)
@@ -484,14 +484,14 @@ def validate_registry(text):
             status_code = "BLOCKED"
         elif status_code == "PASS":
             status_code = "HUMAN_REVIEW_REQUIRED"
-            
+
     return status_code, errors, blocked_reasons
 
 def validate_task_breakdown(text):
     errors = []
     blocked_reasons = []
     status_code = "PASS"
-    
+
     required = [
         "origin_technical_assignment",
         "origin_architecture_brief",
@@ -499,37 +499,61 @@ def validate_task_breakdown(text):
         "origin_pattern",
         "origin_stack_preset",
         "origin_unknown_resolution",
-        "origin_conflict_resolution"
+        "origin_conflict_resolution",
+        "architecture_decision_evidence",
+        "human_architecture_checkpoint",
+        "unresolved_unknowns",
+        "downstream_scope_boundary",
+        "risk_profile_handling",
+        "approval_boundary",
+        "build_step_boundary"
     ]
     missing = contains_required_fields(text, required)
     if missing:
         errors.append(f"Missing required origins: {missing}")
-        if "origin_unknown_resolution" in missing:
+        if "origin_unknown_resolution" in missing or "unresolved_unknowns" in missing or "architecture_decision_evidence" in missing:
             status_code = "UNKNOWN_BLOCKED"
         elif "origin_conflict_resolution" in missing and status_code == "PASS":
             status_code = "CONFLICT_BLOCKED"
+        elif "human_architecture_checkpoint" in missing and status_code == "PASS":
+            status_code = "HUMAN_REVIEW_REQUIRED"
         else:
             status_code = "BLOCKED"
-            
+
+    text_lower = text.lower()
+    unsafe_contract_claims = [
+        "pass is approval",
+        "evidence is approval",
+        "validator pass is execution authority",
+        "task brief readiness is build step authorization",
+        "aos-farm.633 execution claimed",
+        "agent assigns low_risk_fast"
+    ]
+    for claim in unsafe_contract_claims:
+        if claim in text_lower:
+            errors.append(f"Unsafe contract claim found: {claim}")
+            if status_code in ["PASS", "HUMAN_REVIEW_REQUIRED"]:
+                status_code = "FAILED"
+
     return status_code, errors, blocked_reasons
 
 def process_file_validation(file_path, command):
     text, err = read_text(file_path)
     if err:
         return "BLOCKED", [f"File missing or unreadable: {file_path}"], [], [], []
-        
+
     authority_findings = find_positive_authority(text)
     unsafe_status_findings = find_unsafe_status_language(text)
     all_auth_findings = authority_findings + unsafe_status_findings
-    
+
     if all_auth_findings:
         return "BLOCKED", [], ["Safety scanner blocked positive authority or unsafe status."], all_auth_findings, []
-        
+
     status = "PASS"
     errors = []
     blocked_reasons = []
     human_review_findings = []
-    
+
     if command == "brief":
         status, errors, blocked_reasons = validate_brief(text)
     elif command == "adr":
@@ -576,7 +600,7 @@ def check_result(id_str, status, severity, file_path, message):
 
 def run_structural_checks():
     results = []
-    
+
     # 1. Required Architecture File Presence
     REQUIRED_ARCHITECTURE_FILES = [
         "aos/docs/workflow/architecture-input-intake.md",
@@ -606,11 +630,11 @@ def run_structural_checks():
 
     require_link("aos/START_HERE.md", "architecture input", "ARCH-REF-START-HERE")
     require_link("aos/START_HERE.md", "architecture decision layer", "ARCH-REF-INPUT-TO-DECISION")
-    
+
     require_link("aos/docs/ROUTES.md", "architecture route", "ARCH-REF-ROUTES")
     require_link("aos/docs/ROUTES.md", "human checkpoint", "ARCH-REF-ROUTES")
     require_link("aos/docs/ROUTES.md", "no automatic execution authority", "ARCH-REF-ROUTES")
-    
+
     require_link("aos/docs/workflow/architecture-decision-layer.md", "architecture-decision-evidence-packet.md", "ARCH-REF-DECISION-TO-EVIDENCE")
     require_link("aos/docs/workflow/architecture-decision-layer.md", "human-architecture-checkpoint-template.md", "ARCH-REF-EVIDENCE-TO-HUMAN-CHECKPOINT")
     require_link("aos/docs/workflow/architecture-decision-layer.md", "task brief", "ARCH-REF-HUMAN-CHECKPOINT-TO-TASK-BRIEF")
@@ -639,14 +663,14 @@ def run_structural_checks():
             "Evidence summary", "inspected files", "validation results", "assumptions", "UNKNOWNs", "rejected options", "human questions", "approval not claimed"
         ]
     }
-    
+
     for doc_path in REQUIRED_ARCHITECTURE_FILES:
         text, err = read_text(doc_path)
         if err:
             continue
-            
+
         text_lower = text.lower()
-        
+
         # Hard Safety Boundary for specific files (e.g. decision layer, evidence packet)
         if doc_path in [
             "aos/docs/workflow/architecture-decision-layer.md",
@@ -657,7 +681,7 @@ def run_structural_checks():
                     results.append(check_result("ARCH-MARKER-HARD", "WARNING", "warning", doc_path, f"canonical doc alignment required outside current AOS-FARM.627 write scope: missing hard safety boundary marker from group: {marker_group[0]}"))
                 else:
                     results.append(check_result("ARCH-MARKER-HARD", "PASS", "info", doc_path, f"Found hard safety boundary marker from group: {marker_group[0]}"))
-                    
+
         # Recommended Structure
         if doc_path in MARKER_GROUPS:
             for marker_spec in MARKER_GROUPS[doc_path]:
@@ -667,17 +691,23 @@ def run_structural_checks():
                 else:
                     found = marker_spec.lower() in text_lower
                     name = marker_spec
-                    
+
                 if not found:
                     results.append(check_result("ARCH-MARKER-REC", "WARNING", "warning", doc_path, f"Missing recommended structural marker: {name}"))
                 else:
                     results.append(check_result("ARCH-MARKER-REC", "PASS", "info", doc_path, f"Found recommended structural marker: {name}"))
-                    
+
         # Unsafe Claims Classifier
         unsafe_phrases = [
             "architecture approved", "approval granted", "automatically approved",
             "validator approves", "pass approves", "ready_for_execution",
-            "implementation authorized", "release authorized", "human approval simulated"
+            "implementation authorized", "release authorized", "human approval simulated",
+            "validator pass authorizes execution", "task brief authorizes build step",
+            "aos-farm.633 execution claimed", "pass is approval", "evidence is approval",
+            "evidence proves approval", "pass proves approval",
+            "validator pass is execution authority",
+            "task brief readiness is build step authorization",
+            "agent assigns low_risk_fast", "agent self-assigns low_risk_fast"
         ]
         allowed_assertions = [
             "approval_claimed: false", "approval granted: no", "not approved",
@@ -702,14 +732,14 @@ def run_structural_checks():
                     is_explicitly_allowed = any(allowed.lower() in line_lower for allowed in allowed_assertions)
                     if is_explicitly_allowed:
                         continue
-                        
+
                     has_negation = any(neg.lower() in line_lower for neg in negation_markers)
                     if has_negation:
                         # Negative context explicitly negates the unsafe phrase
                         continue
-                        
+
                     has_ambiguous = any(amb.lower() in line_lower for amb in ambiguous_markers)
-                    
+
                     if has_ambiguous:
                         results.append(check_result("ARCH-UNSAFE-CLAIM", "UNKNOWN_BLOCKED", "error", doc_path, f"Ambiguous approval wording on line {i+1}: '{unsafe}'"))
                     else:
@@ -725,19 +755,19 @@ def get_validate_all_report():
         ("matrix", "aos/docs/architecture/review/pattern-fit-matrix.md"),
         ("criteria", "aos/docs/architecture/review/architecture-decision-criteria.md")
     ]
-    
+
     registry_files = [
         "aos/docs/architecture/pattern-registry.md",
         "aos/docs/architecture/stack-preset-registry.md"
     ]
-    
+
     overall_status = "PASS"
     all_errors = []
     all_blocked = []
     all_auth = []
     all_human_review = []
     checks_report = []
-    
+
     for reg_file in registry_files:
         status, errors, blocked_reasons, auth_findings, human_review_findings = process_file_validation(reg_file, "registry")
         overall_status = aggregate_status(overall_status, status)
@@ -755,7 +785,7 @@ def get_validate_all_report():
         all_blocked.extend(blocked_reasons)
         all_auth.extend(auth_findings)
         all_human_review.extend(human_review_findings)
-        
+
     checks_report.append({
         "checker": "task-breakdown",
         "result": "NOT_RUN",
@@ -763,7 +793,7 @@ def get_validate_all_report():
         "counted_as_pass": False,
         "blocks_overall_pass": False
     })
-    
+
     structural_results = run_structural_checks()
     for res in structural_results:
         status = res.get("status")
@@ -771,7 +801,7 @@ def get_validate_all_report():
         if status in ["BLOCKED", "UNKNOWN_BLOCKED", "FAILED"]:
             overall_status = aggregate_status(overall_status, status)
         checks_report.append(res)
-    
+
     return build_report_dict(
         status=overall_status,
         target_type="validate-all",
@@ -793,11 +823,11 @@ def main():
     args = parser.parse_args()
 
     command = args.command
-    
+
     if command == "validate-all":
         run_validate_all()
         return
-    
+
     if command == "registry" and getattr(args, 'validate', False):
         registry_files = [
             "aos/docs/architecture/pattern-registry.md",
@@ -807,7 +837,7 @@ def main():
         all_errors = []
         all_blocked = []
         all_auth = []
-        
+
         for reg_file in registry_files:
             status, errors, blocked_reasons, auth_findings, _human_review_findings = process_file_validation(reg_file, "registry")
             if status == "BLOCKED":
@@ -818,11 +848,11 @@ def main():
                 overall_status = "UNKNOWN_BLOCKED"
             elif status == "CONFLICT_BLOCKED" and overall_status in ["PASS", "HUMAN_REVIEW_REQUIRED", "UNKNOWN_BLOCKED"]:
                 overall_status = "CONFLICT_BLOCKED"
-                
+
             all_errors.extend(errors)
             all_blocked.extend(blocked_reasons)
             all_auth.extend(auth_findings)
-            
+
         emit_report(
             status=overall_status,
             target_type=command,
@@ -832,7 +862,7 @@ def main():
             authority_findings=all_auth
         )
         exit_for_status(overall_status)
-        
+
     file_path = getattr(args, 'file', None)
     if file_path:
         status, errors, blocked_reasons, auth_findings, human_review_findings = process_file_validation(file_path, command)

@@ -21,16 +21,23 @@ commit_authority: none
 push_authority: none
 release_authority: none
 
-origin_technical_assignment: 
-origin_architecture_brief: 
-origin_adr: 
-origin_pattern: 
-origin_stack_preset: 
-origin_unknown_resolution: 
-origin_conflict_resolution: 
-human_checkpoints: 
-unknown_records: 
-conflict_records: 
+origin_technical_assignment:
+origin_architecture_brief:
+origin_adr:
+origin_pattern:
+origin_stack_preset:
+origin_unknown_resolution:
+origin_conflict_resolution:
+architecture_decision_evidence:
+human_architecture_checkpoint:
+unresolved_unknowns:
+downstream_scope_boundary:
+risk_profile_handling:
+approval_boundary:
+build_step_boundary:
+human_checkpoints:
+unknown_records:
+conflict_records:
 
 ## Task candidate status values:
 - TASK_CANDIDATE_DRAFT
