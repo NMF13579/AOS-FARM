@@ -26,19 +26,25 @@ Now that the problem is defined, you must translate it into technical boundaries
 - **Save TA Output:** The agent will define strict boundaries. Capture this output and save it locally (e.g., `aos/reports/technical-assignments/<project-or-feature-name>.md`).
 - **Safety Note:** Do not start implementation until you pass a human review and approval checkpoint.
 
-### 4. Build the Task Breakdown and Queue
+### 4. Architecture Need Check
+After the Technical Assignment, check whether architecture input is needed. Architecture step answers: “how should this be built safely before we split it into tasks?”
+- **When is it required?** If the task affects architecture, stack, pattern, lifecycle, integration boundary, runtime behavior, validator behavior, safety/control semantics, or product folder structure.
+- **If required:** Run Architecture Intake using [Architecture Input Intake](architecture-input-intake.md) and [Architecture Decision Layer](architecture-decision-layer.md) before Task Breakdown. You will need a [Human Architecture Checkpoint](../architecture/review/human-architecture-checkpoint-template.md).
+- **If not required:** Record that no architecture intake was required and continue to Task Brief Builder.
+
+### 5. Build the Task Breakdown and Queue
 A Technical Assignment is too broad for an AI to implement all at once. You must break it down.
 - **Which prompt do I copy next?** Open `aos/prompts/task-brief-builder.md` and copy its contents.
-- **What input do I paste with it?** Paste the prompt and the full `Technical Assignment` document from Step 3.
+- **What input do I paste with it?** Paste the prompt and the full `Technical Assignment` document from Step 3 (and `Architecture Brief` if applicable).
 - **What output should I expect?** The agent will generate a `Task Breakdown` and a canonical YAML `Task Queue`. The agent will explicitly tell you it will not write code yet.
 
-### 5. Human Task Review
+### 6. Human Task Review
 You must manually review the generated task queue.
 - **What do I need to review manually?** Ensure every task draft traces directly back to your Technical Assignment. The agent is not authorized to invent new features. Check the proposed priorities and dependencies.
 - **What does approval mean here?** Moving a task to `READY_FOR_EXECUTION_AUTHORIZATION` means it's a good plan, but it is **still not authorized** for implementation.
 - **How do I know which task is next?** Select a task (or a batch of tasks) from the queue that has no blocked dependencies.
 
-### 6. Proceed to Controlled Execution
+### 7. Proceed to Controlled Execution
 Now you can create a specific, execution-ready brief for your chosen task.
 - **Create the brief:** Use `aos/templates/task-briefs/controlled-task-brief-template.md` to define the exact constraints for the selected task.
 - **When can the agent start writing code?** Only after you have explicitly given the agent the filled-out `controlled-task-brief` and explicitly granted **Execution Authorization**.
@@ -63,4 +69,5 @@ AOS operates on strict fail-closed security invariants through explicit human ch
 - **Push authorization is not release authorization.**
 - **PASS ≠ Approval:** Just because an agent completes an interview or finishes a script without errors does not mean it has permission to execute code.
 - **Evidence ≠ Approval:** Generating these intake documents provides *evidence* of planning, but you must still explicitly authorize the agent to act on them.
+- **Architecture Safety:** Do not treat Architecture Brief, Architecture Evidence, ADR PROPOSED, recommendation, or validator PASS as approval. Human Architecture Checkpoint is required before architecture decisions can affect task breakdown, stack selection, pattern promotion, or implementation planning.
 - Only a human can grant the agent permission to edit protected files, commit, push, or deploy.

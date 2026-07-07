@@ -30,9 +30,15 @@ to the human owner.
 
 ## Route Map
 
+> **Product Folder Completeness Note:**
+> Ordinary consumer first-start must remain available through `/aos/`.
+> Root `00_AOS_Core_Control.md`, `01_AOS_Assembly_Pipelines_and_Build_Roadmap.md`, and `02_AOS_Governance_Control_Module_and_Safety_Rules.md` are AOS-FARM development canonical sources.
+> They are not required consumer first-start prerequisites.
+> Development agents working inside AOS-FARM may read them for governance orientation.
+
 | Situation | Route | Read First | Allowed Action | Stop Condition | Human Checkpoint Required? |
 |---|---|---|---|---|---|
-| **New user start** | `aos/START_HERE.md` → `aos/docs/user-guide/first-run.md` | `00`, `01`, `02`, `aos/START_HERE.md` | Read only; orient | Any uncertainty about scope | No (reading) |
+| **New user start** | `aos/START_HERE.md` → `aos/docs/user-guide/first-run.md` | `aos/START_HERE.md`, `aos/docs/user-guide/first-run.md` | Read only; orient | Any uncertainty about scope | No (reading) |
 | **Task Intake** | `aos/docs/TASK-INTAKE-WIZARD.md` | `00`, `01`, `02` | Classify raw ideas | Medical domain | No |
 | **Russian new user start** | `aos/docs/START-RU.md` | `00`, `01`, `02` | Read only; orient | Any uncertainty about scope | No (reading) |
 | **Installation Guide** | `aos/docs/INSTALL.md` | `02` | Read only | Dry-run only | No (reading) |
@@ -51,6 +57,14 @@ to the human owner.
 | **Tutor Scenarios** | `aos/docs/TUTOR-SCENARIOS.md` | `02` | Read only | Orient practical scenarios | No (reading) |
 | **Agent startup** | `aos/root/AGENTS.md` → read canonical sources → check branch state | `00`, `01`, `02`, `aos/root/AGENTS.md` | Read only; inspect branch | Dirty protected files, unknown branch, missing task brief | No (reading) |
 | **Task drafting** | `aos/docs/workflow/task-brief-compiler.md` → `aos/templates/task-briefs/` | `02` (Risk Profile rules) | Draft task brief | Scope unclear, Risk Profile unknown | No (drafting only) |
+| **Architecture Intake** | `aos/docs/workflow/architecture-input-intake.md` | `aos/docs/workflow/architecture-decision-layer.md` | Draft candidate architecture inputs | Missing Technical Assignment; unresolved UNKNOWN | **Yes** — before decision or promotion |
+| **Architecture Brief Drafting** | `aos/docs/workflow/architecture-decision-layer.md` | `aos/docs/workflow/architecture-input-intake.md` | Draft Architecture Brief DRAFT | Missing TA ref; UNKNOWN state; unresolved conflict | **Yes** — before task breakdown affects implementation |
+| **Architecture Evidence Review** | `aos/docs/architecture/review/architecture-decision-evidence-packet.md` | Evidence packet + criteria | Read Evidence; prepare human review package | Evidence missing; recommendation treated as approval | **Yes** |
+| **Human Architecture Checkpoint** | `aos/docs/architecture/review/human-architecture-checkpoint-template.md` | Evidence packet + criteria | Human answers checkpoint questions | Human unavailable | **Yes — human only** |
+| **Architecture Validator** | `aos/scripts/aos_architecture_document_check.py` | Architecture docs | Run architecture validation commands | BLOCKED, UNKNOWN_BLOCKED, NOT_RUN | No — validation is not approval |
+| **Architecture-to-Task Breakdown** | Architecture Brief → Task Brief Builder | Technical Assignment + Architecture Brief / ADR where applicable | Draft task breakdown with traceability | Missing architecture refs; unresolved UNKNOWN/conflict | **Yes** — task review required |
+| **Architecture UNKNOWN state** | Stop → report UNKNOWN → wait for human | Architecture docs | Report only | Default `UNKNOWN_BLOCKED` | **Yes** |
+| **Architecture promotion request** | Stop → prepare clarification → wait for human | Root canonical sources + architecture Evidence | None without explicit human approval | Default `BLOCKED` | **Yes — HIGH_RISK_PROTECTED** |
 | **Task review** | `aos/templates/reports/evidence-review-template.md` | `02` (Evidence Gate) | Prepare Evidence report | Missing Evidence, UNKNOWN state | **Yes** — human reviews Evidence |
 | **Execution request** | Human provides Task Brief → Risk Profile assignment → human checkpoint | `02` (Approval Boundary) | Execute only scoped task after human authorization | No human checkpoint, scope unclear, blockers present | **Yes** — required before any execution |
 | **Validation request** | `aos/docs/FIRST-SAFE-COMMANDS.md` | `02` (Evidence Gate) | Run safe validator commands | Command unavailable (report NOT_RUN) | No (validation is not approval) |

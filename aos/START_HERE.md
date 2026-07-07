@@ -30,18 +30,29 @@ Convert the problem definition into strict technical boundaries.
 - **What it does:** The agent will bound the scope, define what NOT to do, and identify target files.
 - **Output:** A `Technical Assignment` document.
 
-### Step 3: Task Brief Builder / Task Breakdown
+### Step 3: Architecture Need Check / Architecture Input Intake
+Before breaking the Technical Assignment into tasks, check whether architecture input is required.
+- **When is it required?** Architecture input is required if the task affects system structure, stack, integration boundary, runtime behavior, validator behavior, lifecycle behavior, safety/control semantics, or product folder structure.
+- **If required:** Run Architecture Input Intake using [Architecture Input Intake](docs/workflow/architecture-input-intake.md) and [Architecture Decision Layer](docs/workflow/architecture-decision-layer.md), and prepare Architecture Brief / Evidence for human review.
+- **If not required:** Record that no architecture intake was required and continue directly to Task Brief Builder.
+
+### Step 4: Human Architecture Checkpoint, if architecture input is required
+Review the architecture evidence before allowing decisions to cascade.
+- **What to do:** Use the [Human Architecture Checkpoint Template](docs/architecture/review/human-architecture-checkpoint-template.md) to record the decision.
+- **Important:** Human Architecture Checkpoint is required before architecture decisions can affect task breakdown, stack selection, pattern promotion, or implementation planning.
+
+### Step 5: Task Brief Builder / Task Breakdown
 Decompose the Technical Assignment into granular, traceable tasks.
-- **What to do:** Give your agent the completed `Technical Assignment` and the prompt `aos/prompts/task-brief-builder.md`.
+- **What to do:** Give your agent the completed `Technical Assignment` (and `Architecture Brief` if applicable) and the prompt `aos/prompts/task-brief-builder.md`.
 - **What it does:** The agent extracts task drafts, traces them back to the Technical Assignment, proposes priorities, and creates a manual task queue. It **does not write code**.
 - **Output:** A `Task Breakdown` and a `Task Queue`.
 
-### Step 4: Human Task Review
+### Step 6: Human Task Review
 Review the proposed tasks before authorizing any work.
-- **What to do:** Manually review the `Task Queue` generated in Step 3.
+- **What to do:** Manually review the `Task Queue` generated in Step 5.
 - **What it does:** Ensures no tasks were invented by the agent and that everything aligns with the Technical Assignment. Task drafts require human review!
 
-### Step 5: Controlled Execution
+### Step 7: Controlled Execution
 Only after a task is reviewed and selected from the queue can you begin execution.
 - **What to do:** Create a task using `aos/templates/task-briefs/controlled-task-brief-template.md` for the selected task.
 - **Reference:** See the [Consumer-to-Runtime Handoff](docs/workflow/consumer-runtime-handoff.md) for details on saving artifacts and workflow boundaries.
@@ -64,6 +75,11 @@ For advanced or local guided execution, there is an optional Python runner locat
 The following invariants govern all agent behavior in this repository:
 - PASS ≠ approval.
 - Evidence ≠ approval.
+- Architecture Brief ≠ approval.
+- Architecture Evidence ≠ approval.
+- ADR PROPOSED ≠ approval.
+- Architecture validator PASS ≠ approval.
+- Human Architecture Checkpoint is required before promotion or implementation planning.
 - CI PASS ≠ approval.
 - UNKNOWN ≠ OK.
 - NOT_RUN ≠ PASS.
