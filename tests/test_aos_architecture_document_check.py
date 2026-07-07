@@ -583,5 +583,145 @@ human_weight_required: true
         except SystemExit:
             self.fail("get_validate_all_report raised SystemExit")
 
+    # 15. Structural Contract: Required Files, Markers, Unsafe Claims, Cross References
+    def test_structural_required_file_missing(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_exists = os.path.exists
+        def mock_exists(path):
+            if path == "aos/docs/workflow/architecture-input-intake.md":
+                return False
+            return original_exists(path)
+            
+        arch_check.os.path.exists = mock_exists
+        try:
+            report = arch_check.get_validate_all_report()
+            self.assertEqual(report.get("status"), "UNKNOWN_BLOCKED")
+            missing_check = next((c for c in report["checks"] if c.get("id") == "ARCH-REQ-FILE" and c.get("status") == "UNKNOWN_BLOCKED"), None)
+            self.assertIsNotNone(missing_check)
+            self.assertEqual(missing_check.get("severity"), "error")
+        finally:
+            arch_check.os.path.exists = original_exists
+
+    def test_structural_marker_missing_hard(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        def mock_read_text(path):
+            if path == "aos/docs/workflow/architecture-decision-layer.md":
+                return "Just some text without safety boundary", None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            # It now yields a WARNING because canonical doc alignment is outside scope
+            # Warning does not block validate-all, so overall is PASS
+            self.assertEqual(report.get("status"), "PASS")
+            missing_check = next((c for c in report["checks"] if c.get("id") == "ARCH-MARKER-HARD" and c.get("status") == "WARNING"), None)
+            self.assertIsNotNone(missing_check)
+            self.assertIn("canonical doc alignment required", missing_check.get("message", ""))
+        finally:
+            arch_check.read_text = original_read_text
+
+    def test_structural_marker_missing_recommended(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        
+        # provide a text with hard boundaries but missing recommended
+        def mock_read_text(path):
+            if path == "aos/docs/workflow/architecture-decision-layer.md":
+                text = "approval not claimed\nhuman review required\nimplementation not authorized\nrelease not authorized\nUNKNOWN not OK\nNOT_RUN not PASS\nPASS not approval\nEvidence not approval\nCI PASS not approval\nhuman approval cannot be simulated"
+                return text, None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            missing_check = next((c for c in report["checks"] if c.get("id") == "ARCH-MARKER-REC" and c.get("status") == "WARNING"), None)
+            self.assertIsNotNone(missing_check)
+            # Warning does not bubble to overall FAILED/BLOCKED if it's just warning
+            self.assertEqual(report.get("status"), "PASS") 
+        finally:
+            arch_check.read_text = original_read_text
+
+    def test_structural_unsafe_positive_claim(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        def mock_read_text(path):
+            if path == "aos/docs/workflow/architecture-decision-layer.md":
+                return "The architecture approved and is ready.", None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            # FAILED maps to FAILED or FAILED_OR_BLOCKED in overall status depending on hierarchy, 
+            # the hierarchy considers FAILED (2) less severe than UNKNOWN_BLOCKED (4).
+            # We just need to check the exact check status
+            check = next((c for c in report["checks"] if c.get("id") == "ARCH-UNSAFE-CLAIM" and c.get("status") == "FAILED"), None)
+            self.assertIsNotNone(check)
+            self.assertIn("architecture approved", check["message"].lower())
+        finally:
+            arch_check.read_text = original_read_text
+            
+    def test_structural_negative_claim_allowed(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        def mock_read_text(path):
+            if path == "aos/docs/workflow/architecture-decision-layer.md":
+                return "approval_claimed: false", None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            checks = [c for c in report["checks"] if c.get("id") == "ARCH-UNSAFE-CLAIM" and "approval_claimed: false" in c.get("message", "").lower()]
+            self.assertEqual(len(checks), 0)
+        finally:
+            arch_check.read_text = original_read_text
+            
+    def test_structural_ambiguous_claim_unknown_blocked(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        def mock_read_text(path):
+            if path == "aos/docs/workflow/architecture-decision-layer.md":
+                return "approval state unclear but ready_for_execution mentioned", None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            # It should trigger UNKNOWN_BLOCKED on the check
+            check = next((c for c in report["checks"] if c.get("id") == "ARCH-UNSAFE-CLAIM" and c.get("status") == "UNKNOWN_BLOCKED"), None)
+            self.assertIsNotNone(check)
+        finally:
+            arch_check.read_text = original_read_text
+            
+    def test_cross_reference_missing(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        original_read_text = arch_check.read_text
+        def mock_read_text(path):
+            if path == "aos/START_HERE.md":
+                return "Just empty text", None
+            return original_read_text(path)
+            
+        arch_check.read_text = mock_read_text
+        try:
+            report = arch_check.get_validate_all_report()
+            check = next((c for c in report["checks"] if c.get("id") == "ARCH-REF-START-HERE" and c.get("status") == "WARNING"), None)
+            self.assertIsNotNone(check)
+        finally:
+            arch_check.read_text = original_read_text
+
+    def test_json_includes_new_fields(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        report = arch_check.get_validate_all_report()
+        self.assertIn("summary", report)
+        self.assertIn("passed", report["summary"])
+        self.assertIn("warnings", report["summary"])
+        self.assertIn("failed", report["summary"])
+        self.assertIn("blocked", report["summary"])
+        self.assertIn("not_run", report["summary"])
+        self.assertEqual(report.get("human_review_required"), True)
+
 if __name__ == '__main__':
     unittest.main()

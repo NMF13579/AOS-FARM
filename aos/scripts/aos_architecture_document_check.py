@@ -9,6 +9,21 @@ def build_report_dict(status, target_type, file_path, errors=None, warnings=None
                 traceability_findings=None, unknown_findings=None,
                 conflict_findings=None, human_review_findings=None,
                 document_type=None, checks=None):
+    summary = {
+        "passed": 0,
+        "warnings": 0,
+        "failed": 0,
+        "blocked": 0,
+        "not_run": 0
+    }
+    for c in (checks or []):
+        c_status = c.get("status") or c.get("result", "UNKNOWN_BLOCKED")
+        if c_status == "PASS": summary["passed"] += 1
+        elif c_status == "WARNING": summary["warnings"] += 1
+        elif c_status == "FAILED": summary["failed"] += 1
+        elif c_status in ["BLOCKED", "UNKNOWN_BLOCKED", "CONFLICT_BLOCKED", "HUMAN_REVIEW_REQUIRED"]: summary["blocked"] += 1
+        elif c_status == "NOT_RUN": summary["not_run"] += 1
+
     return {
         "status": status,
         "target_type": target_type,
@@ -18,6 +33,8 @@ def build_report_dict(status, target_type, file_path, errors=None, warnings=None
         "execution_authorized": False,
         "implementation_authorized": False,
         "release_authorized": False,
+        "human_review_required": True,
+        "summary": summary,
         "checks": checks or [],
         "errors": errors or [],
         "warnings": warnings or [],
@@ -544,6 +561,163 @@ def aggregate_status(current, new):
     new_val = hierarchy.get(new, 0)
     return current if cur_val >= new_val else new
 
+
+def check_result(id_str, status, severity, file_path, message):
+    return {
+        "id": id_str,
+        "status": status,
+        "severity": severity,
+        "file": file_path,
+        "message": message,
+        # Keep backwards compatibility for old checks model if needed
+        "checker": id_str,
+        "result": status
+    }
+
+def run_structural_checks():
+    results = []
+    
+    # 1. Required Architecture File Presence
+    REQUIRED_ARCHITECTURE_FILES = [
+        "aos/docs/workflow/architecture-input-intake.md",
+        "aos/docs/workflow/architecture-decision-layer.md",
+        "aos/docs/architecture/review/architecture-decision-evidence-packet.md",
+        "aos/docs/architecture/review/human-architecture-checkpoint-template.md",
+        "aos/docs/architecture/review/pattern-fit-matrix.md",
+        "aos/docs/architecture/review/stack-fit-matrix.md",
+        "aos/docs/architecture/decisions/README.md"
+    ]
+    for f in REQUIRED_ARCHITECTURE_FILES:
+        if not os.path.exists(f):
+            results.append(check_result("ARCH-REQ-FILE", "UNKNOWN_BLOCKED", "error", f, "required architecture artifact missing"))
+        else:
+            results.append(check_result("ARCH-REQ-FILE", "PASS", "info", f, "required file present"))
+
+    # 2. Cross-Reference Diagnostics
+    def require_link(source_file, target_string, ref_id):
+        text, err = read_text(source_file)
+        if err:
+            results.append(check_result(ref_id, "WARNING", "warning", source_file, f"Could not read source file for cross-reference check: {source_file}"))
+            return
+        if target_string.lower() not in text.lower():
+            results.append(check_result(ref_id, "WARNING", "warning", source_file, f"Missing cross-reference to: {target_string}"))
+        else:
+            results.append(check_result(ref_id, "PASS", "info", source_file, f"Found cross-reference to: {target_string}"))
+
+    require_link("aos/START_HERE.md", "architecture input", "ARCH-REF-START-HERE")
+    require_link("aos/START_HERE.md", "architecture decision layer", "ARCH-REF-INPUT-TO-DECISION")
+    
+    require_link("aos/docs/ROUTES.md", "architecture route", "ARCH-REF-ROUTES")
+    require_link("aos/docs/ROUTES.md", "human checkpoint", "ARCH-REF-ROUTES")
+    require_link("aos/docs/ROUTES.md", "no automatic execution authority", "ARCH-REF-ROUTES")
+    
+    require_link("aos/docs/workflow/architecture-decision-layer.md", "architecture-decision-evidence-packet.md", "ARCH-REF-DECISION-TO-EVIDENCE")
+    require_link("aos/docs/workflow/architecture-decision-layer.md", "human-architecture-checkpoint-template.md", "ARCH-REF-EVIDENCE-TO-HUMAN-CHECKPOINT")
+    require_link("aos/docs/workflow/architecture-decision-layer.md", "task brief", "ARCH-REF-HUMAN-CHECKPOINT-TO-TASK-BRIEF")
+
+    # 3. Marker Groups & Unsafe Claims
+    MARKER_GROUPS = {
+        "hard_safety_boundary": [
+            ("PASS ≠ approval", "PASS != approval", "PASS not approval", "Validation PASS ≠ approval", "Architecture validator PASS ≠ approval", "validator PASS ≠ approval"),
+            ("Evidence ≠ approval", "Evidence != approval", "Evidence not approval", "Evidence Packet ≠ approval", "Evidence Packet != approval"),
+            ("CI PASS ≠ approval", "CI PASS != approval", "CI PASS not approval"),
+            ("UNKNOWN ≠ OK", "UNKNOWN != OK", "UNKNOWN not OK"),
+            ("NOT_RUN ≠ PASS", "NOT_RUN != PASS", "NOT_RUN not PASS"),
+            ("Human approval cannot be simulated", "human approval cannot be simulated"),
+            ("approval_claimed: false", "approval not claimed", "approval_status: NOT_APPROVED", "not approved", "does not grant approval", "no approval record is created", "is_approval: false", "approval_status: NOT_REQUESTED"),
+            ("implementation_authorized: false", "implementation not authorized", "does not authorize implementation", "is_implementation_authorized: false", "implementation was not authorized", "no implementation is authorized"),
+            ("release_authorized: false", "release not authorized", "does not authorize release", "is_release_authorized: false", "release was not authorized", "no release is authorized"),
+            ("human_review_required: true", "human review required", "human checkpoint", "human review is required")
+        ],
+        "aos/docs/workflow/architecture-input-intake.md": [
+            ("purpose", "input"), "constraints", "assumptions", "UNKNOWN", "non-goals", ("human review", "checkpoint")
+        ],
+        "aos/docs/workflow/architecture-decision-layer.md": [
+            "decision question", "options", "recommended option", "rejected options", "Evidence", "human review", "approval boundary"
+        ],
+        "aos/docs/architecture/review/architecture-decision-evidence-packet.md": [
+            "Evidence summary", "inspected files", "validation results", "assumptions", "UNKNOWNs", "rejected options", "human questions", "approval not claimed"
+        ]
+    }
+    
+    for doc_path in REQUIRED_ARCHITECTURE_FILES:
+        text, err = read_text(doc_path)
+        if err:
+            continue
+            
+        text_lower = text.lower()
+        
+        # Hard Safety Boundary for specific files (e.g. decision layer, evidence packet)
+        if doc_path in [
+            "aos/docs/workflow/architecture-decision-layer.md",
+            "aos/docs/architecture/review/architecture-decision-evidence-packet.md"
+        ]:
+            for marker_group in MARKER_GROUPS["hard_safety_boundary"]:
+                if not any(m.lower() in text_lower for m in marker_group):
+                    results.append(check_result("ARCH-MARKER-HARD", "WARNING", "warning", doc_path, f"canonical doc alignment required outside current AOS-FARM.627 write scope: missing hard safety boundary marker from group: {marker_group[0]}"))
+                else:
+                    results.append(check_result("ARCH-MARKER-HARD", "PASS", "info", doc_path, f"Found hard safety boundary marker from group: {marker_group[0]}"))
+                    
+        # Recommended Structure
+        if doc_path in MARKER_GROUPS:
+            for marker_spec in MARKER_GROUPS[doc_path]:
+                if isinstance(marker_spec, tuple):
+                    found = any(m.lower() in text_lower for m in marker_spec)
+                    name = " or ".join(marker_spec)
+                else:
+                    found = marker_spec.lower() in text_lower
+                    name = marker_spec
+                    
+                if not found:
+                    results.append(check_result("ARCH-MARKER-REC", "WARNING", "warning", doc_path, f"Missing recommended structural marker: {name}"))
+                else:
+                    results.append(check_result("ARCH-MARKER-REC", "PASS", "info", doc_path, f"Found recommended structural marker: {name}"))
+                    
+        # Unsafe Claims Classifier
+        unsafe_phrases = [
+            "architecture approved", "approval granted", "automatically approved",
+            "validator approves", "pass approves", "ready_for_execution",
+            "implementation authorized", "release authorized", "human approval simulated"
+        ]
+        allowed_assertions = [
+            "approval_claimed: false", "approval granted: no", "not approved",
+            "not automatically approved", "does not approve", "does not authorize",
+            "pass ≠ approval", "converted to approval: no", "implementation_authorized: false",
+            "release_authorized: false", "human approval cannot be simulated"
+        ]
+        negation_markers = [
+            "not", "no", "false", "cannot", "must not", "does not", "do not",
+            "≠", "!=", "not approved", "not authorized", "not claimed",
+            "without approval", "approval not claimed", "implementation_authorized: false",
+            "release_authorized: false", "approval_claimed: false", "forbidden example",
+            "unsafe example", "should reject", "negative test"
+        ]
+
+        ambiguous_markers = ["unclear", "maybe", "unsure", "pending", "might", "could", "possibly", "assume"]
+        lines = text.splitlines()
+        for i, line in enumerate(lines):
+            line_lower = line.lower()
+            for unsafe in unsafe_phrases:
+                if unsafe.lower() in line_lower:
+                    is_explicitly_allowed = any(allowed.lower() in line_lower for allowed in allowed_assertions)
+                    if is_explicitly_allowed:
+                        continue
+                        
+                    has_negation = any(neg.lower() in line_lower for neg in negation_markers)
+                    if has_negation:
+                        # Negative context explicitly negates the unsafe phrase
+                        continue
+                        
+                    has_ambiguous = any(amb.lower() in line_lower for amb in ambiguous_markers)
+                    
+                    if has_ambiguous:
+                        results.append(check_result("ARCH-UNSAFE-CLAIM", "UNKNOWN_BLOCKED", "error", doc_path, f"Ambiguous approval wording on line {i+1}: '{unsafe}'"))
+                    else:
+                        results.append(check_result("ARCH-UNSAFE-CLAIM", "FAILED", "error", doc_path, f"Unsafe positive approval wording on line {i+1}: '{unsafe}'"))
+
+    return results
+
+
 def get_validate_all_report():
     known_targets = [
         ("evidence", "aos/docs/architecture/review/architecture-decision-evidence-packet.md"),
@@ -589,6 +763,14 @@ def get_validate_all_report():
         "counted_as_pass": False,
         "blocks_overall_pass": False
     })
+    
+    structural_results = run_structural_checks()
+    for res in structural_results:
+        status = res.get("status")
+        # Do not aggregate WARNING or PASS or NOT_RUN into overall failure unnecessarily, but FAILED, BLOCKED, UNKNOWN_BLOCKED affect overall
+        if status in ["BLOCKED", "UNKNOWN_BLOCKED", "FAILED"]:
+            overall_status = aggregate_status(overall_status, status)
+        checks_report.append(res)
     
     return build_report_dict(
         status=overall_status,
