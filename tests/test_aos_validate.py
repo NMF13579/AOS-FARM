@@ -6,7 +6,15 @@ import os
 class TestAosValidate(unittest.TestCase):
     def test_aos_validate_orchestration_only(self):
         # ensure it runs without error and outputs correct boundary fields
-        result = subprocess.run(["python3", "aos/scripts/aos_validate.py", "all", "--json"], capture_output=True, text=True)
+        try:
+            result = subprocess.run(
+                ["python3", "aos/scripts/aos_validate.py", "all", "--json"],
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+        except subprocess.TimeoutExpired as exc:
+            self.fail(f"aos_validate.py timed out: {exc}")
         self.assertEqual(result.returncode, 0, msg=f"aos_validate failed: {result.stderr}")
         
         try:
