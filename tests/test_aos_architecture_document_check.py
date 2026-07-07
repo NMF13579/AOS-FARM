@@ -535,5 +535,40 @@ human_weight_required: true
         self.assertEqual(res.returncode, 1)
         self.assertEqual(report.get("status"), "BLOCKED")
 
+    # 14. validate-all semantics
+    def test_validate_all_execution(self):
+        res, report = self.run_cli(["validate-all", "--json"])
+        self.assertEqual(res.returncode, 0)
+        self.assertIsNotNone(report)
+        self.assertEqual(report.get("status"), "PASS")
+        self.assertEqual(report.get("approval_claimed"), False)
+        self.assertEqual(report.get("execution_authorized"), False)
+        self.assertEqual(report.get("implementation_authorized"), False)
+        self.assertEqual(report.get("release_authorized"), False)
+        
+        checks = report.get("checks", [])
+        self.assertTrue(len(checks) > 0)
+        
+        not_run_checks = [c for c in checks if c.get("result") == "NOT_RUN"]
+        self.assertTrue(len(not_run_checks) > 0)
+        self.assertEqual(not_run_checks[0].get("checker"), "task-breakdown")
+        self.assertEqual(not_run_checks[0].get("reason"), "checker_not_implemented")
+        self.assertFalse(not_run_checks[0].get("counted_as_pass"))
+        self.assertFalse(not_run_checks[0].get("blocks_overall_pass"))
+        
+        output_str = json.dumps(report)
+        self.assertNotIn('"APPROVED"', output_str)
+        self.assertNotIn('"READY_FOR_EXECUTION"', output_str)
+        
+    def test_validate_all_no_recursion(self):
+        with open(self.script_path, "r") as f:
+            content = f.read()
+        self.assertNotIn("aos_validate.py", content)
+        self.assertNotIn("aos_doctor.py", content)
+        self.assertNotIn("unittest discover", content)
+        self.assertNotIn("subprocess", content)
+        self.assertNotIn("os.system", content)
+        self.assertNotIn("Popen", content)
+
 if __name__ == '__main__':
     unittest.main()

@@ -8,12 +8,17 @@ def emit_report(status, target_type, file_path, errors=None, warnings=None,
                 blocked_reasons=None, authority_findings=None,
                 traceability_findings=None, unknown_findings=None,
                 conflict_findings=None, human_review_findings=None,
-                document_type=None):
+                document_type=None, checks=None):
     report = {
         "status": status,
         "target_type": target_type,
         "document_type": document_type or target_type,
         "file": file_path,
+        "approval_claimed": False,
+        "execution_authorized": False,
+        "implementation_authorized": False,
+        "release_authorized": False,
+        "checks": checks or [],
         "errors": errors or [],
         "warnings": warnings or [],
         "blocked_reasons": blocked_reasons or [],
@@ -64,6 +69,9 @@ def build_parser():
     registry_group = registry_parser.add_mutually_exclusive_group(required=True)
     registry_group.add_argument("--validate", action="store_true", help="Validate the full registry")
     registry_group.add_argument("--file", help="Path to registry file")
+
+    validate_all_parser = subparsers.add_parser("validate-all", help="Run all architecture checks")
+    validate_all_parser.add_argument("--json", action="store_true", help="Output JSON")
 
     return parser
 
@@ -508,11 +516,87 @@ def process_file_validation(file_path, command):
 
     return status, errors, blocked_reasons, all_auth_findings, human_review_findings
 
+def aggregate_status(current, new):
+    hierarchy = {
+        "BLOCKED": 6,
+        "CONFLICT_BLOCKED": 5,
+        "UNKNOWN_BLOCKED": 4,
+        "HUMAN_REVIEW_REQUIRED": 3,
+        "FAILED": 2,
+        "NOT_RUN": 1,
+        "PASS": 0
+    }
+    cur_val = hierarchy.get(current, 0)
+    new_val = hierarchy.get(new, 0)
+    return current if cur_val >= new_val else new
+
+def run_validate_all():
+    known_targets = [
+        ("evidence", "aos/docs/architecture/review/architecture-decision-evidence-packet.md"),
+        ("matrix", "aos/docs/architecture/review/stack-fit-matrix.md"),
+        ("matrix", "aos/docs/architecture/review/pattern-fit-matrix.md"),
+        ("criteria", "aos/docs/architecture/review/architecture-decision-criteria.md")
+    ]
+    
+    registry_files = [
+        "aos/docs/architecture/pattern-registry.md",
+        "aos/docs/architecture/stack-preset-registry.md"
+    ]
+    
+    overall_status = "PASS"
+    all_errors = []
+    all_blocked = []
+    all_auth = []
+    all_human_review = []
+    checks_report = []
+    
+    for reg_file in registry_files:
+        status, errors, blocked_reasons, auth_findings, human_review_findings = process_file_validation(reg_file, "registry")
+        overall_status = aggregate_status(overall_status, status)
+        checks_report.append({"file": reg_file, "checker": "registry", "result": status})
+        all_errors.extend(errors)
+        all_blocked.extend(blocked_reasons)
+        all_auth.extend(auth_findings)
+        all_human_review.extend(human_review_findings)
+
+    for cmd, path in known_targets:
+        status, errors, blocked_reasons, auth_findings, human_review_findings = process_file_validation(path, cmd)
+        overall_status = aggregate_status(overall_status, status)
+        checks_report.append({"file": path, "checker": cmd, "result": status})
+        all_errors.extend(errors)
+        all_blocked.extend(blocked_reasons)
+        all_auth.extend(auth_findings)
+        all_human_review.extend(human_review_findings)
+        
+    checks_report.append({
+        "checker": "task-breakdown",
+        "result": "NOT_RUN",
+        "reason": "checker_not_implemented",
+        "counted_as_pass": False,
+        "blocks_overall_pass": False
+    })
+    
+    emit_report(
+        status=overall_status,
+        target_type="validate-all",
+        file_path="aggregate",
+        errors=all_errors,
+        blocked_reasons=all_blocked,
+        authority_findings=all_auth,
+        human_review_findings=all_human_review,
+        checks=checks_report
+    )
+    exit_for_status(overall_status)
+
 def main():
     parser = build_parser()
     args = parser.parse_args()
 
     command = args.command
+    
+    if command == "validate-all":
+        run_validate_all()
+        return
     
     if command == "registry" and getattr(args, 'validate', False):
         registry_files = [
