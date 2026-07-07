@@ -570,5 +570,18 @@ human_weight_required: true
         self.assertNotIn("os.system", content)
         self.assertNotIn("Popen", content)
 
+    def test_get_validate_all_report_import_safe(self):
+        import aos.scripts.aos_architecture_document_check as arch_check
+        try:
+            report = arch_check.get_validate_all_report()
+            self.assertIsInstance(report, dict)
+            self.assertIn("status", report)
+            self.assertEqual(report.get("approval_claimed"), False)
+            self.assertEqual(report.get("execution_authorized"), False)
+            self.assertEqual(report.get("implementation_authorized"), False)
+            self.assertEqual(report.get("release_authorized"), False)
+        except SystemExit:
+            self.fail("get_validate_all_report raised SystemExit")
+
 if __name__ == '__main__':
     unittest.main()

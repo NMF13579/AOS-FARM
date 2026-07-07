@@ -9,6 +9,7 @@ import subprocess
 import json
 import sys
 import argparse
+import aos_architecture_document_check
 
 VALIDATION_COMMANDS = [
     ["python3", "aos/scripts/aos_install.py", "--dry-run"],
@@ -54,21 +55,27 @@ def run_command(cmd):
 def determine_overall_status(results):
     has_failed = False
     has_not_run = False
+    has_blocked = False
+    has_unknown = False
     
     for r in results:
         status = r.get("status")
         stdout = r.get("stdout", "")
         stderr = r.get("stderr", "")
         
-        if status == "FAILED":
-            if "UNKNOWN_BLOCKED" in stdout or "UNKNOWN_BLOCKED" in stderr:
-                return "UNKNOWN_BLOCKED"
-            if "BLOCKED" in stdout or "BLOCKED" in stderr:
-                return "BLOCKED"
+        if status == "UNKNOWN_BLOCKED" or "UNKNOWN_BLOCKED" in stdout or "UNKNOWN_BLOCKED" in stderr:
+            has_unknown = True
+        elif status in ["BLOCKED", "CONFLICT_BLOCKED", "HUMAN_REVIEW_REQUIRED"] or "BLOCKED" in stdout or "BLOCKED" in stderr:
+            has_blocked = True
+        elif status == "FAILED":
             has_failed = True
         elif status == "NOT_RUN":
             has_not_run = True
             
+    if has_unknown:
+        return "UNKNOWN_BLOCKED"
+    if has_blocked:
+        return "BLOCKED"
     if has_failed:
         return "FAILED_OR_BLOCKED"
     if has_not_run:
@@ -92,6 +99,31 @@ def main():
         res = run_command(cmd)
         results.append(res)
         
+    if args.target == "all" or args.target == "architecture":
+        try:
+            arch_report = aos_architecture_document_check.get_validate_all_report()
+            results.append({
+                "command": "aos_architecture_document_check.get_validate_all_report",
+                "status": arch_report.get("status", "UNKNOWN_BLOCKED"),
+                "source": "aos_architecture_document_check.get_validate_all_report",
+                "approval_claimed": False,
+                "execution_authorized": False,
+                "implementation_authorized": False,
+                "release_authorized": False,
+                "report": arch_report
+            })
+        except Exception as e:
+            results.append({
+                "command": "aos_architecture_document_check.get_validate_all_report",
+                "status": "UNKNOWN_BLOCKED",
+                "reason": f"architecture_validation_unavailable: {e}",
+                "counted_as_pass": False,
+                "approval_claimed": False,
+                "execution_authorized": False,
+                "implementation_authorized": False,
+                "release_authorized": False
+            })
+            
     overall_status = determine_overall_status(results)
     
     output = {

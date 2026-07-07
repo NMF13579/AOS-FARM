@@ -4,12 +4,12 @@ import os
 import sys
 import re
 
-def emit_report(status, target_type, file_path, errors=None, warnings=None,
+def build_report_dict(status, target_type, file_path, errors=None, warnings=None,
                 blocked_reasons=None, authority_findings=None,
                 traceability_findings=None, unknown_findings=None,
                 conflict_findings=None, human_review_findings=None,
                 document_type=None, checks=None):
-    report = {
+    return {
         "status": status,
         "target_type": target_type,
         "document_type": document_type or target_type,
@@ -28,6 +28,20 @@ def emit_report(status, target_type, file_path, errors=None, warnings=None,
         "conflict_findings": conflict_findings or [],
         "human_review_findings": human_review_findings or []
     }
+
+def emit_report(status, target_type, file_path, errors=None, warnings=None,
+                blocked_reasons=None, authority_findings=None,
+                traceability_findings=None, unknown_findings=None,
+                conflict_findings=None, human_review_findings=None,
+                document_type=None, checks=None):
+    report = build_report_dict(
+        status=status, target_type=target_type, file_path=file_path,
+        errors=errors, warnings=warnings, blocked_reasons=blocked_reasons,
+        authority_findings=authority_findings, traceability_findings=traceability_findings,
+        unknown_findings=unknown_findings, conflict_findings=conflict_findings,
+        human_review_findings=human_review_findings, document_type=document_type,
+        checks=checks
+    )
     print(json.dumps(report, indent=2))
 
 def exit_for_status(status):
@@ -530,7 +544,7 @@ def aggregate_status(current, new):
     new_val = hierarchy.get(new, 0)
     return current if cur_val >= new_val else new
 
-def run_validate_all():
+def get_validate_all_report():
     known_targets = [
         ("evidence", "aos/docs/architecture/review/architecture-decision-evidence-packet.md"),
         ("matrix", "aos/docs/architecture/review/stack-fit-matrix.md"),
@@ -576,7 +590,7 @@ def run_validate_all():
         "blocks_overall_pass": False
     })
     
-    emit_report(
+    return build_report_dict(
         status=overall_status,
         target_type="validate-all",
         file_path="aggregate",
@@ -586,7 +600,11 @@ def run_validate_all():
         human_review_findings=all_human_review,
         checks=checks_report
     )
-    exit_for_status(overall_status)
+
+def run_validate_all():
+    report = get_validate_all_report()
+    print(json.dumps(report, indent=2))
+    exit_for_status(report["status"])
 
 def main():
     parser = build_parser()
