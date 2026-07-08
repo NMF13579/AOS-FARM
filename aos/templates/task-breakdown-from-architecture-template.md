@@ -39,6 +39,36 @@ human_checkpoints:
 unknown_records:
 conflict_records:
 
+## How to use this template
+
+Use this template only after the architecture gate is resolved for the Technical Assignment.
+
+If architecture input was required, include the Architecture Brief, architecture decision Evidence, validation status, Human Architecture Checkpoint status, unresolved UNKNOWNs, and downstream scope boundary.
+
+This artifact creates task candidates for review. It does not create an approved Task Brief and does not authorize execution.
+
+## Required content
+
+- source Technical Assignment reference
+- source Architecture Brief reference
+- architecture decision Evidence reference
+- Human Architecture Checkpoint status
+- unresolved UNKNOWNs carried forward
+- conflict resolutions carried forward
+- downstream scope boundary
+- proposed Risk Profile only, not assigned Risk Profile
+- approval boundary
+- build step boundary
+
+## Prohibited claims
+
+- approved: true
+- status: READY_FOR_EXECUTION
+- execution_authorized: true
+- risk_profile_assigned_by_agent: true
+- task brief approved
+- validator PASS means approval
+
 ## Task candidate status values:
 - TASK_CANDIDATE_DRAFT
 - HUMAN_REVIEW_REQUIRED
@@ -51,3 +81,13 @@ conflict_records:
 - Without traceability, a task must not become APPROVED.
 - READY_FOR_QUEUE_REVIEW ≠ APPROVED.
 - READY_FOR_QUEUE_REVIEW ≠ READY_FOR_EXECUTION.
+
+## Validation
+
+Use validation as Evidence only:
+
+```bash
+python3 aos/scripts/aos_architecture_document_check.py task-breakdown --file <path>
+```
+
+Validator PASS is not approval and does not authorize execution.

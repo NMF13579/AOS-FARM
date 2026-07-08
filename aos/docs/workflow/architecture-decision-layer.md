@@ -21,6 +21,50 @@ NOT_RUN ≠ PASS.
 5. Task Breakdown
 6. Task Candidate Queue
 
+## Decision Question
+
+Every Architecture Decision Layer artifact must state the decision question it is answering. Example:
+
+```text
+Which architecture option should be carried forward as candidate evidence for human review, given the Technical Assignment constraints and unresolved UNKNOWNs?
+```
+
+The question frames review. It does not authorize implementation.
+
+## Options
+
+List all material options considered, including:
+- candidate architecture patterns;
+- candidate stack presets;
+- no-architecture-input path, if applicable;
+- defer / UNKNOWN_BLOCKED option;
+- rejected options.
+
+Each option must preserve traceability to source constraints, assumptions, risks, UNKNOWNs, and conflicts.
+
+## Recommended Option
+
+The agent may recommend a candidate option for human review.
+
+Recommendation status must remain candidate-only until a human checkpoint records a decision.
+Recommendation confidence is evidence only. It is not approval, Risk Profile assignment, or execution authorization.
+
+## Rejected Options
+
+Rejected options must record the reason for rejection, the evidence used, and any unresolved UNKNOWN.
+
+Agent rejection is review evidence only. It does not create lifecycle authority unless a human checkpoint explicitly adopts the decision.
+
+## Approval Boundary
+
+The Architecture Decision Layer may produce architecture decision Evidence, but it must stop at human review. It must not convert readiness, recommendation, validator PASS, or Evidence into approval.
+
+Use:
+- `aos/docs/architecture/review/architecture-decision-evidence-packet.md`
+- `aos/docs/architecture/review/human-architecture-checkpoint-template.md`
+
+before architecture decisions affect task breakdown, stack selection, pattern promotion, or implementation planning.
+
 ## Safety Rules
 
 - Architecture readiness is not approval.

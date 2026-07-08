@@ -124,6 +124,8 @@ always takes precedence.*
 ## Architecture-to-Task Export Semantics
 
 **Required distinction:**
+- Architecture route exists only to guide review-safe planning.
+- Architecture route has no automatic execution authority.
 - Route existence ≠ execution authorization.
 - Route PASS ≠ approval.
 - Architecture Evidence ≠ Task Brief approval.

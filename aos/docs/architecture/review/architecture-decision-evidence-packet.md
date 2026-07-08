@@ -19,9 +19,19 @@ human_review_required: true
 This packet gathers architecture decision evidence for a future human checkpoint in AOS-FARM.621.
 It summarizes available ADR constraints, existing stack presets, existing AOS and architecture patterns, and tradeoffs that need human weighting before any architecture promotion.
 
+## Evidence summary
+
+This packet is a review package for candidate architecture decisions. It gathers sources, options, tradeoffs, validation results, UNKNOWNs, rejected options, and human questions.
+
+It is not approval and it does not authorize implementation, execution, commit, push, merge, or release.
+
 ## Non-approval boundary
 
+PASS ≠ approval.
 Evidence Packet ≠ approval.
+CI PASS ≠ approval.
+UNKNOWN ≠ OK.
+NOT_RUN ≠ PASS.
 Recommendation ≠ approval.
 Recommendation confidence ≠ approval.
 Matrix score ≠ decision.
@@ -42,6 +52,35 @@ Release was not authorized.
 - `aos/docs/architecture/stack-preset-registry.md`
 - `aos/docs/architecture/pattern-registry.md`
 - AOS governance constraints requiring human approval boundaries and fail-closed handling.
+
+## Inspected files
+
+This packet should cite every architecture artifact, registry, ADR, matrix, criteria document, validator output, and downstream Task Brief boundary artifact inspected during review.
+
+If an expected source was not inspected, record it under `NOT_RUN` or `UNKNOWNs`. Do not treat missing inspection as PASS.
+
+## Validation results
+
+Validation output may be included as Evidence.
+
+Required boundary:
+- validation PASS is not approval;
+- validation NOT_RUN is not PASS;
+- validation UNKNOWN is not OK;
+- validation does not assign Risk Profile;
+- validation does not authorize Task Brief execution.
+
+## Assumptions
+
+Assumptions must be listed explicitly and carried into the human checkpoint if they affect stack choice, architecture pattern choice, safety/control semantics, lifecycle behavior, validator behavior, product folder structure, runtime behavior, or downstream task boundaries.
+
+Unstated assumptions must not be converted into architecture decisions.
+
+## UNKNOWNs
+
+Unresolved UNKNOWNs must be listed explicitly.
+
+If an UNKNOWN affects architecture selection, task breakdown, Risk Profile, validation, or implementation planning, the safe status is `UNKNOWN_BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
 
 ## ADR constraints summary
 
@@ -109,6 +148,17 @@ Candidate-only recommendation for human review:
 - Treat web, API, bot, and desktop app presets as context-dependent candidates that require explicit human weighting against operational burden and runtime authority.
 - Use the stack and pattern matrices as evidence inputs only; they do not decide architecture.
 
+## Rejected options
+
+Rejected options should be recorded with:
+- option name;
+- rejection reason;
+- evidence source;
+- unresolved UNKNOWNs, if any;
+- whether human review is still required.
+
+Rejected option evidence is not approval and does not authorize implementation.
+
 ## Recommendation confidence
 
 Recommendation confidence is MEDIUM because the existing ADRs and registries provide enough evidence for a candidate-only review packet, but human weights, product context, and lifecycle integration decisions are intentionally absent.
@@ -124,6 +174,20 @@ Recommendation confidence is MEDIUM because the existing ADRs and registries pro
 7. Should this packet be returned for revision before any promotion?
 8. Is promotion to active lifecycle status allowed for any entries?
 9. Is implementation planning allowed, and if yes, what is the exact scope?
+
+## Human questions
+
+Human questions must remain unanswered until the human checkpoint is actually completed.
+
+Blank answers, missing human weights, missing stack choice, or missing promotion decision must result in `HUMAN_REVIEW_REQUIRED` or `UNKNOWN_BLOCKED`.
+
+## Approval not claimed
+
+approval_claimed: false
+execution_authorized: false
+implementation_authorized: false
+release_authorized: false
+risk_profile_assigned_by_agent: false
 
 ## Known lifecycle integration gaps
 

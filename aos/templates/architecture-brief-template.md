@@ -35,6 +35,42 @@ unknown_records:
 conflict_records: 
 human_checkpoints: 
 
+## How to use this template
+
+Use this template after Architecture Input Intake to draft candidate architecture evidence for human review.
+
+This artifact may summarize selected and rejected candidate options, but it must not approve architecture, assign Risk Profile, authorize implementation, or create an executable Task Brief.
+
+## Required content
+
+- decision question
+- source Technical Assignment reference
+- source Architecture Input Intake reference
+- selected option candidates
+- rejected option candidates
+- assumptions
+- constraints
+- tradeoffs
+- risks
+- unresolved UNKNOWN records
+- conflict records
+- downstream Task Brief impact
+- validation command/output reference
+- human review questions
+- human checkpoints required
+
+## Prohibited claims
+
+- approved: true
+- approval_status: APPROVED
+- status: READY_FOR_EXECUTION
+- execution_authorized: true
+- implementation_authorized: true
+- release_authorized: true
+- risk_profile_assigned_by_agent: true
+- validator PASS means approval
+- no human review required
+
 ## Allowed Statuses
 - DRAFT
 - HUMAN_REVIEW_REQUIRED
@@ -51,3 +87,13 @@ human_checkpoints:
 - Architecture Brief does not authorize commit.
 - Architecture Brief does not authorize push.
 - Architecture Brief does not authorize release.
+
+## Validation
+
+Use validation as Evidence only:
+
+```bash
+python3 aos/scripts/aos_architecture_document_check.py brief --file <path>
+```
+
+Validator PASS is not approval. Validator PASS does not authorize Task Brief execution.

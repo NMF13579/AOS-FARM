@@ -753,7 +753,8 @@ def get_validate_all_report():
         ("evidence", "aos/docs/architecture/review/architecture-decision-evidence-packet.md"),
         ("matrix", "aos/docs/architecture/review/stack-fit-matrix.md"),
         ("matrix", "aos/docs/architecture/review/pattern-fit-matrix.md"),
-        ("criteria", "aos/docs/architecture/review/architecture-decision-criteria.md")
+        ("criteria", "aos/docs/architecture/review/architecture-decision-criteria.md"),
+        ("task-breakdown", "tests/fixtures/architecture/valid_task_breakdown_traced.md")
     ]
 
     registry_files = [
@@ -785,14 +786,6 @@ def get_validate_all_report():
         all_blocked.extend(blocked_reasons)
         all_auth.extend(auth_findings)
         all_human_review.extend(human_review_findings)
-
-    checks_report.append({
-        "checker": "task-breakdown",
-        "result": "NOT_RUN",
-        "reason": "checker_not_implemented",
-        "counted_as_pass": False,
-        "blocks_overall_pass": False
-    })
 
     structural_results = run_structural_checks()
     for res in structural_results:

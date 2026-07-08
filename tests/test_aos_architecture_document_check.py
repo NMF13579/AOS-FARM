@@ -549,12 +549,10 @@ human_weight_required: true
         checks = report.get("checks", [])
         self.assertTrue(len(checks) > 0)
         
-        not_run_checks = [c for c in checks if c.get("result") == "NOT_RUN"]
-        self.assertTrue(len(not_run_checks) > 0)
-        self.assertEqual(not_run_checks[0].get("checker"), "task-breakdown")
-        self.assertEqual(not_run_checks[0].get("reason"), "checker_not_implemented")
-        self.assertFalse(not_run_checks[0].get("counted_as_pass"))
-        self.assertFalse(not_run_checks[0].get("blocks_overall_pass"))
+        task_breakdown_checks = [c for c in checks if c.get("checker") == "task-breakdown"]
+        self.assertTrue(len(task_breakdown_checks) > 0)
+        self.assertEqual(task_breakdown_checks[0].get("result"), "PASS")
+        self.assertEqual(task_breakdown_checks[0].get("file"), "tests/fixtures/architecture/valid_task_breakdown_traced.md")
         
         output_str = json.dumps(report)
         self.assertNotIn('"APPROVED"', output_str)

@@ -16,12 +16,35 @@ The Technical Assignment (TA) workflow bridges the gap between raw problem defin
 - **Consuming Intake:** The TA prompt requires the saved Problem Intake output as direct input context.
 - **Where to save TA output:** `aos/reports/technical-assignments/<project-or-feature-name>.md`
 - **Required fields:** Scope, Non-Goals, target files, Acceptance Criteria, dependencies.
-- **When to prepare Task Brief:** A controlled task brief may be prepared only *after* the TA output is finalized and saved.
+- **When to prepare Task Breakdown:** A task breakdown may be prepared only *after* the TA output is finalized and saved, and only after the Architecture Need Check below is resolved.
+- **When to prepare Task Brief:** A controlled task brief may be prepared only after task candidates pass human task review and any required architecture checkpoint has been recorded.
+
+## Architecture Need Check
+
+After the Technical Assignment is saved, decide whether architecture input is required before task breakdown.
+
+Architecture input is required if the TA affects:
+- system structure;
+- stack or architecture pattern;
+- integration boundary;
+- runtime behavior;
+- validator behavior;
+- lifecycle behavior;
+- safety/control semantics;
+- product folder structure.
+
+If architecture input is required:
+1. Run `aos/docs/workflow/architecture-input-intake.md`.
+2. Draft an Architecture Brief through `aos/docs/workflow/architecture-decision-layer.md`.
+3. Validate architecture artifacts with `python3 aos/scripts/aos_architecture_document_check.py validate-all --json` or a narrower architecture checker.
+4. Stop at the Human Architecture Checkpoint before architecture decisions affect task breakdown, stack selection, pattern promotion, or implementation planning.
+
+If architecture input is not required, record that decision and continue to task breakdown. Missing or unclear architecture need is `UNKNOWN_BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
 
 ## Bridge to Controlled Task
-The Technical Assignment provides the foundational constraints for creating a specific **Controlled Task Brief** (`aos/templates/task-briefs/controlled-task-brief-template.md`). 
+The Technical Assignment provides foundational constraints for architecture intake and task breakdown. It does not directly authorize a specific **Controlled Task Brief** (`aos/templates/task-briefs/controlled-task-brief-template.md`).
 
-`Idea → Problem Intake → Technical Assignment → Controlled Task Brief → Execution → Verification → Human Checkpoint`
+`Idea -> Problem Intake -> Technical Assignment -> Architecture Need Check -> Architecture Input Intake / Decision Layer when required -> Human Architecture Checkpoint when required -> Task Breakdown -> Human Task Review -> Controlled Task Brief -> Execution Authorization`
 
 ## Methodology Integration
 This workflow is governed by `aos/docs/methodology/technical-assignment-methodology.md`. It relies purely on Markdown and prompt engineering, with no legacy Python validators required.
