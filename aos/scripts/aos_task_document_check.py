@@ -14,6 +14,25 @@ QUEUE_PRIORITIES = {"LOW", "NORMAL", "HIGH"}
 TEMPLATE_LEVELS = {"S", "M", "L"}
 NEXT_CANDIDATE_QUEUE_STATUSES = {"BACKLOG", "NEXT", "IN_PROGRESS"}
 NON_NEXT_LIFECYCLE_STATUSES = {"BLOCKED", "CLOSED", "REJECTED"}
+READINESS_SUCCESS_STATES = {"READY_FOR_HANDOFF", "EXCLUDED_TERMINAL", "EXCLUDED_LEGACY"}
+TERMINAL_EXCLUSION_STATUSES = {"REJECTED", "CLOSED"}
+TERMINAL_CLOSURE_TYPES = {"REJECTED", "RETIRED", "SUPERSEDED"}
+VALID_EXCLUSION_TYPES = {"TERMINAL", "LEGACY"}
+MISSING_HUMAN_WITNESS_VALUES = {"REQUIRED_NOT_AVAILABLE", "HUMAN_REVIEW_REQUIRED"}
+VALID_TASK_ID_RE = re.compile(r"^AOS-FARM-TASK-\d+$")
+EXCLUSION_FIELD_NAMES = {
+    "readiness_exclusion_task_id",
+    "readiness_exclusion_type",
+    "readiness_exclusion_reason",
+    "readiness_exclusion_source_evidence",
+    "readiness_exclusion_human_checkpoint",
+    "readiness_exclusion_applies_to_readiness",
+    "readiness_exclusion_approval_granted",
+    "readiness_exclusion_created_in_stage",
+    "readiness_exclusion_review_required",
+    "closure_type",
+    "superseded_by",
+}
 
 REQUIRED_YAML_FIELDS = {
     "task_id", "title", "type", "template_level", "status", "queue_mode",
@@ -22,6 +41,134 @@ REQUIRED_YAML_FIELDS = {
     "validator_status", "evidence_status", "log_uri", "log_status", "owner",
     "created_at", "updated_at"
 }
+
+
+def is_valid_task_id(value):
+    return bool(VALID_TASK_ID_RE.match(str(value)))
+
+
+def task_exists(task_id, all_tasks):
+    if not all_tasks:
+        return False
+    return any(task.get("task_id") == task_id for task in all_tasks)
+
+
+def build_exclusion_record(task_id, status, reasons, exclusion_type=None):
+    return {
+        "task_id": task_id,
+        "status": status,
+        "reasons": reasons,
+        "exclusion_type": exclusion_type,
+        "counted_as_ready": status == "READY_FOR_HANDOFF",
+    }
+
+
+def has_exclusion_request(yaml_data):
+    return any(field in yaml_data for field in EXCLUSION_FIELD_NAMES)
+
+
+def validate_exclusion_request(yaml_data, all_tasks=None):
+    task_id = yaml_data.get("task_id")
+    exclusion_type = yaml_data.get("readiness_exclusion_type")
+    if exclusion_type not in VALID_EXCLUSION_TYPES:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            f"readiness_exclusion_type must be one of {sorted(VALID_EXCLUSION_TYPES)}"
+        ])
+
+    required_fields = [
+        "readiness_exclusion_task_id",
+        "readiness_exclusion_reason",
+        "readiness_exclusion_source_evidence",
+        "readiness_exclusion_human_checkpoint",
+        "readiness_exclusion_created_in_stage",
+    ]
+    missing_fields = [field for field in required_fields if not yaml_data.get(field)]
+    if missing_fields:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            f"Missing exclusion witness fields: {', '.join(missing_fields)}"
+        ], exclusion_type=exclusion_type)
+
+    target_task_id = str(yaml_data.get("readiness_exclusion_task_id"))
+    if target_task_id != str(task_id):
+        reason = "readiness_exclusion_task_id must match task_id exactly"
+        if "*" in target_task_id:
+            reason = "Wildcard exclusion is forbidden"
+        elif "," in target_task_id or " " in target_task_id.strip():
+            reason = "Mass or blanket exclusion is forbidden"
+        elif target_task_id.upper() in {"ALL", "ANY", "BACKLOG"}:
+            reason = "Blanket exclusion is forbidden"
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [reason], exclusion_type=exclusion_type)
+
+    if yaml_data.get("readiness_exclusion_applies_to_readiness") is not True:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            "readiness_exclusion_applies_to_readiness must be true"
+        ], exclusion_type=exclusion_type)
+
+    if yaml_data.get("readiness_exclusion_approval_granted") is not False:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            "readiness_exclusion_approval_granted must be false"
+        ], exclusion_type=exclusion_type)
+
+    checkpoint = str(yaml_data.get("readiness_exclusion_human_checkpoint")).strip()
+    if checkpoint in MISSING_HUMAN_WITNESS_VALUES:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            f"Explicit human witness is unavailable: {checkpoint}"
+        ], exclusion_type=exclusion_type)
+
+    if yaml_data.get("readiness_exclusion_review_required") is True:
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            "readiness_exclusion_review_required cannot be true for an active exclusion"
+        ], exclusion_type=exclusion_type)
+
+    if exclusion_type == "TERMINAL":
+        status = yaml_data.get("status")
+        if status not in TERMINAL_EXCLUSION_STATUSES:
+            return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                "Terminal exclusion requires status REJECTED or CLOSED"
+            ], exclusion_type=exclusion_type)
+
+        closure_type = yaml_data.get("closure_type")
+        if status == "REJECTED":
+            if closure_type not in (None, "", "REJECTED"):
+                return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                    "REJECTED tasks may not use a non-rejected closure_type"
+                ], exclusion_type=exclusion_type)
+        else:
+            if closure_type not in TERMINAL_CLOSURE_TYPES:
+                return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                    f"CLOSED terminal exclusion requires closure_type in {sorted(TERMINAL_CLOSURE_TYPES)}"
+                ], exclusion_type=exclusion_type)
+            if closure_type == "SUPERSEDED":
+                superseded_by = yaml_data.get("superseded_by")
+                if not superseded_by:
+                    return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                        "closure_type SUPERSEDED requires superseded_by"
+                    ], exclusion_type=exclusion_type)
+                if superseded_by == task_id:
+                    return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                        "superseded_by cannot reference the same task"
+                    ], exclusion_type=exclusion_type)
+                if not is_valid_task_id(superseded_by):
+                    return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                        f"superseded_by must be a valid task id: {superseded_by}"
+                    ], exclusion_type=exclusion_type)
+                if all_tasks is not None and not task_exists(superseded_by, all_tasks):
+                    return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+                        f"superseded_by target not found: {superseded_by}"
+                    ], exclusion_type=exclusion_type)
+
+        return build_exclusion_record(task_id, "EXCLUDED_TERMINAL", [
+            f"terminal exclusion via {checkpoint}"
+        ], exclusion_type=exclusion_type)
+
+    if is_valid_task_id(task_id):
+        return build_exclusion_record(task_id, "MALFORMED_EXCLUSION", [
+            "Legacy exclusion is allowed only for invalid legacy task ids"
+        ], exclusion_type=exclusion_type)
+
+    return build_exclusion_record(task_id, "EXCLUDED_LEGACY", [
+        f"legacy exclusion via {checkpoint}"
+    ], exclusion_type=exclusion_type)
 
 def parse_yaml_frontmatter(content):
     lines = content.split('\n')
@@ -587,7 +734,7 @@ def check_task_readiness(filepath, all_tasks=None):
         reasons_blocked.append("Missing task_id")
         task_id = "UNKNOWN"
     else:
-        if not re.match(r"^AOS-FARM-TASK-\d+$", str(task_id)):
+        if not has_exclusion_request(yaml_data) and not is_valid_task_id(task_id):
             reasons_blocked.append(f"Invalid task_id format: {task_id}")
         filename = os.path.basename(filepath)
         if filename != f"{task_id}.md":
@@ -601,6 +748,10 @@ def check_task_readiness(filepath, all_tasks=None):
     missing_fields = REQUIRED_YAML_FIELDS - set(yaml_data.keys())
     if missing_fields:
         reasons_blocked.append(f"Missing required YAML fields: {missing_fields}")
+
+    exclusion_result = None
+    if has_exclusion_request(yaml_data):
+        exclusion_result = validate_exclusion_request(yaml_data, all_tasks=all_tasks)
 
     for k, v in yaml_data.items():
         if v == "OK" and k != "title":
@@ -625,6 +776,8 @@ def check_task_readiness(filepath, all_tasks=None):
 
     if yaml_data.get("status") not in LIFECYCLE_STATUSES:
         reasons_blocked.append(f"Invalid status: {yaml_data.get('status')}")
+    elif yaml_data.get("status") in TERMINAL_EXCLUSION_STATUSES and exclusion_result is None:
+        reasons_blocked.append(f"status {yaml_data.get('status')} requires explicit exclusion witness")
 
     if yaml_data.get("status") == "READY_FOR_EXECUTION":
         if yaml_data.get("approval_status") == "REJECTED":
@@ -737,11 +890,84 @@ def check_task_readiness(filepath, all_tasks=None):
     if not log_status:
         reasons_blocked.append("log_status is missing")
 
+    if exclusion_result is not None:
+        exclusion_reasons = exclusion_result["reasons"]
+        if exclusion_result["status"] == "MALFORMED_EXCLUSION":
+            return "MALFORMED_EXCLUSION", exclusion_reasons + reasons_blocked + reasons_human
+        if reasons_blocked:
+            return "MALFORMED_EXCLUSION", exclusion_reasons + reasons_blocked + reasons_human
+        return exclusion_result["status"], exclusion_reasons
+
     if reasons_blocked:
         return "BLOCKED", reasons_blocked + reasons_human
     if reasons_human:
         return "HUMAN_REVIEW_REQUIRED", reasons_human
     return "READY_FOR_HANDOFF", ["readiness passed"]
+
+
+def build_readiness_report(tasks_dir="tasks"):
+    report = {
+        "status": "PASS",
+        "explicit_not_pass_statement": [
+            "EXCLUDED_TERMINAL is not PASS",
+            "EXCLUDED_LEGACY is not PASS",
+            "MALFORMED_EXCLUSION is blocker state",
+        ],
+        "counts": {
+            "active_ready_count": 0,
+            "active_blocked_count": 0,
+            "active_human_review_required_count": 0,
+            "excluded_terminal_count": 0,
+            "excluded_legacy_count": 0,
+            "malformed_exclusion_count": 0,
+        },
+        "active_blockers": [],
+        "excluded_terminal_tasks": [],
+        "excluded_legacy_tasks": [],
+        "malformed_exclusions": [],
+        "tasks": [],
+    }
+
+    if not os.path.exists(tasks_dir):
+        return report
+
+    tasks = load_all_tasks(tasks_dir)
+    for filename in sorted(os.listdir(tasks_dir)):
+        if not filename.endswith(".md"):
+            continue
+        filepath = os.path.join(tasks_dir, filename)
+        status, reasons = check_task_readiness(filepath, all_tasks=tasks)
+        task_id = filename[:-3]
+        entry = {
+            "task_id": task_id,
+            "readiness": status,
+            "notes": reasons,
+        }
+        report["tasks"].append(entry)
+        if status == "READY_FOR_HANDOFF":
+            report["counts"]["active_ready_count"] += 1
+        elif status == "EXCLUDED_TERMINAL":
+            report["counts"]["excluded_terminal_count"] += 1
+            report["excluded_terminal_tasks"].append(entry)
+        elif status == "EXCLUDED_LEGACY":
+            report["counts"]["excluded_legacy_count"] += 1
+            report["excluded_legacy_tasks"].append(entry)
+        elif status == "MALFORMED_EXCLUSION":
+            report["counts"]["malformed_exclusion_count"] += 1
+            report["malformed_exclusions"].append(entry)
+            report["status"] = "UNKNOWN_BLOCKED"
+        elif status == "HUMAN_REVIEW_REQUIRED":
+            report["counts"]["active_human_review_required_count"] += 1
+            report["active_blockers"].append(entry)
+            if report["status"] != "UNKNOWN_BLOCKED":
+                report["status"] = "BLOCKED"
+        else:
+            report["counts"]["active_blocked_count"] += 1
+            report["active_blockers"].append(entry)
+            if report["status"] != "UNKNOWN_BLOCKED":
+                report["status"] = "BLOCKED"
+
+    return report
 
 def cmd_task_readiness(filepath):
     if not os.path.exists(filepath) and not filepath.endswith(".md"):
@@ -766,41 +992,52 @@ def cmd_task_readiness(filepath):
         print("- READY_FOR_HANDOFF is not execution authorization")
         print("- Commit is not authorized")
         print("- Push is not authorized")
+    elif status in {"EXCLUDED_TERMINAL", "EXCLUDED_LEGACY"}:
+        print(f"- {status} is not PASS")
+        print(f"- {status} is not READY_FOR_HANDOFF")
+        print("- Exclusion does not imply approval")
+        print("- Exclusion does not imply execution authorization")
+    elif status == "MALFORMED_EXCLUSION":
+        print("- MALFORMED_EXCLUSION is blocker state")
+        print("- PASS is not approval")
+        print("- Evidence is not approval")
+        print("- CI PASS is not approval")
     else:
         print("- READY_FOR_HANDOFF is not READY_FOR_EXECUTION")
         print("- PASS is not approval")
         print("- Evidence is not approval")
         print("- CI PASS is not approval")
 
-    if status == "READY_FOR_HANDOFF":
+    if status in READINESS_SUCCESS_STATES:
         sys.exit(0)
     else:
         sys.exit(1)
 
 def cmd_task_readiness_all():
-    tasks_dir = "tasks"
-    if not os.path.exists(tasks_dir):
+    report = build_readiness_report("tasks")
+    if not report["tasks"]:
         print("PASS: no tasks directory")
         sys.exit(0)
 
-    tasks = load_all_tasks(tasks_dir)
     print("task_id | readiness | notes")
-    all_ready = True
+    for entry in report["tasks"]:
+        notes = ", ".join(entry["notes"]) if entry["notes"] else "none"
+        print(f"{entry['task_id']} | {entry['readiness']} | {notes}")
 
-    for filename in sorted(os.listdir(tasks_dir)):
-        if not filename.endswith(".md"): continue
-        filepath = os.path.join(tasks_dir, filename)
-        status, reasons = check_task_readiness(filepath, all_tasks=tasks)
-        notes = ", ".join(reasons) if reasons else "none"
-        task_id = filename.replace(".md", "")
-        print(f"{task_id} | {status} | {notes}")
-        if status != "READY_FOR_HANDOFF":
-            all_ready = False
+    print("---")
+    print(f"active_ready_count: {report['counts']['active_ready_count']}")
+    print(f"active_blocked_count: {report['counts']['active_blocked_count']}")
+    print(f"active_human_review_required_count: {report['counts']['active_human_review_required_count']}")
+    print(f"excluded_terminal_count: {report['counts']['excluded_terminal_count']}")
+    print(f"excluded_legacy_count: {report['counts']['excluded_legacy_count']}")
+    print(f"malformed_exclusion_count: {report['counts']['malformed_exclusion_count']}")
+    print("EXCLUDED_TERMINAL is not PASS")
+    print("EXCLUDED_LEGACY is not PASS")
+    print("MALFORMED_EXCLUSION is blocker state")
 
-    if all_ready:
+    if report["status"] == "PASS":
         sys.exit(0)
-    else:
-        sys.exit(1)
+    sys.exit(1)
 
 def cmd_task_result_review(filepath):
     if not os.path.exists(filepath) and not filepath.endswith(".md"):

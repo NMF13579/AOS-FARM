@@ -10,6 +10,7 @@ import json
 import sys
 import argparse
 import aos_architecture_document_check
+import aos_task_document_check
 
 VALIDATION_COMMANDS = [
     ["python3", "aos/scripts/aos_install.py", "--dry-run"],
@@ -82,6 +83,34 @@ def determine_overall_status(results):
         return "PASS_WITH_NOT_RUN"
     return "PASS"
 
+
+def build_readiness_audit():
+    try:
+        return aos_task_document_check.build_readiness_report("tasks")
+    except Exception as exc:
+        return {
+            "status": "UNKNOWN_BLOCKED",
+            "error": f"readiness_audit_unavailable: {exc}",
+            "counts": {
+                "active_ready_count": 0,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+            "active_blockers": [],
+            "excluded_terminal_tasks": [],
+            "excluded_legacy_tasks": [],
+            "malformed_exclusions": [],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+
 def main():
     parser = argparse.ArgumentParser(description="Unified AOS Validate")
     parser.add_argument("target", nargs="?", default="all", help="Target to validate (e.g. 'all')")
@@ -124,12 +153,18 @@ def main():
                 "release_authorized": False
             })
             
+    readiness_audit = build_readiness_audit()
     overall_status = determine_overall_status(results)
-    
+    if readiness_audit.get("status") == "UNKNOWN_BLOCKED":
+        overall_status = "UNKNOWN_BLOCKED"
+    elif readiness_audit.get("status") == "BLOCKED" and overall_status == "PASS":
+        overall_status = "BLOCKED"
+
     output = {
         "command": "aos validate",
         "target": args.target,
         "overall_status": overall_status,
+        "readiness_audit": readiness_audit,
         "approval_claimed": False,
         "commit_authorized": False,
         "push_authorized": False,

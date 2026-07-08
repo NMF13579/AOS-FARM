@@ -2,6 +2,19 @@ import unittest
 import json
 import subprocess
 import os
+import contextlib
+import importlib.util
+import io
+import sys
+from unittest import mock
+
+
+MODULE_PATH = os.path.join("aos", "scripts", "aos_validate.py")
+sys.path.insert(0, os.path.abspath(os.path.join("aos", "scripts")))
+SPEC = importlib.util.spec_from_file_location("aos_validate_module", MODULE_PATH)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(MODULE)
 
 class TestAosValidate(unittest.TestCase):
     def test_aos_validate_orchestration_only(self):
@@ -30,6 +43,8 @@ class TestAosValidate(unittest.TestCase):
         self.assertIn("results", data)
         self.assertTrue(isinstance(data["results"], list))
         self.assertTrue(len(data["results"]) > 0)
+        self.assertIn("readiness_audit", data)
+        self.assertIn("counts", data["readiness_audit"])
 
     def test_architecture_integration_in_json(self):
         result = subprocess.run(
@@ -62,6 +77,41 @@ class TestAosValidate(unittest.TestCase):
         
         # the integration should just call the imported function
         self.assertIn("aos_architecture_document_check.get_validate_all_report()", content)
+
+    def test_malformed_exclusion_blocks_overall_pass(self):
+        readiness_audit = {
+            "status": "UNKNOWN_BLOCKED",
+            "counts": {
+                "active_ready_count": 0,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 1,
+            },
+            "active_blockers": [],
+            "excluded_terminal_tasks": [],
+            "excluded_legacy_tasks": [],
+            "malformed_exclusions": [{"task_id": "AOS-FARM-TASK-9999", "readiness": "MALFORMED_EXCLUSION"}],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+        arch_report = {"status": "PASS"}
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value=arch_report), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(data["readiness_audit"]["counts"]["malformed_exclusion_count"], 1)
 
 if __name__ == '__main__':
     unittest.main()

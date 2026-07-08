@@ -1,0 +1,233 @@
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SCRIPT = PROJECT_ROOT / "aos/scripts/aos_task_document_check.py"
+
+
+def build_task(task_id, **overrides):
+    data = {
+        "task_id": task_id,
+        "title": "Fixture task",
+        "type": "task",
+        "template_level": "S",
+        "status": "DRAFT",
+        "queue_mode": "AUTO",
+        "queue_position": "null",
+        "queue_status": "BACKLOG",
+        "queue_priority": "NORMAL",
+        "risk_profile": "LOW_RISK_FAST",
+        "risk_assigned_by": "human",
+        "approval_status": "APPROVED",
+        "human_checkpoint_required": "true",
+        "validator_status": "VALIDATION_COMPLETE",
+        "evidence_status": "EVIDENCE_COLLECTED",
+        "log_uri": f".aos-tmp/tasks/{task_id}/agent-actions.log",
+        "log_status": "NOT_STARTED",
+        "owner": "human",
+        "created_at": "2026-07-08",
+        "updated_at": "2026-07-08",
+    }
+    data.update(overrides)
+
+    lines = ["---"]
+    for key, value in data.items():
+        if isinstance(value, bool):
+            rendered = "true" if value else "false"
+        elif value == "null":
+            rendered = "null"
+        elif isinstance(value, int):
+            rendered = str(value)
+        else:
+            rendered = f"\"{value}\""
+        lines.append(f"{key}: {rendered}")
+    lines.append("---")
+    lines.append("## Задача")
+    lines.append("goal")
+    lines.append("")
+    lines.append("## Done когда")
+    lines.append("done")
+    lines.append("")
+    lines.append("## История")
+    lines.append("history")
+    lines.append("")
+    lines.append("## Evidence")
+    lines.append("evidence")
+    lines.append("")
+    lines.append("## ⛔ Решение")
+    lines.append("APPROVED")
+    lines.append("")
+    return "\n".join(lines)
+
+
+class TestAOSTaskReadinessExclusions(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.tasks_dir = Path(self.temp_dir) / "tasks"
+        self.tasks_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def write_task(self, filename, content):
+        (self.tasks_dir / filename).write_text(content, encoding="utf-8")
+
+    def run_cmd(self, *args):
+        return subprocess.run(
+            ["python3", str(SCRIPT)] + list(args),
+            cwd=self.temp_dir,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_rejected_task_with_explicit_witness_is_excluded_terminal_not_pass(self):
+        self.write_task(
+            "AOS-FARM-TASK-1001.md",
+            build_task(
+                "AOS-FARM-TASK-1001",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1001",
+                readiness_exclusion_type="TERMINAL",
+                readiness_exclusion_reason="human rejected task",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="reports/human-checkpoints/example.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.642",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1001")
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("Readiness: EXCLUDED_TERMINAL", res.stdout)
+        self.assertIn("EXCLUDED_TERMINAL is not PASS", res.stdout)
+        self.assertNotIn("Readiness: READY_FOR_HANDOFF", res.stdout)
+
+    def test_invalid_legacy_task_with_explicit_witness_is_excluded_legacy(self):
+        self.write_task(
+            "AOS-FARM.463.md",
+            build_task(
+                "AOS-FARM.463",
+                readiness_exclusion_task_id="AOS-FARM.463",
+                readiness_exclusion_type="LEGACY",
+                readiness_exclusion_reason="legacy invalid task id retained for audit",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example-legacy.md",
+                readiness_exclusion_human_checkpoint="reports/human-checkpoints/example-legacy.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.642",
+                readiness_exclusion_review_required=False,
+            ),
+        )
+        self.write_task("AOS-FARM-TASK-2000.md", build_task("AOS-FARM-TASK-2000"))
+        res_validate = self.run_cmd("task", "--validate-all")
+        self.assertEqual(res_validate.returncode, 0, res_validate.stderr + res_validate.stdout)
+        res = self.run_cmd("task", "--readiness-all")
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("AOS-FARM.463 | EXCLUDED_LEGACY", res.stdout)
+        self.assertIn("AOS-FARM-TASK-2000 | READY_FOR_HANDOFF", res.stdout)
+        self.assertIn("excluded_legacy_count: 1", res.stdout)
+        self.assertIn("EXCLUDED_LEGACY is not PASS", res.stdout)
+
+    def test_malformed_exclusion_blocks_readiness(self):
+        self.write_task(
+            "AOS-FARM-TASK-1002.md",
+            build_task(
+                "AOS-FARM-TASK-1002",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1002",
+                readiness_exclusion_type="TERMINAL",
+                readiness_exclusion_reason="missing witness should fail closed",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="HUMAN_REVIEW_REQUIRED",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.642",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness-all")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("AOS-FARM-TASK-1002 | MALFORMED_EXCLUSION", res.stdout)
+        self.assertIn("malformed_exclusion_count: 1", res.stdout)
+        self.assertIn("MALFORMED_EXCLUSION is blocker state", res.stdout)
+
+    def test_wildcard_mass_and_blanket_exclusions_are_rejected(self):
+        cases = [
+            ("AOS-FARM-TASK-*", "Wildcard exclusion is forbidden"),
+            ("AOS-FARM-TASK-1003,AOS-FARM-TASK-1004", "Mass or blanket exclusion is forbidden"),
+            ("ALL", "Blanket exclusion is forbidden"),
+        ]
+        for target, reason in cases:
+            with self.subTest(target=target):
+                shutil.rmtree(self.tasks_dir)
+                self.tasks_dir.mkdir()
+                self.write_task(
+                    "AOS-FARM-TASK-1003.md",
+                    build_task(
+                        "AOS-FARM-TASK-1003",
+                        status="REJECTED",
+                        readiness_exclusion_task_id=target,
+                        readiness_exclusion_type="TERMINAL",
+                        readiness_exclusion_reason="invalid scope",
+                        readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                        readiness_exclusion_human_checkpoint="reports/human-checkpoints/example.md",
+                        readiness_exclusion_applies_to_readiness=True,
+                        readiness_exclusion_approval_granted=False,
+                        readiness_exclusion_created_in_stage="AOS-FARM.642",
+                        readiness_exclusion_review_required=False,
+                        approval_status="REJECTED",
+                    ),
+                )
+                res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1003")
+                self.assertNotEqual(res.returncode, 0)
+                self.assertIn("MALFORMED_EXCLUSION", res.stdout)
+                self.assertIn(reason, res.stdout)
+
+    def test_closed_and_rejected_alone_are_not_escape_hatches(self):
+        self.write_task(
+            "AOS-FARM-TASK-1004.md",
+            build_task("AOS-FARM-TASK-1004", status="CLOSED", approval_status="NOT_APPROVED"),
+        )
+        self.write_task(
+            "AOS-FARM-TASK-1005.md",
+            build_task("AOS-FARM-TASK-1005", status="REJECTED", approval_status="REJECTED"),
+        )
+        res = self.run_cmd("task", "--readiness-all")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("AOS-FARM-TASK-1004 | BLOCKED", res.stdout)
+        self.assertIn("AOS-FARM-TASK-1005 | BLOCKED", res.stdout)
+        self.assertNotIn("AOS-FARM-TASK-1004 | EXCLUDED_TERMINAL", res.stdout)
+        self.assertNotIn("AOS-FARM-TASK-1005 | EXCLUDED_TERMINAL", res.stdout)
+
+    def test_invalid_task_id_without_witness_stays_blocked(self):
+        self.write_task("AOS-FARM.463.md", build_task("AOS-FARM.463"))
+        res = self.run_cmd("task", "--readiness", "AOS-FARM.463")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Invalid task_id format: AOS-FARM.463", res.stdout)
+        self.assertNotIn("EXCLUDED_LEGACY", res.stdout)
+
+    def test_not_run_and_evidence_not_approval_remain_fail_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1006.md",
+            build_task(
+                "AOS-FARM-TASK-1006",
+                validator_status="NOT_RUN",
+                evidence_status="EVIDENCE_COLLECTED",
+                approval_status="NOT_APPROVED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1006")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("validator_status is NOT_RUN", res.stdout)
+        self.assertIn("approval_status is NOT_APPROVED", res.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
