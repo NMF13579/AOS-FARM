@@ -11,6 +11,15 @@ queue_priority: NORMAL
 risk_profile: HIGH_RISK_PROTECTED
 risk_assigned_by: none
 approval_status: NOT_APPROVED
+readiness_exclusion_task_id: AOS-FARM.463
+readiness_exclusion_type: LEGACY
+readiness_exclusion_reason: "Human confirms: AOS-FARM.463 is a legacy invalid id for readiness purposes; classify as EXCLUDED_LEGACY; do not rename; do not normalize; do not migrate; this is not approval; release is not authorized; merge to main is not authorized."
+readiness_exclusion_source_evidence: "AOS-FARM.643 Prompt 1 Human Decision Matrix"
+readiness_exclusion_human_checkpoint: "Human confirms: AOS-FARM.463 is a legacy invalid id for readiness purposes; classify as EXCLUDED_LEGACY; do not rename; do not normalize; do not migrate; this is not approval; release is not authorized; merge to main is not authorized."
+readiness_exclusion_applies_to_readiness: true
+readiness_exclusion_approval_granted: false
+readiness_exclusion_created_in_stage: AOS-FARM.643
+readiness_exclusion_review_required: false
 commit_authorized: false
 push_authorized: false
 release_authorized: false

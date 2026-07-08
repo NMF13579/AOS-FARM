@@ -2,14 +2,24 @@
 task_id: AOS-FARM-TASK-060102
 title: Task Registry Draft Validation and User Example
 type: task
-status: DRAFT
+status: CLOSED
 queue_mode: MANUAL
 queue_position: 10000
 queue_status: BACKLOG
 queue_priority: NORMAL
-risk_profile: UNKNOWN_BLOCKED
-risk_assigned_by: none
+risk_profile: HIGH_RISK_PROTECTED
+risk_assigned_by: human
 approval_status: NOT_APPROVED
+readiness_exclusion_task_id: AOS-FARM-TASK-060102
+readiness_exclusion_type: TERMINAL
+readiness_exclusion_reason: "Human confirms: AOS-FARM-TASK-060102 is retired for readiness purposes. It should no longer be an active readiness blocker. This is not approval. This does not authorize READY_FOR_EXECUTION. This does not authorize READY_FOR_RELEASE. This does not authorize release. This does not authorize merge to main."
+readiness_exclusion_source_evidence: "AOS-FARM.643 Prompt 1e Exact Human Correction Decision"
+readiness_exclusion_human_checkpoint: "Human confirms: AOS-FARM-TASK-060102 is retired for readiness purposes. It should no longer be an active readiness blocker. This is not approval. This does not authorize READY_FOR_EXECUTION. This does not authorize READY_FOR_RELEASE. This does not authorize release. This does not authorize merge to main."
+readiness_exclusion_applies_to_readiness: true
+readiness_exclusion_approval_granted: false
+readiness_exclusion_created_in_stage: AOS-FARM.643
+readiness_exclusion_review_required: false
+closure_type: RETIRED
 human_checkpoint_required: true
 validator_status: NOT_RUN
 evidence_status: NOT_RUN
