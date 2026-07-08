@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import json
 import tempfile
 import datetime
 
@@ -323,6 +324,133 @@ def load_all_tasks(tasks_dir="tasks"):
             except:
                 pass
     return tasks
+
+def _is_true(value):
+    return value is True or str(value).strip().lower() == "true"
+
+def _normalized_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+def _risk_profile_status(yaml_data):
+    risk_profile = _normalized_text(yaml_data.get("risk_profile"))
+    if not risk_profile:
+        return "missing"
+    if risk_profile in {"UNKNOWN", "UNKNOWN_BLOCKED"}:
+        return "unknown"
+    return "present"
+
+def _risk_profile_assigned_by(yaml_data):
+    assigned_by = _normalized_text(yaml_data.get("risk_assigned_by")).lower()
+    if not assigned_by or assigned_by in {"none", "null"}:
+        return "missing"
+    if assigned_by == "human":
+        return "human"
+    if assigned_by == "approved_deterministic_classifier":
+        return "approved_deterministic_classifier"
+    if assigned_by in {"agent", "self", "ai"}:
+        return "agent_proposed"
+    return "unknown"
+
+def _human_witness_status(yaml_data):
+    checkpoint_required = _is_true(yaml_data.get("human_checkpoint_required"))
+    if not checkpoint_required:
+        return "not_required"
+    if _risk_profile_assigned_by(yaml_data) == "human":
+        return "present"
+    checkpoint = _normalized_text(yaml_data.get("readiness_exclusion_human_checkpoint"))
+    if checkpoint and checkpoint not in MISSING_HUMAN_WITNESS_VALUES:
+        return "present"
+    return "missing"
+
+def _validation_status(yaml_data):
+    status = _normalized_text(yaml_data.get("validator_status")).upper()
+    if not status:
+        return "NOT_RUN"
+    if status in {"VALIDATED", "VALIDATION_COMPLETE", "COMPLETE", "COMPLETED"}:
+        return "PASS"
+    if status in {"NOT_RUN", "PENDING"}:
+        return "NOT_RUN"
+    if status in {"UNKNOWN", "UNKNOWN_BLOCKED"}:
+        return "UNKNOWN_BLOCKED"
+    if status == "HUMAN_REVIEW_REQUIRED":
+        return "HUMAN_REVIEW_REQUIRED"
+    if status in {"FAIL", "FAILED", "ERROR", "INVALID"}:
+        return "FAIL"
+    return "UNKNOWN_BLOCKED"
+
+def _evidence_status(yaml_data):
+    status = _normalized_text(yaml_data.get("evidence_status")).upper()
+    if not status or status in {"NOT_RUN", "PENDING"}:
+        return "missing"
+    if status in {"UNKNOWN", "UNKNOWN_BLOCKED"}:
+        return "unknown"
+    if status in {"NOT_REQUIRED", "N/A"}:
+        return "not_required"
+    return "present"
+
+def _approval_status(yaml_data):
+    status = _normalized_text(yaml_data.get("approval_status")).upper()
+    if not status:
+        return "missing"
+    if status == "APPROVED":
+        return "human_approved"
+    if status in {"NOT_APPROVED", "NOT_REQUESTED"}:
+        return "not_approved"
+    if status in {"UNKNOWN", "UNKNOWN_BLOCKED"}:
+        return "unknown"
+    return "unknown"
+
+def build_gate_provenance(yaml_data, readiness_status, notes):
+    validation_status = _validation_status(yaml_data)
+    evidence_status = _evidence_status(yaml_data)
+    risk_profile_status = _risk_profile_status(yaml_data)
+    human_witness_status = _human_witness_status(yaml_data)
+    notes_text = " ".join(str(note) for note in notes)
+    has_blocking_unknown = (
+        risk_profile_status == "unknown"
+        or _risk_profile_assigned_by(yaml_data) == "unknown"
+        or validation_status == "UNKNOWN_BLOCKED"
+        or evidence_status == "unknown"
+        or _approval_status(yaml_data) == "unknown"
+        or "UNKNOWN" in readiness_status
+        or "UNKNOWN" in notes_text
+    )
+    has_required_human_review = (
+        readiness_status == "HUMAN_REVIEW_REQUIRED"
+        or validation_status in {"NOT_RUN", "HUMAN_REVIEW_REQUIRED"}
+        or evidence_status == "missing"
+        or human_witness_status == "missing"
+    )
+    return {
+        "risk_profile_status": risk_profile_status,
+        "risk_profile_assigned_by": _risk_profile_assigned_by(yaml_data),
+        "human_witness_status": human_witness_status,
+        "validation_status": validation_status,
+        "evidence_status": evidence_status,
+        "approval_status": _approval_status(yaml_data),
+        "has_blocking_unknown": has_blocking_unknown,
+        "has_required_human_review": has_required_human_review,
+    }
+
+def build_authorization_boundary(readiness_status):
+    return {
+        "handoff_allowed": readiness_status == "READY_FOR_HANDOFF",
+        "execution_authorized": False,
+        "commit_authorized": False,
+        "push_authorized": False,
+        "merge_authorized": False,
+        "release_authorized": False,
+    }
+
+def determine_effective_readiness(readiness_status, gate_provenance):
+    if readiness_status == "READY_FOR_HANDOFF":
+        if gate_provenance["has_blocking_unknown"]:
+            return "UNKNOWN_BLOCKED"
+        if gate_provenance["has_required_human_review"]:
+            return "HUMAN_REVIEW_REQUIRED"
+    return readiness_status
 
 def cmd_validate(filepath):
     is_valid, msgs = validate_task_document(filepath)
@@ -937,30 +1065,47 @@ def build_readiness_report(tasks_dir="tasks"):
             continue
         filepath = os.path.join(tasks_dir, filename)
         status, reasons = check_task_readiness(filepath, all_tasks=tasks)
+        yaml_data = {}
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                yaml_data, _ = parse_yaml_frontmatter(f.read())
+        except Exception:
+            yaml_data = {}
+        if yaml_data is None:
+            yaml_data = {}
         task_id = filename[:-3]
+        gate_provenance = build_gate_provenance(yaml_data, status, reasons)
+        effective_readiness = determine_effective_readiness(status, gate_provenance)
         entry = {
             "task_id": task_id,
             "readiness": status,
+            "effective_readiness": effective_readiness,
             "notes": reasons,
+            "gate_provenance": gate_provenance,
+            "authorization_boundary": build_authorization_boundary(effective_readiness),
         }
         report["tasks"].append(entry)
-        if status == "READY_FOR_HANDOFF":
+        if effective_readiness == "READY_FOR_HANDOFF":
             report["counts"]["active_ready_count"] += 1
-        elif status == "EXCLUDED_TERMINAL":
+        elif effective_readiness == "EXCLUDED_TERMINAL":
             report["counts"]["excluded_terminal_count"] += 1
             report["excluded_terminal_tasks"].append(entry)
-        elif status == "EXCLUDED_LEGACY":
+        elif effective_readiness == "EXCLUDED_LEGACY":
             report["counts"]["excluded_legacy_count"] += 1
             report["excluded_legacy_tasks"].append(entry)
-        elif status == "MALFORMED_EXCLUSION":
+        elif effective_readiness == "MALFORMED_EXCLUSION":
             report["counts"]["malformed_exclusion_count"] += 1
             report["malformed_exclusions"].append(entry)
             report["status"] = "UNKNOWN_BLOCKED"
-        elif status == "HUMAN_REVIEW_REQUIRED":
+        elif effective_readiness == "HUMAN_REVIEW_REQUIRED":
             report["counts"]["active_human_review_required_count"] += 1
             report["active_blockers"].append(entry)
             if report["status"] != "UNKNOWN_BLOCKED":
                 report["status"] = "BLOCKED"
+        elif effective_readiness == "UNKNOWN_BLOCKED":
+            report["counts"]["active_blocked_count"] += 1
+            report["active_blockers"].append(entry)
+            report["status"] = "UNKNOWN_BLOCKED"
         else:
             report["counts"]["active_blocked_count"] += 1
             report["active_blockers"].append(entry)
@@ -1013,8 +1158,14 @@ def cmd_task_readiness(filepath):
     else:
         sys.exit(1)
 
-def cmd_task_readiness_all():
+def cmd_task_readiness_all(json_output=False):
     report = build_readiness_report("tasks")
+    if json_output:
+        print(json.dumps(report, indent=2))
+        if report["status"] == "PASS":
+            sys.exit(0)
+        sys.exit(1)
+
     if not report["tasks"]:
         print("PASS: no tasks directory")
         sys.exit(0)
@@ -1638,7 +1789,7 @@ def main():
                 sys.exit(1)
             cmd_task_readiness(sys.argv[3])
         elif sub == "--readiness-all":
-            cmd_task_readiness_all()
+            cmd_task_readiness_all(json_output="--json" in sys.argv[3:])
         elif sub == "--result-review":
             if len(sys.argv) < 4:
                 sys.exit(1)

@@ -9,6 +9,7 @@ import subprocess
 import json
 import sys
 import argparse
+import re
 import aos_architecture_document_check
 import aos_task_document_check
 
@@ -22,6 +23,47 @@ VALIDATION_COMMANDS = [
     # Do not include aos_doctor.py here because doctor runs broad unittest discover and can recursively re-enter tests/test_aos_validate.py through aos_validate.py.
     ["python3", "aos/scripts/aos_queue_dashboard.py"],
     ["python3", "aos/scripts/aos_next_task_selection.py", "--json"]
+]
+
+PASS = "PASS"
+HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
+UNKNOWN_BLOCKED = "UNKNOWN_BLOCKED"
+BLOCKED = "BLOCKED"
+NOT_RUN = "NOT_RUN"
+FAIL = "FAIL"
+
+STATUS_ALIASES = {
+    PASS: PASS,
+    "PASS_WITH_WARNINGS": HUMAN_REVIEW_REQUIRED,
+    HUMAN_REVIEW_REQUIRED: HUMAN_REVIEW_REQUIRED,
+    UNKNOWN_BLOCKED: UNKNOWN_BLOCKED,
+    "UNKNOWN": UNKNOWN_BLOCKED,
+    BLOCKED: BLOCKED,
+    "CONFLICT_BLOCKED": BLOCKED,
+    NOT_RUN: NOT_RUN,
+    FAIL: FAIL,
+    "FAILED": FAIL,
+    "FAILED_OR_BLOCKED": FAIL,
+    "ERROR": FAIL,
+    "INVALID": FAIL,
+    "MALFORMED_EXCLUSION": UNKNOWN_BLOCKED,
+}
+
+STATUS_FIELD_PATTERNS = [
+    re.compile(r"^\s*(?:\*\*)?Final Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+    re.compile(r"^\s*(?:\*\*)?Overall Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+    re.compile(r"^\s*(?:\*\*)?final_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+    re.compile(r"^\s*(?:\*\*)?overall_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+    re.compile(r"^\s*(?:\*\*)?install_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+    re.compile(r"^\s*(?:\*\*)?Readiness(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
+]
+STATUS_FIELD_NAMES = [
+    "Final Status",
+    "Overall Status",
+    "final_status",
+    "overall_status",
+    "install_status",
+    "Readiness",
 ]
 
 def run_command(cmd):
@@ -53,35 +95,99 @@ def run_command(cmd):
             "reason": str(e)
         }
 
+def normalize_status(raw_status):
+    if raw_status is None:
+        return UNKNOWN_BLOCKED
+    status = str(raw_status).strip().replace("*", "").replace("`", "")
+    if not status:
+        return UNKNOWN_BLOCKED
+    return STATUS_ALIASES.get(status, UNKNOWN_BLOCKED)
+
+def aggregate_statuses(statuses):
+    normalized = [normalize_status(status) for status in statuses]
+    if not normalized:
+        return UNKNOWN_BLOCKED
+    if UNKNOWN_BLOCKED in normalized:
+        return UNKNOWN_BLOCKED
+    if HUMAN_REVIEW_REQUIRED in normalized:
+        return HUMAN_REVIEW_REQUIRED
+    if BLOCKED in normalized:
+        return BLOCKED
+    if FAIL in normalized:
+        return FAIL
+    if NOT_RUN in normalized:
+        return NOT_RUN
+    if all(status == PASS for status in normalized):
+        return PASS
+    return UNKNOWN_BLOCKED
+
+def collect_json_statuses(payload):
+    statuses = []
+    if not isinstance(payload, dict):
+        return statuses
+    specific_status_keys = ["overall_status", "final_status", "install_status", "dry_run_install_status"]
+    has_specific_status = any(key in payload for key in specific_status_keys)
+    for key in specific_status_keys:
+        if key in payload:
+            statuses.append(payload.get(key))
+    if "status" in payload and not has_specific_status:
+        statuses.append(payload.get("status"))
+    for key in [
+        "package_integrity",
+        "target_install_state",
+        "installer_dry_run",
+        "readiness_audit",
+    ]:
+        value = payload.get(key)
+        if isinstance(value, dict):
+            statuses.extend(collect_json_statuses(value))
+    return statuses
+
+def extract_json_report(text):
+    marker = "--- JSON REPORT ---"
+    end_marker = "-------------------"
+    if marker not in text:
+        return None
+    after_marker = text.split(marker, 1)[1]
+    json_text = after_marker.split(end_marker, 1)[0].strip()
+    if not json_text:
+        return None
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError:
+        return {"status": UNKNOWN_BLOCKED}
+
+def collect_text_statuses(text):
+    statuses = []
+    if not text:
+        return statuses
+    json_report = extract_json_report(text)
+    if json_report is not None:
+        statuses.extend(collect_json_statuses(json_report))
+        return statuses
+    for line in text.splitlines():
+        clean_line = line.replace("*", "").replace("`", "").strip()
+        for field_name in STATUS_FIELD_NAMES:
+            prefix = f"{field_name}:"
+            if clean_line.startswith(prefix):
+                status = clean_line[len(prefix):].strip().split()[0] if clean_line[len(prefix):].strip() else ""
+                statuses.append(status)
+    for pattern in STATUS_FIELD_PATTERNS:
+        statuses.extend(pattern.findall(text))
+    return statuses
+
+def normalize_child_result(result):
+    statuses = [result.get("status")]
+    statuses.extend(collect_text_statuses(result.get("stdout", "")))
+    statuses.extend(collect_text_statuses(result.get("stderr", "")))
+    normalized = aggregate_statuses(statuses)
+    return_code = result.get("return_code")
+    if return_code not in (None, 0) and normalized == PASS:
+        return FAIL
+    return normalized
+
 def determine_overall_status(results):
-    has_failed = False
-    has_not_run = False
-    has_blocked = False
-    has_unknown = False
-    
-    for r in results:
-        status = r.get("status")
-        stdout = r.get("stdout", "")
-        stderr = r.get("stderr", "")
-        
-        if status == "UNKNOWN_BLOCKED" or "UNKNOWN_BLOCKED" in stdout or "UNKNOWN_BLOCKED" in stderr:
-            has_unknown = True
-        elif status in ["BLOCKED", "CONFLICT_BLOCKED", "HUMAN_REVIEW_REQUIRED"] or "BLOCKED" in stdout or "BLOCKED" in stderr:
-            has_blocked = True
-        elif status == "FAILED":
-            has_failed = True
-        elif status == "NOT_RUN":
-            has_not_run = True
-            
-    if has_unknown:
-        return "UNKNOWN_BLOCKED"
-    if has_blocked:
-        return "BLOCKED"
-    if has_failed:
-        return "FAILED_OR_BLOCKED"
-    if has_not_run:
-        return "PASS_WITH_NOT_RUN"
-    return "PASS"
+    return aggregate_statuses([normalize_child_result(result) for result in results])
 
 
 def build_readiness_audit():

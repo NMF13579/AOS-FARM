@@ -1,3 +1,4 @@
+import json
 import shutil
 import subprocess
 import tempfile
@@ -84,6 +85,10 @@ class TestAOSTaskReadinessExclusions(unittest.TestCase):
             text=True,
         )
 
+    def readiness_json(self):
+        res = self.run_cmd("task", "--readiness-all", "--json")
+        return res, json.loads(res.stdout)
+
     def test_rejected_task_with_explicit_witness_is_excluded_terminal_not_pass(self):
         self.write_task(
             "AOS-FARM-TASK-1001.md",
@@ -157,6 +162,119 @@ class TestAOSTaskReadinessExclusions(unittest.TestCase):
         self.assertIn("AOS-FARM-TASK-1002 | MALFORMED_EXCLUSION", res.stdout)
         self.assertIn("malformed_exclusion_count: 1", res.stdout)
         self.assertIn("MALFORMED_EXCLUSION is blocker state", res.stdout)
+
+    def test_readiness_json_includes_typed_gate_provenance(self):
+        self.write_task("AOS-FARM-TASK-2100.md", build_task("AOS-FARM-TASK-2100"))
+        res, data = self.readiness_json()
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        entry = data["tasks"][0]
+
+        self.assertIn("gate_provenance", entry)
+        self.assertIn("authorization_boundary", entry)
+        self.assertEqual(
+            set(entry["gate_provenance"].keys()),
+            {
+                "risk_profile_status",
+                "risk_profile_assigned_by",
+                "human_witness_status",
+                "validation_status",
+                "evidence_status",
+                "approval_status",
+                "has_blocking_unknown",
+                "has_required_human_review",
+            },
+        )
+        self.assertEqual(
+            set(entry["authorization_boundary"].keys()),
+            {
+                "handoff_allowed",
+                "execution_authorized",
+                "commit_authorized",
+                "push_authorized",
+                "merge_authorized",
+                "release_authorized",
+            },
+        )
+
+    def test_readiness_json_authorization_booleans_default_false(self):
+        self.write_task("AOS-FARM-TASK-2101.md", build_task("AOS-FARM-TASK-2101"))
+        res, data = self.readiness_json()
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        boundary = data["tasks"][0]["authorization_boundary"]
+
+        self.assertTrue(boundary["handoff_allowed"])
+        self.assertFalse(boundary["execution_authorized"])
+        self.assertFalse(boundary["commit_authorized"])
+        self.assertFalse(boundary["push_authorized"])
+        self.assertFalse(boundary["merge_authorized"])
+        self.assertFalse(boundary["release_authorized"])
+
+    def test_missing_risk_profile_does_not_authorize_execution(self):
+        self.write_task(
+            "AOS-FARM-TASK-2102.md",
+            build_task("AOS-FARM-TASK-2102", risk_profile=""),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["tasks"][0]
+
+        self.assertEqual(entry["readiness"], "BLOCKED")
+        self.assertEqual(entry["gate_provenance"]["risk_profile_status"], "missing")
+        self.assertFalse(entry["authorization_boundary"]["execution_authorized"])
+
+    def test_missing_human_witness_does_not_authorize_execution_when_required(self):
+        self.write_task(
+            "AOS-FARM-TASK-2103.md",
+            build_task("AOS-FARM-TASK-2103", risk_assigned_by="none"),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["tasks"][0]
+
+        self.assertEqual(entry["readiness"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["gate_provenance"]["human_witness_status"], "missing")
+        self.assertTrue(entry["gate_provenance"]["has_required_human_review"])
+        self.assertFalse(entry["authorization_boundary"]["execution_authorized"])
+
+    def test_not_run_is_represented_as_not_run_not_pass(self):
+        self.write_task(
+            "AOS-FARM-TASK-2104.md",
+            build_task("AOS-FARM-TASK-2104", validator_status="NOT_RUN"),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        provenance = data["tasks"][0]["gate_provenance"]
+
+        self.assertEqual(provenance["validation_status"], "NOT_RUN")
+        self.assertNotEqual(provenance["validation_status"], "PASS")
+        self.assertTrue(provenance["has_required_human_review"])
+
+    def test_unknown_is_represented_as_blocking(self):
+        self.write_task(
+            "AOS-FARM-TASK-2105.md",
+            build_task("AOS-FARM-TASK-2105", risk_profile="UNKNOWN_BLOCKED"),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        provenance = data["tasks"][0]["gate_provenance"]
+
+        self.assertEqual(provenance["risk_profile_status"], "unknown")
+        self.assertTrue(provenance["has_blocking_unknown"])
+        self.assertFalse(data["tasks"][0]["authorization_boundary"]["execution_authorized"])
+
+    def test_human_review_required_remains_non_pass(self):
+        self.write_task(
+            "AOS-FARM-TASK-2106.md",
+            build_task("AOS-FARM-TASK-2106", evidence_status="NOT_RUN"),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["tasks"][0]
+
+        self.assertEqual(entry["readiness"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["gate_provenance"]["evidence_status"], "missing")
+        self.assertTrue(entry["gate_provenance"]["has_required_human_review"])
+        self.assertNotEqual(entry["readiness"], "PASS")
 
     def test_closed_completed_terminal_exclusion_is_rejected_fail_closed(self):
         self.write_task(

@@ -17,6 +17,70 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
 
 class TestAosValidate(unittest.TestCase):
+    def assertAggregateNotPass(self, result):
+        self.assertNotEqual(MODULE.determine_overall_status([result]), "PASS")
+
+    def test_nested_human_review_required_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "PASS",
+            "return_code": 0,
+            "stdout": "Final Status: HUMAN_REVIEW_REQUIRED",
+            "stderr": "",
+        })
+
+    def test_nested_unknown_blocked_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "PASS",
+            "return_code": 0,
+            "stdout": "Final Status: UNKNOWN_BLOCKED",
+            "stderr": "",
+        })
+
+    def test_nested_blocked_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "PASS",
+            "return_code": 0,
+            "stdout": "Final Status: BLOCKED",
+            "stderr": "",
+        })
+
+    def test_required_not_run_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "NOT_RUN",
+            "reason": "required child check not available",
+        })
+
+    def test_unknown_nested_status_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "PASS",
+            "return_code": 0,
+            "stdout": "Final Status: SURPRISE_STATUS",
+            "stderr": "",
+        })
+
+    def test_malformed_child_status_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "",
+            "return_code": 0,
+            "stdout": "Final Status:",
+            "stderr": "",
+        })
+
+    def test_child_non_zero_exit_blocks_overall_pass(self):
+        self.assertAggregateNotPass({
+            "status": "FAILED",
+            "return_code": 1,
+            "stdout": "Final Status: PASS",
+            "stderr": "",
+        })
+
+    def test_all_required_checks_pass_aggregates_pass(self):
+        overall = MODULE.determine_overall_status([
+            {"status": "PASS", "return_code": 0, "stdout": "Final Status: PASS", "stderr": ""},
+            {"status": "PASS", "return_code": 0, "stdout": "", "stderr": ""},
+        ])
+        self.assertEqual(overall, "PASS")
+
     def test_aos_validate_orchestration_only(self):
         # ensure it runs without error and outputs correct boundary fields
         try:

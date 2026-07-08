@@ -1,0 +1,102 @@
+artifact_type: executor_handoff_package
+artifact_status: neutral_pre_authorization_handoff_template
+task_id: REPLACE_WITH_TASK_ID
+source_task_brief_path: REPLACE_WITH_TASK_BRIEF_PATH
+
+scope:
+  summary: REPLACE_WITH_BOUNDED_HANDOFF_SCOPE
+  allowed_changes:
+    - REPLACE_WITH_ALLOWED_CHANGE
+  forbidden_changes:
+    - REPLACE_WITH_FORBIDDEN_CHANGE
+  non_goals:
+    - REPLACE_WITH_NON_GOAL
+
+handoff_context:
+  validation_instructions:
+    - REPLACE_WITH_VALIDATION_COMMAND_OR_REVIEW
+  expected_final_report:
+    format: REPLACE_WITH_EXPECTED_FINAL_REPORT_FORMAT
+    must_include:
+      - changed_files
+      - validation_results
+      - not_run_items
+      - unknowns_or_blockers
+      - no_approval_claim
+      - no_execution_authorization_claim
+
+risk_profile:
+  assignment_status: REPLACE_WITH_PRESENT_MISSING_OR_UNKNOWN
+  assigned_by: REPLACE_WITH_HUMAN_OR_MISSING_OR_UNKNOWN
+  assignment_evidence: REPLACE_WITH_HUMAN_ASSIGNMENT_EVIDENCE_OR_BLOCKER_STATE
+
+human_witness:
+  status: REPLACE_WITH_PRESENT_MISSING_OR_UNKNOWN
+  evidence: REPLACE_WITH_HUMAN_WITNESS_EVIDENCE_OR_BLOCKER_STATE
+
+known_unknowns_and_blockers:
+  unknowns:
+    - REPLACE_WITH_UNKNOWN_OR_NONE
+  blockers:
+    - REPLACE_WITH_BLOCKER_OR_NONE
+
+boundaries:
+  protected_canonical_boundary:
+    protected_canonical_change_authorized: false
+    rule: Protected/canonical mutation requires a separate explicit human checkpoint.
+  destructive_operation_boundary:
+    destructive_operation_authorized: false
+    rule: Destructive operations are forbidden by default.
+  approval_boundary:
+    approval_granted: false
+    rule: Executor Handoff Package is not approval.
+  execution_authorization_boundary:
+    execution_authorized: false
+    requires_human_execution_authorization: true
+    rule: Executor Handoff Package is not execution authorization.
+  commit_boundary:
+    commit_authorized: false
+    rule: Commit authorization requires a separate explicit human commit authorization.
+  push_boundary:
+    push_authorized: false
+    rule: Push authorization requires a separate explicit human push authorization.
+  merge_boundary:
+    merge_authorized: false
+    rule: Merge authorization requires a separate explicit human merge authorization.
+  release_boundary:
+    release_authorized: false
+    rule: Release authorization requires a separate explicit human release authorization.
+  lifecycle_mutation_boundary:
+    lifecycle_mutation_authorized: false
+    rule: Lifecycle mutation requires a separate explicit human checkpoint.
+  scope_expansion_boundary:
+    scope_expansion_authorized: false
+    rule: Scope expansion requires separate explicit human permission.
+
+human_review_boundary:
+  requires_human_review: true
+  requires_human_execution_authorization: true
+  human_unavailable_status: HUMAN_REVIEW_REQUIRED
+
+explicit_exclusions:
+  approval: excluded
+  execution_authorization: excluded
+  commit_authorization: excluded
+  push_authorization: excluded
+  merge_authorization: excluded
+  release_authorization: excluded
+  scope_expansion_permission: excluded
+  protected_canonical_mutation_permission: excluded
+  destructive_operation_permission: excluded
+  lifecycle_mutation_permission: excluded
+
+boundary_notes:
+  - Executor Handoff Package is neutral bounded context for agent handoff.
+  - Executor Handoff Package is not approval.
+  - Executor Handoff Package is not execution authorization.
+  - Executor Handoff Package does not grant commit, push, merge, release, lifecycle mutation, destructive operation, protected/canonical mutation, or scope expansion.
+  - Controlled Execution Package is the authorized execution context after explicit human execution authorization.
+  - Controlled Execution Package requires explicit human execution authorization.
+  - Readiness is not execution permission.
+  - Evidence is not approval.
+  - Validator PASS is not approval.

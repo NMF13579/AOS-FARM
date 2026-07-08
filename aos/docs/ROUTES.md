@@ -28,6 +28,61 @@ to the human owner.
 
 ---
 
+## First-Interaction Route Matrix
+
+Use this matrix for the first vague user phrase before selecting any execution,
+approval, merge, release, destructive, protected/canonical, lifecycle, or
+scope-expansion route.
+
+Vague first-interaction phrases do not authorize execution. A plan is not
+approval. A Task Brief draft is not approval. An Execution Package draft is
+not approval. An Executor Handoff Package is not approval. Readiness is not
+approval. Evidence is not approval. Validator PASS is not approval.
+
+If the route remains unclear after reading the phrase and current repository
+context, stop with `UNKNOWN_BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
+
+| User phrase | Safe default route | Must not imply |
+|---|---|---|
+| `сделай` | Clarify scope, or create a plan/task draft if the context already identifies a bounded artifact. | Execution authorization, approval, broad repo mutation, protected/canonical mutation, lifecycle mutation, merge, release, destructive operation, or scope expansion. |
+| `исправь` | Rewrite the named artifact fully, or prepare a scoped fix plan if the target is a repo/code/doc change. | Broad repo mutation, execution authorization, protected/canonical mutation, destructive operation, lifecycle mutation, merge, release, or scope expansion. |
+| `проверь` | Audit, validation, or read-only inspection. | Approval, execution authorization, lifecycle mutation, commit authorization, push authorization, merge authorization, release authorization, or destructive operation permission. |
+| `собери задачу` | Task Brief draft or Execution Package draft for human review. | Execution authorization, approval, merge, release, protected/canonical mutation, destructive operation, lifecycle mutation, or scope expansion. |
+| `передай агенту` | Executor handoff readiness check and neutral handoff package preparation using `aos/templates/execution-packages/executor-handoff-package-template.yaml` when a package is needed. | Approval, execution authorization, commit authorization, push authorization, merge authorization, release authorization, lifecycle mutation, or scope expansion. |
+| `можно выполнять?` | Readiness and human review boundary check. | Automatic approval, execution authorization, commit authorization, push authorization, merge authorization, release authorization, destructive operation permission, or protected/canonical mutation permission. |
+| `готово?` | Status review and Evidence review. | Lifecycle mutation, approval, execution authorization, commit authorization, push authorization, merge authorization, release authorization, or release readiness. |
+| unknown / ambiguous request | Stop and ask for clarification; record `UNKNOWN_BLOCKED` or `HUMAN_REVIEW_REQUIRED`. | Any inferred permission, including execution, approval, merge, release, destructive operation, protected/canonical mutation, lifecycle mutation, or scope expansion. |
+
+Forbidden implicit permissions:
+
+- `сделай` must not create execution authorization.
+- `проверь` must not create approval.
+- `исправь` must not create broad repo mutation.
+- `собери задачу` must not authorize execution.
+- `передай агенту` must not grant approval or execution authorization.
+- `можно выполнять?` must not create automatic approval.
+- `готово?` must not mutate lifecycle.
+- Vague wording must not create merge authorization.
+- Vague wording must not create release authorization.
+- Vague wording must not create destructive operation authorization.
+- Vague wording must not create protected/canonical mutation authorization.
+- Vague wording must not create scope expansion.
+
+Commit authorization requires an explicit commit phrase. Push authorization
+requires a separate explicit push phrase. Merge authorization requires a
+separate explicit merge phrase. Release authorization requires a separate
+explicit release phrase. Destructive operations are forbidden by default.
+Protected/canonical changes require a human checkpoint. Human unavailable for
+required review, approval, checkpoint, or Risk Profile assignment means
+`BLOCKED` or `HUMAN_REVIEW_REQUIRED`.
+
+This matrix is documentation/control guidance only. It is not a runtime
+natural-language classifier, AI auto-approval logic, execution router, approval
+router, merge automation, release automation, lifecycle model, approval model,
+or Risk Profile assignment model.
+
+---
+
 ## Route Map
 
 > **Product Folder Completeness Note:**

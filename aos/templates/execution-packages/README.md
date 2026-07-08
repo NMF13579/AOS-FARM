@@ -1,8 +1,29 @@
-# Controlled Execution Package Templates
+# Execution Package Templates
+
+This directory separates neutral handoff context from authorized execution
+context.
+
+## Executor Handoff Package
+
+`executor-handoff-package-template.yaml` is a neutral pre-authorization handoff
+artifact. It can carry bounded context from a user/controller to an executor
+agent, but it does not grant approval, execution authorization, commit
+authorization, push authorization, merge authorization, release authorization,
+lifecycle mutation authorization, destructive operation authorization,
+protected/canonical mutation permission, or scope expansion permission.
+
+All unsafe authorization booleans in the neutral handoff template default to
+`false`. It requires human review and separate explicit human execution
+authorization before any execution context can exist.
+
+## Controlled Execution Package
 
 Controlled Execution Package is the input artifact for Controlled Execution Guard `precheck`, `scopecheck`, and `postcheck`.
 
 It does not authorize execution by itself. It must reference a real Human Execution Authorization, define the exact authorized files and scope, define forbidden files and actions, and name expected report and evidence paths.
+
+Controlled Execution Package is the authorized execution context only after
+explicit human execution authorization exists and is referenced by the package.
 
 Safety boundary:
 - PASS is not approval.
