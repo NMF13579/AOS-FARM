@@ -158,6 +158,74 @@ class TestAOSTaskReadinessExclusions(unittest.TestCase):
         self.assertIn("malformed_exclusion_count: 1", res.stdout)
         self.assertIn("MALFORMED_EXCLUSION is blocker state", res.stdout)
 
+    def test_closed_completed_terminal_exclusion_is_rejected_fail_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1007.md",
+            build_task(
+                "AOS-FARM-TASK-1007",
+                status="CLOSED",
+                closure_type="COMPLETED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1007",
+                readiness_exclusion_type="TERMINAL",
+                readiness_exclusion_reason="completed is not a terminal exclusion subtype",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="reports/human-checkpoints/example.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.643",
+                readiness_exclusion_review_required=False,
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1007")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: MALFORMED_EXCLUSION", res.stdout)
+        self.assertIn("CLOSED terminal exclusion requires closure_type", res.stdout)
+
+    def test_missing_readiness_exclusion_type_fails_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1008.md",
+            build_task(
+                "AOS-FARM-TASK-1008",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1008",
+                readiness_exclusion_reason="missing type should fail closed",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="reports/human-checkpoints/example.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.644",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1008")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: MALFORMED_EXCLUSION", res.stdout)
+        self.assertIn("readiness_exclusion_type must be one of", res.stdout)
+
+    def test_invalid_readiness_exclusion_type_fails_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1009.md",
+            build_task(
+                "AOS-FARM-TASK-1009",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1009",
+                readiness_exclusion_type="ACTIVE",
+                readiness_exclusion_reason="invalid type should fail closed",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="reports/human-checkpoints/example.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.644",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1009")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: MALFORMED_EXCLUSION", res.stdout)
+        self.assertIn("readiness_exclusion_type must be one of", res.stdout)
+
     def test_wildcard_mass_and_blanket_exclusions_are_rejected(self):
         cases = [
             ("AOS-FARM-TASK-*", "Wildcard exclusion is forbidden"),
@@ -227,6 +295,73 @@ class TestAOSTaskReadinessExclusions(unittest.TestCase):
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("validator_status is NOT_RUN", res.stdout)
         self.assertIn("approval_status is NOT_APPROVED", res.stdout)
+
+    def test_missing_risk_profile_stays_fail_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1010.md",
+            build_task("AOS-FARM-TASK-1010", risk_profile=""),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1010")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: BLOCKED", res.stdout)
+        self.assertIn("risk_profile is missing", res.stdout)
+
+    def test_agent_assigned_risk_profile_does_not_satisfy_human_assignment(self):
+        self.write_task(
+            "AOS-FARM-TASK-1011.md",
+            build_task(
+                "AOS-FARM-TASK-1011",
+                risk_profile="HIGH_RISK_PROTECTED",
+                risk_assigned_by="agent",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1011")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: BLOCKED", res.stdout)
+        self.assertIn("risk_assigned_by: agent is forbidden (agent/self)", res.stdout)
+
+    def test_missing_human_witness_field_fails_closed(self):
+        self.write_task(
+            "AOS-FARM-TASK-1012.md",
+            build_task(
+                "AOS-FARM-TASK-1012",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-1012",
+                readiness_exclusion_type="TERMINAL",
+                readiness_exclusion_reason="missing checkpoint should fail closed",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.644",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res = self.run_cmd("task", "--readiness", "AOS-FARM-TASK-1012")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("Readiness: MALFORMED_EXCLUSION", res.stdout)
+        self.assertIn("Missing exclusion witness fields", res.stdout)
+
+    def test_unknown_blocked_does_not_pass_aggregate_readiness(self):
+        self.write_task("AOS-FARM-TASK-1013.md", build_task("AOS-FARM-TASK-1013", risk_profile="UNKNOWN_BLOCKED"))
+        self.write_task("AOS-FARM-TASK-1014.md", build_task("AOS-FARM-TASK-1014"))
+        res = self.run_cmd("task", "--readiness-all")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("AOS-FARM-TASK-1013 | BLOCKED", res.stdout)
+        self.assertIn("active_blocked_count: 1", res.stdout)
+        self.assertIn("AOS-FARM-TASK-1014 | READY_FOR_HANDOFF", res.stdout)
+
+    def test_not_run_does_not_pass_aggregate_readiness(self):
+        self.write_task(
+            "AOS-FARM-TASK-1015.md",
+            build_task("AOS-FARM-TASK-1015", validator_status="NOT_RUN"),
+        )
+        self.write_task("AOS-FARM-TASK-1016.md", build_task("AOS-FARM-TASK-1016"))
+        res = self.run_cmd("task", "--readiness-all")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("AOS-FARM-TASK-1015 | HUMAN_REVIEW_REQUIRED", res.stdout)
+        self.assertIn("active_human_review_required_count: 1", res.stdout)
+        self.assertIn("AOS-FARM-TASK-1016 | READY_FOR_HANDOFF", res.stdout)
 
 
 if __name__ == "__main__":

@@ -113,5 +113,84 @@ class TestAosValidate(unittest.TestCase):
         self.assertEqual(data["overall_status"], "UNKNOWN_BLOCKED")
         self.assertEqual(data["readiness_audit"]["counts"]["malformed_exclusion_count"], 1)
 
+    def test_pass_requires_no_active_blockers_in_structured_readiness_output(self):
+        readiness_audit = {
+            "status": "BLOCKED",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 1,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 1,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+            "active_blockers": [{"task_id": "AOS-FARM-TASK-9998", "readiness": "BLOCKED"}],
+            "excluded_terminal_tasks": [{"task_id": "AOS-FARM-TASK-9997", "readiness": "EXCLUDED_TERMINAL"}],
+            "excluded_legacy_tasks": [],
+            "malformed_exclusions": [],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "BLOCKED")
+        self.assertEqual(data["readiness_audit"]["counts"]["active_blocked_count"], 1)
+
+    def test_pass_output_keeps_approval_boundary_false(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 1,
+                "excluded_legacy_count": 1,
+                "malformed_exclusion_count": 0,
+            },
+            "active_blockers": [],
+            "excluded_terminal_tasks": [{"task_id": "AOS-FARM-TASK-9997", "readiness": "EXCLUDED_TERMINAL"}],
+            "excluded_legacy_tasks": [{"task_id": "AOS-FARM.463", "readiness": "EXCLUDED_LEGACY"}],
+            "malformed_exclusions": [],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "PASS")
+        self.assertFalse(data["approval_claimed"])
+        self.assertFalse(data["commit_authorized"])
+        self.assertFalse(data["push_authorized"])
+        self.assertFalse(data["release_authorized"])
+        self.assertEqual(
+            data["readiness_audit"]["explicit_not_pass_statement"],
+            [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        )
+
 if __name__ == '__main__':
     unittest.main()
