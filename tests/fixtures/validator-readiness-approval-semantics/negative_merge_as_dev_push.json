@@ -1,0 +1,10 @@
+{
+  "description": "Tests that Merge authorization treated as dev push authorization is blocked",
+  "expected_phrase": "Merge authorization is not dev push authorization",
+  "payload": {
+    "title": "Merge as dev push test",
+    "push_authorized": true,
+    "push_authorized_reason": "merge_authorized",
+    "evidence": "merge completed successfully"
+  }
+}

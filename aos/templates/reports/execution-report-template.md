@@ -27,11 +27,14 @@ List of all files created, modified, or deleted.
 
 ## Boundary Verification
 - [ ] Modified only authorized files.
-- [ ] Did not perform unauthorized commits/pushes.
+- [ ] Did not perform unauthorized commits, merges, or pushes.
+- [ ] Merge authorization was not treated as dev push authorization.
+- [ ] Feature branch push authorization was not treated as dev push authorization.
+- [ ] Did not use combined local integration + remote write commands.
 - [ ] Kept protected root files safe.
 - [ ] Did not expand scope without human permission.
 - [ ] Guard PASS was not treated as approval.
-- [ ] Evidence was not treated as commit or push authorization.
+- [ ] Evidence was not treated as commit, merge, or push authorization.
 
 ## Status
 **[TASK_ID]_EXECUTION_COMPLETE**

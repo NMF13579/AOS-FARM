@@ -13,7 +13,7 @@ class TestAOSSemanticGuard(unittest.TestCase):
         
     def test_semantic_guard_fixtures(self):
         fixture_files = [f for f in os.listdir(self.fixtures_dir) if f.endswith(".json")]
-        self.assertEqual(len(fixture_files), 10, "Expected exactly 10 semantic guard fixtures")
+        self.assertEqual(len(fixture_files), 12, "Expected exactly 12 semantic guard fixtures")
         
         for filename in fixture_files:
             filepath = os.path.join(self.fixtures_dir, filename)
@@ -54,6 +54,13 @@ class TestAOSSemanticGuard(unittest.TestCase):
         self.assertTrue(len(collect_raw_text_authority_claims("human approved")) > 0)
         self.assertTrue(len(collect_raw_text_authority_claims("ready to merge")) > 0)
         self.assertTrue(len(collect_raw_text_authority_claims("result verified")) > 0)
+        
+        # Chained local integration + remote write check
+        self.assertTrue(len(collect_raw_text_authority_claims("git checkout dev && git merge --no-ff feature -m 'merge' && git push origin dev")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("git merge feature && git push origin dev")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("git rebase feature && git push origin dev")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("git cherry-pick 12345 && git push origin dev")) > 0)
+        self.assertTrue(len(collect_raw_text_authority_claims("git merge --ff-only origin/source-branch\nDo not push dev. Await AOS PUSH DEV OK AOS-FARM.1234.")) == 0)
         
         # Allowed explicit boundaries
         self.assertEqual(len(collect_raw_text_authority_claims("execution_authorized: false")), 0)

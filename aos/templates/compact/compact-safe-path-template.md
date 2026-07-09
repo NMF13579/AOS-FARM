@@ -220,6 +220,13 @@ Checklist:
 - Push authorization does not grant merge.
 - Push authorization does not grant release.
 - Merge authorization does not grant release.
+- Merge authorization is not dev push authorization.
+- Dev push requires separate exact phrase: AOS PUSH DEV OK AOS-FARM.<ID>.
+- Feature branch push authorization is not dev push authorization.
+- Combined local integration + remote write command is forbidden.
+- Post-merge local verification required before dev push.
+- Accepted violation state is not authorization precedent.
+- Merge type must be explicit or default --ff-only.
 - Do not request push authorization in the same block as commit authorization.
 
 ## 16. General Boundary Reminder

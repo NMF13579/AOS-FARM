@@ -22,6 +22,13 @@ python3 aos/scripts/aos_review_package.py --mode push-authorization --task-id <T
 - Allowed next action is not authorization.
 - Remote closure verification is not release authorization.
 - Commit authorization is not push authorization.
+- Merge authorization is not dev push authorization.
+- Dev push requires separate exact phrase: AOS PUSH DEV OK AOS-FARM.<ID>.
+- Feature branch push authorization is not dev push authorization.
+- Combined local integration + remote write command is forbidden.
+- Post-merge local verification required before dev push.
+- Accepted violation state is not authorization precedent.
+- Merge type must be explicit or default --ff-only.
 - PASS ≠ approval.
 - Evidence ≠ approval.
 - UNKNOWN ≠ OK.

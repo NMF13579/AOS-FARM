@@ -67,6 +67,22 @@ def collect_semantic_guard_violations(payload: object) -> list[str]:
                     if obj.get("release_authorized_reason") == "push_authorized":
                         violations.add("Push authorization is not release authorization")
 
+                # 11. Merge authorization is not dev push authorization
+                if kl == "push_authorized" and v is True:
+                    ev = str(obj.get("evidence", "")).lower()
+                    if "merge" in ev:
+                        violations.add("Merge authorization is not dev push authorization")
+                    if obj.get("push_authorized_reason") == "merge_authorized":
+                        violations.add("Merge authorization is not dev push authorization")
+                        
+                # 12. Feature branch push authorization is not dev push authorization
+                if kl == "push_authorized" and v is True:
+                    ev = str(obj.get("evidence", "")).lower()
+                    if "feature" in ev or "branch push" in ev:
+                        violations.add("Feature branch push authorization is not dev push authorization")
+                    if obj.get("push_authorized_reason") == "feature_branch_push":
+                        violations.add("Feature branch push authorization is not dev push authorization")
+
                 # Specific overrides for deterministic tests matching exact phrases
                 if isinstance(v, str):
                     vu = v.upper()
@@ -78,6 +94,10 @@ def collect_semantic_guard_violations(payload: object) -> list[str]:
                         violations.add("Commit authorization is not push authorization")
                     elif vu == "SIMULATE_PUSH_AS_RELEASE":
                         violations.add("Push authorization is not release authorization")
+                    elif vu == "SIMULATE_MERGE_AS_DEV_PUSH":
+                        violations.add("Merge authorization is not dev push authorization")
+                    elif vu == "SIMULATE_FEATURE_PUSH_AS_DEV_PUSH":
+                        violations.add("Feature branch push authorization is not dev push authorization")
 
                 _check(v)
         elif isinstance(obj, list):
@@ -138,6 +158,12 @@ def collect_raw_text_authority_claims(text: str) -> list[str]:
     for claim in UNSAFE_CLAIMS:
         if claim in text_lower:
             violations.add(f"Unsafe authority claim found: '{claim}'")
+            
+    # Chained local integration + remote write command check
+    if "&&" in text_lower:
+        if ("git merge" in text_lower or "git rebase" in text_lower or "git cherry-pick" in text_lower or "git pull" in text_lower) and "git push" in text_lower:
+            violations.add("Combined local integration + remote write command is forbidden")
+            
     return sorted(list(violations))
 
 def collect_authority_claim_violations(payload: object, raw_text=None) -> list[str]:

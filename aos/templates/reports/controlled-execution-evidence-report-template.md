@@ -110,9 +110,16 @@ manual_review_notes:
 - [ ] 11. Push authorization was separated from merge authorization.
 - [ ] 12. Push authorization was separated from release authorization.
 - [ ] 13. Merge authorization was separated from release authorization.
-- [ ] 14. Lifecycle transition was not implied by Evidence.
-- [ ] 15. Scope did not expand silently.
-- [ ] 16. /.aos-tmp/ was not used as Source of Truth.
+- [ ] 14. Merge authorization was not treated as dev push authorization.
+- [ ] 15. Feature branch push authorization was not treated as dev push authorization.
+- [ ] 16. Dev push authorization used separate exact phrase.
+- [ ] 17. Combined local integration + remote write command was not used.
+- [ ] 18. Post-merge local verification was performed before dev push.
+- [ ] 19. Accepted violation state was not used as authorization precedent.
+- [ ] 20. Merge type was explicit or defaulted to --ff-only.
+- [ ] 21. Lifecycle transition was not implied by Evidence.
+- [ ] 22. Scope did not expand silently.
+- [ ] 23. /.aos-tmp/ was not used as Source of Truth.
 
 ## Risk Profile and Escalation
 

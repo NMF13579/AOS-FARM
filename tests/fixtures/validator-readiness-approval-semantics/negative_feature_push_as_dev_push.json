@@ -1,0 +1,10 @@
+{
+  "description": "Tests that Feature branch push authorization treated as dev push authorization is blocked",
+  "expected_phrase": "Feature branch push authorization is not dev push authorization",
+  "payload": {
+    "title": "Feature push as dev push test",
+    "push_authorized": true,
+    "push_authorized_reason": "feature_branch_push",
+    "evidence": "feature branch push completed"
+  }
+}
