@@ -539,7 +539,7 @@ def main():
                     print("\n".join(r['stderr'].split('\n')[:3]))
             print("-" * 40)
             
-        print(f"Overall Status: {overall_status}")
+        print(f"Overall Status: {technical_status}")
         print("\nNote: BLOCKED beats HUMAN_REVIEW_REQUIRED. UNKNOWN_BLOCKED beats PASS.")
         print("NOT_RUN is reported, never converted to PASS.")
 
