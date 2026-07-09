@@ -62,22 +62,22 @@ def process_exit_status(return_code=None, process_error=None):
         return "EXIT_ZERO"
     return "EXIT_NON_ZERO"
 
-STATUS_FIELD_PATTERNS = [
+BASE_STATUS_FIELD_PATTERNS = [
     re.compile(r"^\s*(?:\*\*)?Final Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
     re.compile(r"^\s*(?:\*\*)?Overall Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
     re.compile(r"^\s*(?:\*\*)?final_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
     re.compile(r"^\s*(?:\*\*)?overall_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
     re.compile(r"^\s*(?:\*\*)?install_status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
-    re.compile(r"^\s*(?:\*\*)?Readiness(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
 ]
-STATUS_FIELD_NAMES = [
+BASE_STATUS_FIELD_NAMES = [
     "Final Status",
     "Overall Status",
     "final_status",
     "overall_status",
     "install_status",
-    "Readiness",
 ]
+READINESS_STATUS_PATTERN = re.compile(r"^\s*(?:\*\*)?Readiness(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE)
+READINESS_STATUS_FIELD_NAME = "Readiness"
 
 def run_command(cmd):
     try:
@@ -186,7 +186,10 @@ def extract_json_report(text):
     except json.JSONDecodeError:
         return {"status": UNKNOWN_BLOCKED}
 
-def collect_text_statuses(text):
+def command_uses_display_readiness_field(command):
+    return "aos_queue_dashboard.py" in command
+
+def collect_text_statuses(text, command=""):
     statuses = []
     if not text:
         return statuses
@@ -194,26 +197,31 @@ def collect_text_statuses(text):
     if json_report is not None:
         statuses.extend(collect_json_statuses(json_report))
         return statuses
+    status_field_names = list(BASE_STATUS_FIELD_NAMES)
+    status_field_patterns = list(BASE_STATUS_FIELD_PATTERNS)
+    if not command_uses_display_readiness_field(command):
+        status_field_names.append(READINESS_STATUS_FIELD_NAME)
+        status_field_patterns.append(READINESS_STATUS_PATTERN)
     for line in text.splitlines():
         clean_line = line.replace("*", "").replace("`", "").strip()
-        for field_name in STATUS_FIELD_NAMES:
+        for field_name in status_field_names:
             prefix = f"{field_name}:"
             if clean_line.startswith(prefix):
                 status = clean_line[len(prefix):].strip().split()[0] if clean_line[len(prefix):].strip() else ""
                 statuses.append(status)
-    for pattern in STATUS_FIELD_PATTERNS:
+    for pattern in status_field_patterns:
         statuses.extend(pattern.findall(text))
     return statuses
 
 def normalize_child_result(result):
     if result.get("process_exit_status") in {"PROCESS_ERROR", "TIMEOUT"}:
         return FAIL if result.get("process_exit_status") == "PROCESS_ERROR" else NOT_RUN
+    command = result.get("command", "")
     statuses = [result.get("status")]
-    statuses.extend(collect_text_statuses(result.get("stdout", "")))
-    statuses.extend(collect_text_statuses(result.get("stderr", "")))
+    statuses.extend(collect_text_statuses(result.get("stdout", ""), command=command))
+    statuses.extend(collect_text_statuses(result.get("stderr", ""), command=command))
     normalized = aggregate_statuses(statuses)
     return_code = result.get("return_code")
-    command = result.get("command", "")
     stdout = result.get("stdout", "")
     if return_code not in (None, 0) and "aos_task_document_check.py task --readiness-all" in command:
         malformed_count_present = (

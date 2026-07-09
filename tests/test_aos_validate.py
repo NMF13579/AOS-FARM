@@ -268,6 +268,36 @@ class TestAosValidate(unittest.TestCase):
         self.assertEqual(normalized, "FAIL")
         self.assertNotEqual(normalized, "HUMAN_REVIEW_REQUIRED")
 
+    def test_dashboard_readiness_excluded_legacy_does_not_poison_aggregate_status(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/aos_queue_dashboard.py",
+            "status": "PASS",
+            "return_code": 0,
+            "process_exit_status": "EXIT_ZERO",
+            "stdout": "Readiness: EXCLUDED_LEGACY",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "PASS")
+
+    def test_excluded_legacy_does_not_normalize_to_pass(self):
+        self.assertEqual(MODULE.normalize_status("EXCLUDED_LEGACY"), "UNKNOWN_BLOCKED")
+        self.assertNotEqual(MODULE.normalize_status("EXCLUDED_LEGACY"), "PASS")
+
+    def test_human_review_required_does_not_normalize_to_pass(self):
+        self.assertEqual(MODULE.normalize_status("HUMAN_REVIEW_REQUIRED"), "HUMAN_REVIEW_REQUIRED")
+        self.assertNotEqual(MODULE.normalize_status("HUMAN_REVIEW_REQUIRED"), "PASS")
+
+    def test_unknown_actual_validation_child_status_still_fails_closed(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/some_actual_validator.py",
+            "status": "PASS",
+            "return_code": 0,
+            "process_exit_status": "EXIT_ZERO",
+            "stdout": "Final Status: SURPRISE_STATUS",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "UNKNOWN_BLOCKED")
+
     def test_readiness_human_review_blocks_overall_pass_in_json_report(self):
         readiness_audit = {
             "status": "HUMAN_REVIEW_REQUIRED",
