@@ -155,17 +155,17 @@ class TestAosValidate(unittest.TestCase):
         except subprocess.TimeoutExpired as exc:
             self.fail(f"aos_validate.py timed out: {exc}")
         self.assertEqual(result.returncode, 0, msg=f"aos_validate failed: {result.stderr}")
-        
+
         try:
             data = json.loads(result.stdout)
         except json.JSONDecodeError:
             self.fail("Output is not valid JSON")
-            
+
         self.assertFalse(data.get("approval_claimed"))
         self.assertFalse(data.get("commit_authorized"))
         self.assertFalse(data.get("push_authorized"))
         self.assertFalse(data.get("release_authorized"))
-        
+
         self.assertIn("results", data)
         self.assertTrue(isinstance(data["results"], list))
         self.assertTrue(len(data["results"]) > 0)
@@ -179,28 +179,28 @@ class TestAosValidate(unittest.TestCase):
             text=True
         )
         data = json.loads(result.stdout)
-        
+
         # Check architecture is included
         arch_results = [r for r in data["results"] if r.get("command") == "aos_architecture_document_check.get_validate_all_report"]
         self.assertEqual(len(arch_results), 1)
         arch = arch_results[0]
-        
+
         self.assertIn(arch.get("status"), ["PASS", "NOT_RUN", "UNKNOWN_BLOCKED", "BLOCKED", "FAILED", "CONFLICT_BLOCKED", "HUMAN_REVIEW_REQUIRED"])
         self.assertFalse(arch.get("approval_claimed"))
         self.assertFalse(arch.get("execution_authorized", False))
         self.assertFalse(arch.get("implementation_authorized", False))
         self.assertFalse(arch.get("release_authorized", False))
-        
+
         # ensure not_run or unknown_blocked is not passed
         self.assertNotEqual(data.get("overall_status"), "UNKNOWN")
 
     def test_architecture_integration_no_recursion(self):
         with open("aos/scripts/aos_validate.py", "r") as f:
             content = f.read()
-        
+
         self.assertNotIn("subprocess.run(['python3', 'aos/scripts/aos_architecture_document_check.py', 'validate-all'])", content)
         self.assertNotIn('subprocess.run(["python3", "aos/scripts/aos_architecture_document_check.py", "validate-all"])', content)
-        
+
         # the integration should just call the imported function
         self.assertIn("aos_architecture_document_check.get_validate_all_report()", content)
 
@@ -596,6 +596,63 @@ class TestAosValidate(unittest.TestCase):
                 "MALFORMED_EXCLUSION is blocker state",
             ],
         )
+
+    def test_required_sources_present_preserves_pass(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+        }
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             mock.patch("os.path.exists", return_value=True), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "PASS")
+        self.assertEqual(data["required_sources"]["status"], "PASS")
+
+    def test_missing_required_source_blocks_pass_and_outputs_json(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+        }
+        buf = io.StringIO()
+
+        def mock_exists(path):
+            if path == "00_AOS_Core_Control.md":
+                return False
+            return True
+
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             mock.patch("os.path.exists", side_effect=mock_exists), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "BLOCKED_REQUIRED_SOURCES_MISSING")
+        self.assertEqual(data["required_sources"]["status"], "FAIL")
+        self.assertIn("00_AOS_Core_Control.md", data["required_sources"]["missing"])
 
 if __name__ == '__main__':
     unittest.main()

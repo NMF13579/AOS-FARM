@@ -8,6 +8,7 @@ It must not: create tasks, mutate queue, write Evidence, claim approval, commit,
 import subprocess
 import json
 import sys
+import os
 import argparse
 import re
 import aos_architecture_document_check
@@ -31,6 +32,19 @@ UNKNOWN_BLOCKED = "UNKNOWN_BLOCKED"
 BLOCKED = "BLOCKED"
 NOT_RUN = "NOT_RUN"
 FAIL = "FAIL"
+BLOCKED_REQUIRED_SOURCES_MISSING = "BLOCKED_REQUIRED_SOURCES_MISSING"
+
+REQUIRED_ROOT_SOURCES = [
+    "00_AOS_Core_Control.md",
+    "01_AOS_Assembly_Pipelines_and_Build_Roadmap.md",
+    "02_AOS_Governance_Control_Module_and_Safety_Rules.md"
+]
+
+def check_required_root_sources():
+    missing = [src for src in REQUIRED_ROOT_SOURCES if not os.path.exists(src)]
+    if missing:
+        return {"status": "FAIL", "missing": missing}
+    return {"status": "PASS", "missing": []}
 
 STATUS_ALIASES = {
     PASS: PASS,
@@ -498,6 +512,10 @@ def main():
     elif readiness_audit.get("status") == "BLOCKED" and technical_status == "PASS":
         technical_status = "BLOCKED"
 
+    required_sources_check = check_required_root_sources()
+    if required_sources_check["status"] != "PASS":
+        technical_status = BLOCKED_REQUIRED_SOURCES_MISSING
+
     advisories = collect_advisories(results)
     control_status = determine_control_status(advisories)
     human_review_required = control_status == HUMAN_REVIEW_REQUIRED
@@ -513,6 +531,7 @@ def main():
         "execution_authorized": False,
         "advisories": advisories,
         "readiness_audit": readiness_audit,
+        "required_sources": required_sources_check,
         "approval_claimed": False,
         "commit_authorized": False,
         "push_authorized": False,
@@ -539,6 +558,12 @@ def main():
                     print("\n".join(r['stderr'].split('\n')[:3]))
             print("-" * 40)
             
+        if required_sources_check["status"] != "PASS":
+            print("ERROR: Required Root Sources Missing:")
+            for m in required_sources_check["missing"]:
+                print(f"  - {m}")
+            print("-" * 40)
+
         print(f"Overall Status: {technical_status}")
         print("\nNote: BLOCKED beats HUMAN_REVIEW_REQUIRED. UNKNOWN_BLOCKED beats PASS.")
         print("NOT_RUN is reported, never converted to PASS.")
