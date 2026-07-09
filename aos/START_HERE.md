@@ -9,6 +9,49 @@ Welcome to AOS. **This is the primary consumer entrypoint.** To ensure safe and 
 
 **Do not write code or create a task brief yet.**
 
+## First-Contact Guidance (If you are not a programmer)
+1. Describe your idea in normal language.
+2. Do not ask the agent to write code immediately.
+3. First ask for Task Intake, Project Brief, or the next safe step.
+4. If the system says UNKNOWN or BLOCKED, this is a safety stop, not a system failure.
+5. PASS means a check passed; it does not mean approval.
+6. Evidence shows facts; it does not approve anything.
+7. Human approval is required wherever an approval boundary exists.
+
+## What AOS-FARM can and cannot do
+
+**AOS-FARM can:**
+1. Turn a raw idea into a structured task.
+2. Identify missing information.
+3. Propose a safe next step.
+4. Collect Evidence.
+5. Prepare a human review surface.
+
+**AOS-FARM cannot:**
+1. Approve its own work.
+2. Simulate human approval.
+3. Treat PASS as approval.
+4. Treat Evidence as approval.
+5. Assign LOW_RISK_FAST to itself.
+6. Change protected/canonical files without a human checkpoint.
+7. Commit, push, merge, release, or deploy without explicit authorization.
+8. Treat UNKNOWN or NOT_RUN as OK.
+
+## Plain-Language Status Glossary
+- **PASS**: A check passed. This is not approval.
+- **Evidence**: Facts and check results. This is not approval.
+- **CI PASS**: CI checks passed. This is not approval.
+- **HUMAN_REVIEW_REQUIRED**: A human must make a scoped decision.
+- **UNKNOWN_BLOCKED**: The system does not know enough to continue safely.
+- **NOT_RUN**: A check did not run. This is not PASS.
+- **BLOCKED**: Work must stop until the blocker is resolved.
+- **DRAFT**: Draft only. Not execution-ready.
+- **READY_FOR_EXECUTION**: May be used only if required gates and human authorization are satisfied.
+- **APPROVED**: Only explicit human approval. The agent cannot create it for itself.
+
+## Future Compact Path Note
+Some small tasks may later use a shortest safe path. This stage does not define or authorize that path. Any Compact Path contract belongs to a separate stage.
+
 ## The AOS Happy Path
 
 Before your agent can write any code, you must define the problem and establish technical boundaries. Follow this exact sequence:

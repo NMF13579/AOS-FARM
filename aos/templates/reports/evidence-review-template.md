@@ -25,11 +25,22 @@
 ## Unresolved Questions
 - [List any open questions or blockers]
 
-## Human Review Decision
-- [ ] Evidence reviewed
-- [ ] Accept execution result for commit authorization preparation
-- [ ] Request changes or clarification
-- [ ] BLOCKED
+## Decision Needed
+
+Human decision required: [yes/no/unknown]
+
+Decision options:
+1. Accept Evidence as sufficient for this scoped stage.
+2. Request additional verification.
+3. Reject result and reopen the task.
+4. Block due to UNKNOWN, missing Evidence, or scope issue.
+
+This decision block does not grant:
+1. Release authorization.
+2. Merge authorization.
+3. Push authorization.
+4. General approval outside the stated scope.
+5. Lifecycle mutation unless explicitly authorized elsewhere.
 
 ## Boundary Reminder
 - **Evidence Review is not commit approval.**

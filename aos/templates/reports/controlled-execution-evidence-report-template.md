@@ -12,6 +12,45 @@ controlled_task_brief:
 execution_package:
 final_status:
 
+## Human-readable Summary
+
+### What changed
+- [Plain-language summary, 1-5 bullets]
+
+### What was checked
+- [Commands, validators, review steps, or manual checks]
+
+### What was not checked
+- [Every skipped/unavailable check must remain NOT_RUN or explicitly unavailable. Do not convert NOT_RUN into PASS.]
+
+### What remains UNKNOWN
+- [List unresolved UNKNOWN items. If none, say "none found during this scoped review"]
+
+### Decision needed
+- [State whether a human decision is required and what the human must decide]
+
+### Safety reminder
+- PASS is not approval.
+- Evidence is not approval.
+- Human approval is separate wherever an approval boundary exists.
+
+## Decision Needed
+
+Human decision required: [yes/no/unknown]
+
+Decision options:
+1. Accept Evidence as sufficient for this scoped stage.
+2. Request additional verification.
+3. Reject result and reopen the task.
+4. Block due to UNKNOWN, missing Evidence, or scope issue.
+
+This decision block does not grant:
+1. Release authorization.
+2. Merge authorization.
+3. Push authorization.
+4. General approval outside the stated scope.
+5. Lifecycle mutation unless explicitly authorized elsewhere.
+
 ## Guard Results
 precheck:
 scopecheck:
