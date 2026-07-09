@@ -211,6 +211,128 @@ class TestAosValidate(unittest.TestCase):
         self.assertEqual(data["overall_status"], "BLOCKED")
         self.assertEqual(data["readiness_audit"]["counts"]["active_blocked_count"], 1)
 
+    def test_process_exit_status_uses_process_only_labels(self):
+        self.assertEqual(MODULE.process_exit_status(0), "EXIT_ZERO")
+        self.assertEqual(MODULE.process_exit_status(1), "EXIT_NON_ZERO")
+        self.assertEqual(MODULE.process_exit_status(None), "NOT_RUN")
+        self.assertEqual(MODULE.process_exit_status(process_error="timeout"), "TIMEOUT")
+        self.assertEqual(MODULE.process_exit_status(process_error="error"), "PROCESS_ERROR")
+        self.assertNotEqual(MODULE.process_exit_status(0), "PASS")
+
+    def test_readiness_nonzero_exit_preserves_human_review_required(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/aos_task_document_check.py task --readiness-all",
+            "status": "FAILED",
+            "return_code": 1,
+            "process_exit_status": "EXIT_NON_ZERO",
+            "stdout": "status: HUMAN_REVIEW_REQUIRED\nactive_human_review_required_count: 1",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "HUMAN_REVIEW_REQUIRED")
+        self.assertNotEqual(normalized, "FAIL")
+        self.assertNotEqual(normalized, "PASS")
+
+    def test_readiness_nonzero_exit_preserves_unknown_blocked(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/aos_task_document_check.py task --readiness-all",
+            "status": "FAILED",
+            "return_code": 1,
+            "process_exit_status": "EXIT_NON_ZERO",
+            "stdout": "status: UNKNOWN_BLOCKED\nmalformed_exclusion_count: 1",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "UNKNOWN_BLOCKED")
+        self.assertNotEqual(normalized, "PASS")
+
+    def test_non_readiness_nonzero_pass_output_stays_structural_fail(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/some_other_check.py",
+            "status": "PASS",
+            "return_code": 1,
+            "process_exit_status": "EXIT_NON_ZERO",
+            "stdout": "Final Status: PASS",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "FAIL")
+        self.assertNotEqual(normalized, "HUMAN_REVIEW_REQUIRED")
+
+    def test_process_error_is_not_relabelled_human_review_required(self):
+        normalized = MODULE.normalize_child_result({
+            "command": "python3 aos/scripts/aos_task_document_check.py task --readiness-all",
+            "status": "NOT_RUN",
+            "return_code": None,
+            "process_exit_status": "PROCESS_ERROR",
+            "stdout": "status: HUMAN_REVIEW_REQUIRED",
+            "stderr": "",
+        })
+        self.assertEqual(normalized, "FAIL")
+        self.assertNotEqual(normalized, "HUMAN_REVIEW_REQUIRED")
+
+    def test_readiness_human_review_blocks_overall_pass_in_json_report(self):
+        readiness_audit = {
+            "status": "HUMAN_REVIEW_REQUIRED",
+            "readiness_inventory": {
+                "active_ready_count": 0,
+                "active_human_review_required_count": 1,
+                "active_unknown_blocked_count": 0,
+                "active_not_run_count": 0,
+                "active_structural_fail_count": 0,
+                "active_blocked_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+            "counts": {
+                "active_ready_count": 0,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 1,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+            "active_blockers": [{
+                "task_id": "AOS-FARM-TASK-9999",
+                "semantic_status": "HUMAN_REVIEW_REQUIRED",
+                "effective_status": "HUMAN_REVIEW_REQUIRED",
+                "structural_status": "PASS",
+                "process_exit_status": "NOT_RUN",
+                "primary_blocker_category": "not_run_required_check",
+                "blocker_categories": [{"category": "not_run_required_check"}],
+                "next_required_action": "requires human decision; not resolved by agent",
+            }],
+            "blocker_resolution_boundary": {
+                "blockers_resolved_by_agent": "none",
+                "human_review_blockers_closed": "none",
+                "approvals_created": "none",
+                "witnesses_created": "none",
+                "risk_profiles_assigned_by_agent": "none",
+                "lifecycle_mutations_performed": "none",
+            },
+            "excluded_terminal_tasks": [],
+            "excluded_legacy_tasks": [],
+            "malformed_exclusions": [],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["overall_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertFalse(data["approval_claimed"])
+        self.assertFalse(data["commit_authorized"])
+        self.assertFalse(data["push_authorized"])
+        self.assertFalse(data["release_authorized"])
+
     def test_pass_output_keeps_approval_boundary_false(self):
         readiness_audit = {
             "status": "PASS",

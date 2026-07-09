@@ -196,6 +196,138 @@ class TestAOSTaskReadinessExclusions(unittest.TestCase):
             },
         )
 
+    def test_readiness_json_includes_status_taxonomy_fields(self):
+        self.write_task("AOS-FARM-TASK-2110.md", build_task("AOS-FARM-TASK-2110"))
+        res, data = self.readiness_json()
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        entry = data["tasks"][0]
+
+        for key in [
+            "raw_status",
+            "raw_readiness",
+            "raw_exit_code",
+            "structural_status",
+            "semantic_status",
+            "effective_status",
+            "process_exit_status",
+            "exit_code",
+            "normalization_reason",
+        ]:
+            self.assertIn(key, entry)
+        self.assertEqual(entry["raw_status"], "READY_FOR_HANDOFF")
+        self.assertEqual(entry["raw_readiness"], "READY_FOR_HANDOFF")
+        self.assertEqual(entry["structural_status"], "PASS")
+        self.assertEqual(entry["semantic_status"], "PASS")
+        self.assertEqual(entry["effective_status"], "PASS")
+        self.assertEqual(entry["process_exit_status"], "NOT_RUN")
+        self.assertIsNone(entry["exit_code"])
+        self.assertFalse(entry["authorization_boundary"]["execution_authorized"])
+
+    def test_semantic_human_review_required_is_not_generic_fail(self):
+        self.write_task(
+            "AOS-FARM-TASK-2111.md",
+            build_task("AOS-FARM-TASK-2111", validator_status="NOT_RUN", approval_status="NOT_APPROVED"),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        self.assertEqual(data["status"], "HUMAN_REVIEW_REQUIRED")
+        entry = data["active_blockers"][0]
+
+        self.assertEqual(entry["raw_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["structural_status"], "PASS")
+        self.assertEqual(entry["semantic_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["effective_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertNotEqual(entry["effective_status"], "PASS")
+        self.assertEqual(entry["primary_blocker_category"], "not_run_required_check")
+        categories = {item["category"] for item in entry["blocker_categories"]}
+        self.assertIn("not_run_required_check", categories)
+        self.assertIn("requires_validation_run", categories)
+        self.assertIn("human_review_required", categories)
+        self.assertEqual(entry["next_required_action"], "requires human decision; not resolved by agent")
+
+    def test_ready_raw_status_can_normalize_to_semantic_human_review(self):
+        self.write_task(
+            "AOS-FARM-TASK-2112.md",
+            build_task(
+                "AOS-FARM-TASK-2112",
+                validator_status="PENDING",
+                evidence_status="EVIDENCE_COLLECTED",
+            ),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["active_blockers"][0]
+
+        self.assertEqual(entry["raw_status"], "READY_FOR_HANDOFF")
+        self.assertEqual(entry["raw_readiness"], "READY_FOR_HANDOFF")
+        self.assertEqual(entry["structural_status"], "PASS")
+        self.assertEqual(entry["semantic_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["effective_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertIn("required validation/Evidence/approval boundary", entry["normalization_reason"])
+        categories = {item["category"] for item in entry["blocker_categories"]}
+        self.assertIn("not_run_required_check", categories)
+
+    def test_structural_fail_remains_fail_not_human_review_required(self):
+        self.write_task("AOS-FARM-TASK-2113.md", "---\ntask_id: \"AOS-FARM-TASK-2113\"\n---\n")
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["active_blockers"][0]
+
+        self.assertEqual(entry["raw_status"], "BLOCKED")
+        self.assertEqual(entry["structural_status"], "FAIL")
+        self.assertEqual(entry["semantic_status"], "BLOCKED")
+        self.assertEqual(entry["effective_status"], "BLOCKED")
+        self.assertNotEqual(entry["semantic_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["primary_blocker_category"], "true_structural_failure")
+        categories = {item["category"] for item in entry["blocker_categories"]}
+        self.assertIn("requires_task_doc_fix", categories)
+
+    def test_malformed_exclusion_is_unknown_not_human_review_required(self):
+        self.write_task(
+            "AOS-FARM-TASK-2114.md",
+            build_task(
+                "AOS-FARM-TASK-2114",
+                status="REJECTED",
+                readiness_exclusion_task_id="AOS-FARM-TASK-2114",
+                readiness_exclusion_type="TERMINAL",
+                readiness_exclusion_reason="missing witness should fail closed",
+                readiness_exclusion_source_evidence="reports/human-checkpoints/example.md",
+                readiness_exclusion_human_checkpoint="HUMAN_REVIEW_REQUIRED",
+                readiness_exclusion_applies_to_readiness=True,
+                readiness_exclusion_approval_granted=False,
+                readiness_exclusion_created_in_stage="AOS-FARM.648",
+                readiness_exclusion_review_required=False,
+                approval_status="REJECTED",
+            ),
+        )
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+        entry = data["malformed_exclusions"][0]
+
+        self.assertEqual(entry["raw_status"], "MALFORMED_EXCLUSION")
+        self.assertEqual(entry["structural_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(entry["semantic_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(entry["effective_status"], "UNKNOWN_BLOCKED")
+        self.assertNotEqual(entry["semantic_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(entry["primary_blocker_category"], "malformed_or_unparseable_status")
+
+    def test_readiness_inventory_and_resolution_boundary_are_reported(self):
+        self.write_task(
+            "AOS-FARM-TASK-2115.md",
+            build_task("AOS-FARM-TASK-2115", validator_status="NOT_RUN"),
+        )
+        self.write_task("AOS-FARM-TASK-2116.md", build_task("AOS-FARM-TASK-2116"))
+        res, data = self.readiness_json()
+        self.assertNotEqual(res.returncode, 0)
+
+        inventory = data["readiness_inventory"]
+        self.assertEqual(inventory["active_ready_count"], 1)
+        self.assertEqual(inventory["active_human_review_required_count"], 1)
+        self.assertEqual(inventory["active_unknown_blocked_count"], 0)
+        self.assertEqual(inventory["active_structural_fail_count"], 0)
+        self.assertIn("blocker_resolution_boundary", data)
+        self.assertTrue(all(value == "none" for value in data["blocker_resolution_boundary"].values()))
+
     def test_readiness_json_authorization_booleans_default_false(self):
         self.write_task("AOS-FARM-TASK-2101.md", build_task("AOS-FARM-TASK-2101"))
         res, data = self.readiness_json()

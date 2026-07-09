@@ -20,6 +20,21 @@ TERMINAL_EXCLUSION_STATUSES = {"REJECTED", "CLOSED"}
 TERMINAL_CLOSURE_TYPES = {"REJECTED", "RETIRED", "SUPERSEDED"}
 VALID_EXCLUSION_TYPES = {"TERMINAL", "LEGACY"}
 MISSING_HUMAN_WITNESS_VALUES = {"REQUIRED_NOT_AVAILABLE", "HUMAN_REVIEW_REQUIRED"}
+PROCESS_EXIT_NOT_RUN = "NOT_RUN"
+BLOCKER_CATEGORY_ORDER = [
+    "true_structural_failure",
+    "malformed_or_unparseable_status",
+    "unknown_blocked",
+    "not_run_required_check",
+    "requires_validation_run",
+    "requires_Evidence",
+    "requires_human_witness",
+    "requires_risk_profile",
+    "human_review_required",
+    "requires_task_doc_fix",
+    "legacy_or_terminal_candidate",
+    "process_error",
+]
 VALID_TASK_ID_RE = re.compile(r"^AOS-FARM-TASK-\d+$")
 EXCLUSION_FIELD_NAMES = {
     "readiness_exclusion_task_id",
@@ -451,6 +466,149 @@ def determine_effective_readiness(readiness_status, gate_provenance):
         if gate_provenance["has_required_human_review"]:
             return "HUMAN_REVIEW_REQUIRED"
     return readiness_status
+
+def _unique_categories(categories):
+    ordered = []
+    for category in categories:
+        if category and category not in ordered:
+            ordered.append(category)
+    return ordered
+
+def _primary_category(categories):
+    for candidate in BLOCKER_CATEGORY_ORDER:
+        if candidate in categories:
+            return candidate
+    return categories[0] if categories else None
+
+def _blocker_categories(status, gate_provenance, reasons):
+    categories = []
+    reasons_text = " ".join(str(reason) for reason in reasons)
+    if status in {"FAIL", "BLOCKED"}:
+        categories.append("true_structural_failure")
+    if status == "MALFORMED_EXCLUSION":
+        categories.append("malformed_or_unparseable_status")
+        categories.append("unknown_blocked")
+    if status == "UNKNOWN_BLOCKED" or gate_provenance.get("has_blocking_unknown"):
+        categories.append("unknown_blocked")
+    if status in {"EXCLUDED_TERMINAL", "EXCLUDED_LEGACY"}:
+        categories.append("legacy_or_terminal_candidate")
+    if status == "BLOCKED":
+        categories.append("requires_task_doc_fix")
+    if gate_provenance.get("validation_status") == "NOT_RUN":
+        categories.append("not_run_required_check")
+        categories.append("requires_validation_run")
+    if gate_provenance.get("evidence_status") == "missing":
+        categories.append("requires_Evidence")
+    if gate_provenance.get("human_witness_status") == "missing":
+        categories.append("requires_human_witness")
+    if (
+        gate_provenance.get("risk_profile_status") in {"missing", "unknown"}
+        or gate_provenance.get("risk_profile_assigned_by") in {"missing", "unknown"}
+        or "risk_assigned_by is missing" in reasons_text
+    ):
+        categories.append("requires_risk_profile")
+    if (
+        status == "HUMAN_REVIEW_REQUIRED"
+        or gate_provenance.get("has_required_human_review")
+    ):
+        categories.append("human_review_required")
+    if "Failed to read file" in reasons_text:
+        categories.append("process_error")
+    return _unique_categories(categories)
+
+def _status_normalization_reason(raw_status, structural_status, semantic_status, categories):
+    if structural_status == "FAIL":
+        return "required output missing, malformed, duplicated, or structurally invalid"
+    if raw_status == "MALFORMED_EXCLUSION":
+        return "readiness exclusion is malformed; fail closed as UNKNOWN_BLOCKED"
+    if semantic_status == "UNKNOWN_BLOCKED":
+        return "readiness gate contains unknown or ambiguous state; UNKNOWN is not OK"
+    if semantic_status == "HUMAN_REVIEW_REQUIRED":
+        if "not_run_required_check" in categories or "requires_validation_run" in categories:
+            return "readiness gate requires human review because required validation/Evidence/approval boundary is not complete"
+        return "readiness gate requires human review; not resolved by agent"
+    if raw_status in {"EXCLUDED_TERMINAL", "EXCLUDED_LEGACY"}:
+        return "task is excluded from active readiness inventory; exclusion is not PASS and not approval"
+    if semantic_status == "BLOCKED":
+        return "readiness gate is blocked by task document or control-boundary findings"
+    if semantic_status == "PASS":
+        return "structural checks passed and no semantic readiness blockers were detected; PASS is not approval"
+    return "status normalized fail-closed"
+
+def _next_required_action(structural_status, semantic_status):
+    if semantic_status == "HUMAN_REVIEW_REQUIRED":
+        return "requires human decision; not resolved by agent"
+    if semantic_status == "UNKNOWN_BLOCKED":
+        return "requires human clarification; not resolved by agent"
+    if structural_status == "FAIL":
+        return "requires task document or parser/input fix; not resolved by agent without scoped authorization"
+    if semantic_status == "BLOCKED":
+        return "requires blocker-specific follow-up; not resolved by agent"
+    return "none"
+
+def build_status_taxonomy(raw_status, raw_readiness, effective_readiness, gate_provenance, reasons):
+    categories = _blocker_categories(raw_status, gate_provenance, reasons)
+    if raw_status == "FAIL":
+        structural_status = "FAIL"
+        semantic_status = "FAIL"
+    elif raw_status == "BLOCKED":
+        structural_status = "FAIL"
+        semantic_status = "BLOCKED"
+    elif raw_status in {"UNKNOWN_BLOCKED", "MALFORMED_EXCLUSION"}:
+        structural_status = "UNKNOWN_BLOCKED"
+        semantic_status = "UNKNOWN_BLOCKED"
+    elif effective_readiness == "HUMAN_REVIEW_REQUIRED":
+        structural_status = "PASS"
+        semantic_status = "HUMAN_REVIEW_REQUIRED"
+    elif effective_readiness == "READY_FOR_HANDOFF":
+        structural_status = "PASS"
+        semantic_status = "PASS"
+    elif raw_status in {"EXCLUDED_TERMINAL", "EXCLUDED_LEGACY"}:
+        structural_status = "PASS"
+        semantic_status = "BLOCKED"
+    else:
+        structural_status = "PASS"
+        semantic_status = effective_readiness if effective_readiness in {"PASS", "HUMAN_REVIEW_REQUIRED", "UNKNOWN_BLOCKED", "BLOCKED", "NOT_RUN", "FAIL"} else "UNKNOWN_BLOCKED"
+    effective_status = semantic_status
+    reason = _status_normalization_reason(raw_status, structural_status, semantic_status, categories)
+    return {
+        "raw_status": raw_status,
+        "raw_readiness": raw_readiness,
+        "raw_exit_code": None,
+        "structural_status": structural_status,
+        "semantic_status": semantic_status,
+        "effective_status": effective_status,
+        "process_exit_status": PROCESS_EXIT_NOT_RUN,
+        "exit_code": None,
+        "normalization_reason": reason,
+        "primary_blocker_category": _primary_category(categories),
+        "blocker_categories": [{"category": category} for category in categories],
+        "blocker_reason": "; ".join(str(reason) for reason in reasons) if reasons else "none",
+        "next_required_action": _next_required_action(structural_status, semantic_status),
+    }
+
+def empty_readiness_inventory():
+    return {
+        "active_ready_count": 0,
+        "active_human_review_required_count": 0,
+        "active_unknown_blocked_count": 0,
+        "active_not_run_count": 0,
+        "active_structural_fail_count": 0,
+        "active_blocked_count": 0,
+        "excluded_terminal_count": 0,
+        "excluded_legacy_count": 0,
+        "malformed_exclusion_count": 0,
+    }
+
+def blocker_resolution_boundary():
+    return {
+        "blockers_resolved_by_agent": "none",
+        "human_review_blockers_closed": "none",
+        "approvals_created": "none",
+        "witnesses_created": "none",
+        "risk_profiles_assigned_by_agent": "none",
+        "lifecycle_mutations_performed": "none",
+    }
 
 def cmd_validate(filepath):
     is_valid, msgs = validate_task_document(filepath)
@@ -1049,10 +1207,12 @@ def build_readiness_report(tasks_dir="tasks"):
             "excluded_legacy_count": 0,
             "malformed_exclusion_count": 0,
         },
+        "readiness_inventory": empty_readiness_inventory(),
         "active_blockers": [],
         "excluded_terminal_tasks": [],
         "excluded_legacy_tasks": [],
         "malformed_exclusions": [],
+        "blocker_resolution_boundary": blocker_resolution_boundary(),
         "tasks": [],
     }
 
@@ -1076,38 +1236,60 @@ def build_readiness_report(tasks_dir="tasks"):
         task_id = filename[:-3]
         gate_provenance = build_gate_provenance(yaml_data, status, reasons)
         effective_readiness = determine_effective_readiness(status, gate_provenance)
+        taxonomy = build_status_taxonomy(
+            raw_status=status,
+            raw_readiness=status,
+            effective_readiness=effective_readiness,
+            gate_provenance=gate_provenance,
+            reasons=reasons,
+        )
         entry = {
             "task_id": task_id,
+            "task_path": filepath,
             "readiness": status,
             "effective_readiness": effective_readiness,
             "notes": reasons,
             "gate_provenance": gate_provenance,
             "authorization_boundary": build_authorization_boundary(effective_readiness),
         }
+        entry.update(taxonomy)
         report["tasks"].append(entry)
         if effective_readiness == "READY_FOR_HANDOFF":
             report["counts"]["active_ready_count"] += 1
+            report["readiness_inventory"]["active_ready_count"] += 1
         elif effective_readiness == "EXCLUDED_TERMINAL":
             report["counts"]["excluded_terminal_count"] += 1
+            report["readiness_inventory"]["excluded_terminal_count"] += 1
             report["excluded_terminal_tasks"].append(entry)
         elif effective_readiness == "EXCLUDED_LEGACY":
             report["counts"]["excluded_legacy_count"] += 1
+            report["readiness_inventory"]["excluded_legacy_count"] += 1
             report["excluded_legacy_tasks"].append(entry)
         elif effective_readiness == "MALFORMED_EXCLUSION":
             report["counts"]["malformed_exclusion_count"] += 1
+            report["readiness_inventory"]["malformed_exclusion_count"] += 1
+            report["readiness_inventory"]["active_unknown_blocked_count"] += 1
             report["malformed_exclusions"].append(entry)
             report["status"] = "UNKNOWN_BLOCKED"
         elif effective_readiness == "HUMAN_REVIEW_REQUIRED":
             report["counts"]["active_human_review_required_count"] += 1
+            report["readiness_inventory"]["active_human_review_required_count"] += 1
             report["active_blockers"].append(entry)
             if report["status"] != "UNKNOWN_BLOCKED":
-                report["status"] = "BLOCKED"
+                report["status"] = "HUMAN_REVIEW_REQUIRED"
         elif effective_readiness == "UNKNOWN_BLOCKED":
             report["counts"]["active_blocked_count"] += 1
+            report["readiness_inventory"]["active_unknown_blocked_count"] += 1
             report["active_blockers"].append(entry)
             report["status"] = "UNKNOWN_BLOCKED"
         else:
             report["counts"]["active_blocked_count"] += 1
+            if taxonomy["structural_status"] == "FAIL":
+                report["readiness_inventory"]["active_structural_fail_count"] += 1
+            elif taxonomy["effective_status"] == "NOT_RUN":
+                report["readiness_inventory"]["active_not_run_count"] += 1
+            else:
+                report["readiness_inventory"]["active_blocked_count"] += 1
             report["active_blockers"].append(entry)
             if report["status"] != "UNKNOWN_BLOCKED":
                 report["status"] = "BLOCKED"

@@ -49,6 +49,19 @@ STATUS_ALIASES = {
     "MALFORMED_EXCLUSION": UNKNOWN_BLOCKED,
 }
 
+def process_exit_status(return_code=None, process_error=None):
+    if process_error == "timeout":
+        return "TIMEOUT"
+    if process_error == "not_run":
+        return "NOT_RUN"
+    if process_error:
+        return "PROCESS_ERROR"
+    if return_code is None:
+        return "NOT_RUN"
+    if return_code == 0:
+        return "EXIT_ZERO"
+    return "EXIT_NON_ZERO"
+
 STATUS_FIELD_PATTERNS = [
     re.compile(r"^\s*(?:\*\*)?Final Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
     re.compile(r"^\s*(?:\*\*)?Overall Status(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE),
@@ -71,7 +84,11 @@ def run_command(cmd):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         return {
             "command": " ".join(cmd),
+            "raw_status": "PASS" if result.returncode == 0 else "FAILED",
             "status": "PASS" if result.returncode == 0 else "FAILED",
+            "raw_exit_code": result.returncode,
+            "exit_code": result.returncode,
+            "process_exit_status": process_exit_status(result.returncode),
             "return_code": result.returncode,
             "stdout": result.stdout.strip(),
             "stderr": result.stderr.strip()
@@ -79,19 +96,31 @@ def run_command(cmd):
     except FileNotFoundError:
         return {
             "command": " ".join(cmd),
+            "raw_status": "NOT_RUN",
             "status": "NOT_RUN",
+            "raw_exit_code": None,
+            "exit_code": None,
+            "process_exit_status": process_exit_status(process_error="not_run"),
             "reason": "Command or script not found"
         }
     except subprocess.TimeoutExpired:
         return {
             "command": " ".join(cmd),
+            "raw_status": "NOT_RUN",
             "status": "NOT_RUN",
+            "raw_exit_code": None,
+            "exit_code": None,
+            "process_exit_status": process_exit_status(process_error="timeout"),
             "reason": "Timeout expired"
         }
     except Exception as e:
         return {
             "command": " ".join(cmd),
+            "raw_status": "NOT_RUN",
             "status": "NOT_RUN",
+            "raw_exit_code": None,
+            "exit_code": None,
+            "process_exit_status": process_exit_status(process_error="error"),
             "reason": str(e)
         }
 
@@ -177,11 +206,33 @@ def collect_text_statuses(text):
     return statuses
 
 def normalize_child_result(result):
+    if result.get("process_exit_status") in {"PROCESS_ERROR", "TIMEOUT"}:
+        return FAIL if result.get("process_exit_status") == "PROCESS_ERROR" else NOT_RUN
     statuses = [result.get("status")]
     statuses.extend(collect_text_statuses(result.get("stdout", "")))
     statuses.extend(collect_text_statuses(result.get("stderr", "")))
     normalized = aggregate_statuses(statuses)
     return_code = result.get("return_code")
+    command = result.get("command", "")
+    stdout = result.get("stdout", "")
+    if return_code not in (None, 0) and "aos_task_document_check.py task --readiness-all" in command:
+        malformed_count_present = (
+            "malformed_exclusion_count: " in stdout
+            and "malformed_exclusion_count: 0" not in stdout
+        )
+        human_review_count_present = (
+            "active_human_review_required_count: " in stdout
+            and "active_human_review_required_count: 0" not in stdout
+        )
+        if "MALFORMED_EXCLUSION" in stdout or malformed_count_present:
+            return UNKNOWN_BLOCKED
+        if "UNKNOWN_BLOCKED" in stdout:
+            return UNKNOWN_BLOCKED
+        if "HUMAN_REVIEW_REQUIRED" in stdout or human_review_count_present:
+            return HUMAN_REVIEW_REQUIRED
+        if "FAIL:" in stdout or "FAIL:" in result.get("stderr", ""):
+            return FAIL
+        return BLOCKED
     if return_code not in (None, 0) and normalized == PASS:
         return FAIL
     return normalized
@@ -263,6 +314,8 @@ def main():
     overall_status = determine_overall_status(results)
     if readiness_audit.get("status") == "UNKNOWN_BLOCKED":
         overall_status = "UNKNOWN_BLOCKED"
+    elif readiness_audit.get("status") == "HUMAN_REVIEW_REQUIRED" and overall_status == "PASS":
+        overall_status = "HUMAN_REVIEW_REQUIRED"
     elif readiness_audit.get("status") == "BLOCKED" and overall_status == "PASS":
         overall_status = "BLOCKED"
 
