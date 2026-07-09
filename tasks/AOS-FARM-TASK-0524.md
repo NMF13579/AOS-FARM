@@ -8,8 +8,8 @@ risk_profile: HIGH_RISK_PROTECTED
 risk_profile_proposed: HIGH_RISK_PROTECTED
 risk_profile_assigned_by_human: HIGH_RISK_PROTECTED
 risk_assigned_by: human
-validator_status: PENDING
-log_status: NOT_RUN
+validator_status: VALIDATED
+log_status: ACTIVE
 log_uri: .aos-tmp/tasks/AOS-FARM-TASK-0524/log.txt
 template_level: task
 owner: human
@@ -20,7 +20,7 @@ queue_status: DONE
 human_checkpoint_required: true
 created_at: null
 updated_at: null
-evidence_status: PENDING
+evidence_status: COLLECTED
 source_reports:
   - reports/aos-farm-523-readiness-vs-approval-validator-semantics-conflict-review.md
   - reports/aos-farm-522-task-canonical-schema-completion-report.md

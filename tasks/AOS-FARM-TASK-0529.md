@@ -8,8 +8,8 @@ risk_profile: HIGH_RISK_PROTECTED
 risk_profile_proposed: HIGH_RISK_PROTECTED
 risk_profile_assigned_by_human: HIGH_RISK_PROTECTED
 risk_assigned_by: human
-validator_status: PENDING
-log_status: NOT_RUN
+validator_status: VALIDATED
+log_status: ACTIVE
 log_uri: .aos-tmp/tasks/AOS-FARM-TASK-0529/log.txt
 template_level: task
 owner: human
@@ -20,7 +20,7 @@ queue_status: DONE
 human_checkpoint_required: true
 created_at: null
 updated_at: null
-evidence_status: PENDING
+evidence_status: COLLECTED
 source_design: reports/validator-readiness-approval-semantics-design.md
 source_review: reports/aos-farm-528-validator-readiness-approval-semantics-design-review.md
 source_reports:
@@ -39,7 +39,7 @@ release_authorized: false
 allowed_future_files:
   - aos/scripts/aos_task_document_check.py
   - tests/fixtures/validator-readiness-approval-semantics/**
-  - reports/aos-farm-530-validator-readiness-approval-semantics-implementation-report.md
+  - reports/aos-farm-531-validator-readiness-approval-semantics-implementation-report.md
 forbidden_files:
   - 00_AOS_Core_Control.md
   - 01_AOS_Assembly_Pipelines_and_Build_Roadmap.md

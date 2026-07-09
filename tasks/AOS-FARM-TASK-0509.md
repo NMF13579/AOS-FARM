@@ -44,8 +44,8 @@ stop_if:
 type: implementation_task
 approval_status: NOT_REQUESTED
 risk_assigned_by: human
-validator_status: PENDING
-log_status: NOT_RUN
+validator_status: VALIDATED
+log_status: ACTIVE
 log_uri: .aos-tmp/tasks/AOS-FARM-TASK-0509/log.txt
 template_level: task
 owner: human
@@ -56,7 +56,7 @@ queue_status: DONE
 human_checkpoint_required: true
 created_at: null
 updated_at: null
-evidence_status: PENDING
+evidence_status: COLLECTED
 risk_profile: HIGH_RISK_PROTECTED
 ---
 # AOS-FARM-TASK-0509: Candidate 0004 Promotion Human Checkpoint Task Draft
@@ -176,7 +176,7 @@ Done when the task artifact/report exists, required validator checks have been r
 - AOS-FARM.535 corrected Evidence and placeholder section wording without changing lifecycle authority.
 
 ## Evidence
-Evidence status: PENDING.
+Evidence status: COLLECTED.
 Current Evidence is limited to this task file lifecycle state and related reports listed in the task context.
 Local log_uri is not Evidence and not Source of Truth.
 Evidence is stored in the task file and referenced reports only.
