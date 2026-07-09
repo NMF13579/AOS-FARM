@@ -125,6 +125,158 @@ treating NOT_RUN as PASS
 agent self-assignment of LOW_RISK_FAST
 ```
 
+## Safety boundary кратчайшего безопасного пути
+
+Кратчайший безопасный путь разрешён только внутри Minimal Safety Floor.
+
+Кратчайший безопасный путь не может обходить правила Governance / Control Module.
+
+Compression — это оптимизация процесса, а не механизм authorization.
+
+Compression не даёт:
+
+```text
+approval;
+execution authorization;
+release authorization;
+merge authorization;
+push authorization;
+Risk Profile assignment;
+lifecycle mutation;
+protected/canonical change permission;
+destructive operation permission;
+scope expansion.
+```
+
+## Safety rules для compression
+
+Агент может использовать compressed path только если одновременно верно:
+
+```text
+active blocker явный;
+ownership ясен;
+change scope узкий;
+files to be touched известны;
+forbidden files известны;
+protected/canonical checkpoint не требуется;
+lifecycle mutation не требуется;
+approval semantics не меняются;
+Risk Profile assignment не требуется;
+destructive operation не выполняется без explicit scoped authorization;
+validation может доказать closure;
+UNKNOWN не трактуется как OK;
+NOT_RUN не трактуется как PASS.
+```
+
+Если любое условие не выполнено, безопасное состояние:
+
+```text
+HUMAN_REVIEW_REQUIRED
+```
+
+или:
+
+```text
+UNKNOWN_BLOCKED
+```
+
+## Когда compression запрещена
+
+Кратчайший безопасный путь запрещён, если:
+
+```text
+ownership неясен;
+Source of Truth files неоднозначны;
+protected/canonical files меняются без checkpoint;
+approval boundary затрагивается;
+lifecycle boundary затрагивается;
+Risk Profile assignment нужен;
+destructive operation запрошена без explicit scoped authorization;
+task metadata mutation вовлечена без explicit scope;
+UNKNOWN остаётся неразрешённым;
+NOT_RUN будет трактоваться как PASS;
+Evidence будет трактоваться как approval;
+validator PASS будет трактоваться как approval;
+CI PASS будет трактоваться как approval;
+scope расширяется beyond active blocker;
+merge или release authority вовлечена.
+```
+
+В этих случаях агент не должен сжимать путь. Он должен остановиться или перейти к соответствующему control path.
+
+## Boundary ручного сжатия пути человеком
+
+Ручное сжатие пути человеком может убрать лишние этапы.
+
+Оно может разрешить:
+
+```text
+объединить audit + fix + validation в один scoped этап;
+не создавать отдельный design-stage, если blocker локальный;
+использовать один commit после explicit commit authorization;
+использовать один push после explicit push authorization;
+предпочесть прямое закрытие blocker вместо broad roadmap work.
+```
+
+Оно не может неявно разрешить:
+
+```text
+approval;
+release;
+merge;
+push;
+commit;
+Risk Profile assignment;
+protected/canonical mutation;
+lifecycle mutation;
+destructive operation;
+scope expansion.
+```
+
+Commit, push, merge, release, destructive operation, protected/canonical change и lifecycle mutation всё ещё требуют отдельной explicit human boundary, если применимы.
+
+## Обязательные поля отчёта при compression
+
+Когда используется кратчайший безопасный путь, отчёт агента должен включать:
+
+```text
+active blocker;
+использованный кратчайший безопасный путь;
+почему compression разрешена;
+что не было включено;
+files touched;
+files forbidden;
+validation run;
+PASS/Evidence/approval boundary preserved;
+commit authorization status;
+push authorization status;
+final_status.
+```
+
+Допустимые успешные final_status examples для compressed stages:
+
+```text
+BLOCKER_CLOSED_VALIDATED
+LOCAL_FIX_COMPLETED_VALIDATED
+LOCAL_HYGIENE_CLEANUP_COMPLETED_VERIFIED
+CONTRACT_UPDATE_COMPLETED_VALIDATED
+```
+
+Запрещённые final_status values:
+
+```text
+APPROVED
+APPROVED_FOR_EXECUTION
+READY_FOR_EXECUTION
+READY_FOR_RELEASE
+APPROVED_FOR_RELEASE
+AUTO_APPROVED
+CI_APPROVED
+```
+
+Compressed stage может дать technical closure. Он не может дать human approval, если нет отдельного explicit human approval witness.
+
+
 ## Required Failure Semantics
 
 ```yaml

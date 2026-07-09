@@ -175,6 +175,136 @@ Destructive operations are forbidden by default
 Agent cannot self-assign LOW_RISK_FAST
 ```
 
+## Кратчайший безопасный путь в Assembly Workflow
+
+Documentation Assembly Pipeline и Code Assembly Pipeline должны использовать кратчайший безопасный путь как режим планирования по умолчанию.
+
+Кратчайший безопасный путь означает:
+
+```text
+минимальный безопасный audit;
+минимальный безопасный fix;
+минимальная обязательная validation;
+явная human boundary;
+без лишнего отдельного этапа.
+```
+
+Перед созданием любого нового этапа агент обязан выполнить проверку сжатия пути.
+
+## Проверка сжатия пути
+
+Каждый предложенный план должен начинаться с блока:
+
+```text
+## Проверка сжатия пути
+
+- active blocker:
+- shortest safe path:
+- можно ли объединить audit + fix + validation в один этап:
+- нужен ли отдельный design/control этап:
+- причина, если отдельный этап нужен:
+- files allowed:
+- files forbidden:
+- validation required:
+- commit required:
+- push required:
+- human authorization boundary:
+- compression allowed:
+- recommended path:
+```
+
+Если active blocker узкий, а fix локальный, агент должен предпочитать один сжатый этап:
+
+```text
+audit → minimal fix → targeted validation → full validation → report → commit boundary → push boundary
+```
+
+Агент не должен делить задачу на несколько этапов, если разделение не защищает реальную boundary.
+
+## Сжатый этап исправления
+
+Сжатый этап исправления разрешён для узких локальных blockers, например:
+
+```text
+failing tests;
+NameError / typo / import bug;
+validator output bug;
+small fixture correction;
+local hygiene cleanup after explicit authorization;
+узкая documentation correction без влияния на approval/lifecycle;
+deterministic metadata normalization.
+```
+
+Сжатый этап исправления может включать:
+
+```text
+read-only diagnosis;
+minimal implementation;
+targeted test;
+full validation;
+diff report;
+commit after explicit commit authorization;
+push after explicit push authorization.
+```
+
+Сжатый этап исправления не может включать:
+
+```text
+scope expansion;
+новую feature beyond blocker closure;
+approval simulation;
+lifecycle mutation;
+Risk Profile assignment by agent;
+protected/canonical change without checkpoint;
+destructive operation without explicit scoped authorization;
+merge;
+release.
+```
+
+## Когда требуется полный control path
+
+Агент обязан перейти от кратчайшего безопасного пути к полному control/design path только если:
+
+```text
+blocker концептуальный, а не локальный;
+approval semantics затрагиваются;
+lifecycle semantics затрагиваются;
+protected/canonical files затрагиваются;
+Source of Truth ownership неясен;
+destructive cleanup запрошен;
+Risk Profile assignment требуется;
+UNKNOWN не может быть разрешён;
+validation не может доказать closure;
+изменение может создать false PASS или false approval.
+```
+
+Если escalation требуется, агент обязан явно указать:
+
+```text
+Кратчайший безопасный путь отклонён, потому что: <reason>
+```
+
+и затем предложить минимальный full-control path.
+
+## Ручное сжатие пути человеком в workflow
+
+Когда human явно просит сжать путь, объединить этапы или убрать лишние design/audit layers, агент обязан перепланировать через кратчайший безопасный путь.
+
+Агент обязан сохранить:
+
+```text
+Minimal Safety Floor;
+approval boundary;
+commit boundary;
+push boundary;
+release boundary;
+protected/canonical checkpoint;
+destructive operation boundary.
+```
+
+Compression допустима только если она сокращает процесс без ослабления control.
+
+
 ## Роли артефактов
 
 | Артефакт | Что делает | Что не делает |
