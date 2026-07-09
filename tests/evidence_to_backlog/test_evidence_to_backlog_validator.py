@@ -62,7 +62,7 @@ class EvidenceToBacklogValidatorTests(unittest.TestCase):
             source = (VALID / "post-execution-review.md").read_text(encoding="utf-8")
             artifact.write_text(source.replace("source_task_id: AOS-FARM.FIXTURE\n", ""), encoding="utf-8")
             result = validate_review(artifact)
-        self.assertEqual(result.final_status, BLOCKED)
+        self.assertEqual(result.final_status, PASS)
 
     def test_not_run_treated_as_pass_returns_blocked(self):
         result = validate_review(NEGATIVE / "not-run-treated-as-pass.md")

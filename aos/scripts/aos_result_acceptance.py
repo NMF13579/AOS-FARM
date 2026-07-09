@@ -2,10 +2,11 @@ import argparse
 import json
 import sys
 import os
-from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations, collect_authority_claim_violations
 
 # Add parent directory to path so we can import the tool
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from aos.scripts.aos_semantic_guard import collect_semantic_guard_violations, collect_authority_claim_violations
 
 try:
     from aos.tools.optional.human_result_acceptance_checker import HumanResultAcceptanceChecker
