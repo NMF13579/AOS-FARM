@@ -78,6 +78,7 @@ BASE_STATUS_FIELD_NAMES = [
 ]
 READINESS_STATUS_PATTERN = re.compile(r"^\s*(?:\*\*)?Readiness(?:\*\*)?\s*:\s*(?:\*\*)?`?([A-Z_]+)", re.MULTILINE)
 READINESS_STATUS_FIELD_NAME = "Readiness"
+NONE = "NONE"
 
 def run_command(cmd):
     try:
@@ -186,6 +187,164 @@ def extract_json_report(text):
     except json.JSONDecodeError:
         return {"status": UNKNOWN_BLOCKED}
 
+def extract_json_stdout(text):
+    if not text:
+        return None
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return {"status": UNKNOWN_BLOCKED, "schema_error": "malformed_json_stdout"}
+    if not isinstance(payload, dict):
+        return {"status": UNKNOWN_BLOCKED, "schema_error": "json_stdout_not_object"}
+    return payload
+
+def is_next_task_selection_command(command):
+    return "aos_next_task_selection.py" in command and "--json" in command
+
+def is_installer_dry_run_command(command):
+    return "aos_install.py" in command and "--dry-run" in command
+
+def is_consumer_self_test_command(command):
+    return "aos_consumer_self_test.py" in command
+
+def _section_items(text, heading):
+    lines = text.splitlines()
+    heading_line = f"### {heading}"
+    for idx, line in enumerate(lines):
+        if line.strip() != heading_line:
+            continue
+        items = []
+        for item_line in lines[idx + 1:]:
+            stripped = item_line.strip()
+            if stripped.startswith("### ") or stripped == "---":
+                break
+            if stripped.startswith("- "):
+                items.append(stripped[2:].strip())
+        return items
+    return []
+
+def installer_blocked_reasons(stdout):
+    return [item for item in _section_items(stdout, "blocked_reasons") if item != "[none]"]
+
+def installer_existing_targets(stdout):
+    return [item for item in _section_items(stdout, "existing_targets") if item != "[none]"]
+
+def installer_conflicts(stdout):
+    return [item for item in _section_items(stdout, "conflicts") if item != "[none]"]
+
+def has_process_failure(result):
+    if result.get("process_exit_status") in {"PROCESS_ERROR", "TIMEOUT", "NOT_RUN"}:
+        return True
+    return result.get("return_code") not in (None, 0)
+
+def selector_payload(result):
+    if not is_next_task_selection_command(result.get("command", "")):
+        return None
+    return extract_json_stdout(result.get("stdout", ""))
+
+def valid_selector_advisory(result):
+    payload = selector_payload(result)
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("schema_error"):
+        return False
+    return (
+        not has_process_failure(result)
+        and payload.get("final_status") == HUMAN_REVIEW_REQUIRED
+        and bool(payload.get("next_candidate"))
+        and not payload.get("runtime_error")
+        and not payload.get("schema_error")
+    )
+
+def valid_installer_dry_run_advisory(result):
+    command = result.get("command", "")
+    stdout = result.get("stdout", "")
+    statuses = collect_text_statuses(stdout, command=command)
+    return (
+        is_installer_dry_run_command(command)
+        and not has_process_failure(result)
+        and HUMAN_REVIEW_REQUIRED in [normalize_status(status) for status in statuses]
+        and not installer_blocked_reasons(stdout)
+        and bool(installer_existing_targets(stdout) or installer_conflicts(stdout))
+    )
+
+def consumer_self_test_report(result):
+    if not is_consumer_self_test_command(result.get("command", "")):
+        return None
+    return extract_json_report(result.get("stdout", ""))
+
+def valid_consumer_self_test_advisory(result):
+    report = consumer_self_test_report(result)
+    if not isinstance(report, dict):
+        return False
+    installer_dry_run = report.get("installer_dry_run", {})
+    return (
+        not has_process_failure(result)
+        and report.get("final_status") == PASS
+        and report.get("package_integrity", {}).get("status") == PASS
+        and report.get("target_install_state", {}).get("status") == PASS
+        and installer_dry_run.get("status") == "COMPLETED"
+        and installer_dry_run.get("dry_run_install_status") == HUMAN_REVIEW_REQUIRED
+        and not report.get("runtime_error")
+        and not report.get("schema_error")
+    )
+
+def build_advisory(result):
+    command = result.get("command", "")
+    if valid_selector_advisory(result):
+        payload = selector_payload(result)
+        return {
+            "source": "aos_next_task_selection.py",
+            "status": HUMAN_REVIEW_REQUIRED,
+            "advisory": True,
+            "blocking_technical_health": False,
+            "next_candidate": payload.get("next_candidate"),
+            "selector_status": payload.get("final_status"),
+            "selection_status": payload.get("selection_status"),
+            "approval_granted": False,
+            "execution_authorized": False,
+            "reason": "next candidate requires human review",
+        }
+    if valid_installer_dry_run_advisory(result):
+        return {
+            "source": "aos_install.py --dry-run",
+            "status": HUMAN_REVIEW_REQUIRED,
+            "advisory": True,
+            "blocking_technical_health": False,
+            "dry_run": True,
+            "approval_granted": False,
+            "execution_authorized": False,
+            "reason": "existing target requires human review",
+        }
+    if valid_consumer_self_test_advisory(result):
+        report = consumer_self_test_report(result)
+        embedded_status = report.get("installer_dry_run", {}).get("dry_run_install_status")
+        return {
+            "source": "aos_consumer_self_test.py",
+            "status": report.get("final_status"),
+            "advisory": True,
+            "blocking_technical_health": False,
+            "embedded_advisory_status": embedded_status,
+            "approval_granted": False,
+            "execution_authorized": False,
+            "reason": "consumer self-test passed while installer dry-run requires human review",
+        }
+    return None
+
+def collect_advisories(results):
+    advisories = []
+    for result in results:
+        advisory = build_advisory(result)
+        if advisory:
+            advisories.append(advisory)
+    return advisories
+
+def determine_control_status(advisories):
+    for advisory in advisories:
+        if advisory.get("status") == HUMAN_REVIEW_REQUIRED or advisory.get("embedded_advisory_status") == HUMAN_REVIEW_REQUIRED:
+            return HUMAN_REVIEW_REQUIRED
+    return NONE
+
 def command_uses_display_readiness_field(command):
     return "aos_queue_dashboard.py" in command
 
@@ -217,6 +376,18 @@ def normalize_child_result(result):
     if result.get("process_exit_status") in {"PROCESS_ERROR", "TIMEOUT"}:
         return FAIL if result.get("process_exit_status") == "PROCESS_ERROR" else NOT_RUN
     command = result.get("command", "")
+    if is_next_task_selection_command(command):
+        payload = selector_payload(result)
+        if not isinstance(payload, dict) or payload.get("schema_error"):
+            return UNKNOWN_BLOCKED
+        status = normalize_status(payload.get("final_status"))
+        if status == HUMAN_REVIEW_REQUIRED:
+            return PASS if valid_selector_advisory(result) else UNKNOWN_BLOCKED
+        return status
+    if valid_installer_dry_run_advisory(result):
+        return PASS
+    if valid_consumer_self_test_advisory(result):
+        return PASS
     statuses = [result.get("status")]
     statuses.extend(collect_text_statuses(result.get("stdout", ""), command=command))
     statuses.extend(collect_text_statuses(result.get("stderr", ""), command=command))
@@ -319,18 +490,28 @@ def main():
             })
             
     readiness_audit = build_readiness_audit()
-    overall_status = determine_overall_status(results)
+    technical_status = determine_overall_status(results)
     if readiness_audit.get("status") == "UNKNOWN_BLOCKED":
-        overall_status = "UNKNOWN_BLOCKED"
-    elif readiness_audit.get("status") == "HUMAN_REVIEW_REQUIRED" and overall_status == "PASS":
-        overall_status = "HUMAN_REVIEW_REQUIRED"
-    elif readiness_audit.get("status") == "BLOCKED" and overall_status == "PASS":
-        overall_status = "BLOCKED"
+        technical_status = "UNKNOWN_BLOCKED"
+    elif readiness_audit.get("status") == "HUMAN_REVIEW_REQUIRED" and technical_status == "PASS":
+        technical_status = "HUMAN_REVIEW_REQUIRED"
+    elif readiness_audit.get("status") == "BLOCKED" and technical_status == "PASS":
+        technical_status = "BLOCKED"
+
+    advisories = collect_advisories(results)
+    control_status = determine_control_status(advisories)
+    human_review_required = control_status == HUMAN_REVIEW_REQUIRED
 
     output = {
         "command": "aos validate",
         "target": args.target,
-        "overall_status": overall_status,
+        "overall_status": technical_status,
+        "technical_status": technical_status,
+        "control_status": control_status,
+        "human_review_required": human_review_required,
+        "approval_granted": False,
+        "execution_authorized": False,
+        "advisories": advisories,
         "readiness_audit": readiness_audit,
         "approval_claimed": False,
         "commit_authorized": False,

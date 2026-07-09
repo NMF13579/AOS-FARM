@@ -20,6 +20,68 @@ class TestAosValidate(unittest.TestCase):
     def assertAggregateNotPass(self, result):
         self.assertNotEqual(MODULE.determine_overall_status([result]), "PASS")
 
+    def selector_result(self, payload, return_code=0, stdout=None):
+        return {
+            "command": "python3 aos/scripts/aos_next_task_selection.py --json",
+            "status": "PASS" if return_code == 0 else "FAILED",
+            "return_code": return_code,
+            "process_exit_status": "EXIT_ZERO" if return_code == 0 else "EXIT_NON_ZERO",
+            "stdout": json.dumps(payload) if stdout is None else stdout,
+            "stderr": "",
+        }
+
+    def installer_result(self, install_status="HUMAN_REVIEW_REQUIRED", blocked_reasons=None, return_code=0):
+        if blocked_reasons is None:
+            blocked_reasons = []
+        blocked_lines = "\n".join(f"- {reason}" for reason in blocked_reasons) if blocked_reasons else "- [none]"
+        stdout = f"""# AOS-FARM Installer Plan
+
+**install_status:** {install_status}
+**apply_status:** NOT_REQUESTED
+
+### existing_targets
+- /aos/
+
+### conflicts
+- aos/ -> aos/ (target folder already exists)
+
+### blocked_reasons
+{blocked_lines}
+
+**approval_claimed:** false
+**execution_authorized:** false
+"""
+        return {
+            "command": "python3 aos/scripts/aos_install.py --dry-run",
+            "status": "PASS" if return_code == 0 else "FAILED",
+            "return_code": return_code,
+            "process_exit_status": "EXIT_ZERO" if return_code == 0 else "EXIT_NON_ZERO",
+            "stdout": stdout,
+            "stderr": "",
+        }
+
+    def consumer_result(self, final_status="PASS", dry_run_status="HUMAN_REVIEW_REQUIRED", return_code=0):
+        report = {
+            "package_integrity": {"status": "PASS"},
+            "target_install_state": {"status": "PASS"},
+            "installer_dry_run": {
+                "status": "COMPLETED",
+                "dry_run_install_status": dry_run_status,
+            },
+            "final_status": final_status,
+            "approval_claimed": False,
+            "execution_authorized": False,
+        }
+        stdout = "--- JSON REPORT ---\n" + json.dumps(report, indent=2) + "\n-------------------"
+        return {
+            "command": "python3 aos/scripts/aos_consumer_self_test.py",
+            "status": "PASS" if return_code == 0 else "FAILED",
+            "return_code": return_code,
+            "process_exit_status": "EXIT_ZERO" if return_code == 0 else "EXIT_NON_ZERO",
+            "stdout": stdout,
+            "stderr": "",
+        }
+
     def test_nested_human_review_required_blocks_overall_pass(self):
         self.assertAggregateNotPass({
             "status": "PASS",
@@ -278,6 +340,133 @@ class TestAosValidate(unittest.TestCase):
             "stderr": "",
         })
         self.assertEqual(normalized, "PASS")
+
+    def test_selector_human_review_required_advisory_does_not_block_technical_health(self):
+        result = self.selector_result({
+            "final_status": "HUMAN_REVIEW_REQUIRED",
+            "selection_status": "RECONCILED",
+            "next_candidate": "AOS-FARM.TEST",
+            "approval_claimed": False,
+            "execution_authorized": False,
+        })
+        self.assertEqual(MODULE.normalize_child_result(result), "PASS")
+        advisory = MODULE.collect_advisories([result])[0]
+        self.assertEqual(advisory["source"], "aos_next_task_selection.py")
+        self.assertEqual(advisory["status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertEqual(advisory["next_candidate"], "AOS-FARM.TEST")
+        self.assertFalse(advisory["blocking_technical_health"])
+        self.assertFalse(advisory["approval_granted"])
+        self.assertFalse(advisory["execution_authorized"])
+
+    def test_installer_dry_run_human_review_required_advisory_does_not_block_technical_health(self):
+        result = self.installer_result()
+        self.assertEqual(MODULE.normalize_child_result(result), "PASS")
+        advisory = MODULE.collect_advisories([result])[0]
+        self.assertEqual(advisory["source"], "aos_install.py --dry-run")
+        self.assertEqual(advisory["status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertTrue(advisory["advisory"])
+        self.assertFalse(advisory["blocking_technical_health"])
+
+    def test_consumer_self_test_embedded_installer_review_advisory_does_not_block_technical_health(self):
+        result = self.consumer_result()
+        self.assertEqual(MODULE.normalize_child_result(result), "PASS")
+        advisory = MODULE.collect_advisories([result])[0]
+        self.assertEqual(advisory["source"], "aos_consumer_self_test.py")
+        self.assertEqual(advisory["status"], "PASS")
+        self.assertEqual(advisory["embedded_advisory_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertFalse(advisory["blocking_technical_health"])
+
+    def test_revised_advisory_contract_exposes_control_metadata_without_false_approval(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+            "active_blockers": [],
+            "excluded_terminal_tasks": [],
+            "excluded_legacy_tasks": [],
+            "malformed_exclusions": [],
+            "tasks": [],
+            "explicit_not_pass_statement": [
+                "EXCLUDED_TERMINAL is not PASS",
+                "EXCLUDED_LEGACY is not PASS",
+                "MALFORMED_EXCLUSION is blocker state",
+            ],
+        }
+        command_results = {
+            " ".join(["python3", "aos/scripts/aos_next_task_selection.py", "--json"]): self.selector_result({
+                "final_status": "HUMAN_REVIEW_REQUIRED",
+                "selection_status": "RECONCILED",
+                "next_candidate": "AOS-FARM.TEST",
+                "approval_claimed": False,
+                "execution_authorized": False,
+            }),
+            " ".join(["python3", "aos/scripts/aos_install.py", "--dry-run"]): self.installer_result(),
+            " ".join(["python3", "aos/scripts/aos_consumer_self_test.py"]): self.consumer_result(),
+        }
+        validation_commands = [
+            ["python3", "aos/scripts/aos_install.py", "--dry-run"],
+            ["python3", "aos/scripts/aos_consumer_self_test.py"],
+            ["python3", "aos/scripts/aos_next_task_selection.py", "--json"],
+        ]
+
+        def fake_run_command(cmd):
+            return command_results[" ".join(cmd)]
+
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "VALIDATION_COMMANDS", validation_commands), \
+             mock.patch.object(MODULE, "run_command", side_effect=fake_run_command), \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["technical_status"], "PASS")
+        self.assertEqual(data["overall_status"], "PASS")
+        self.assertEqual(data["control_status"], "HUMAN_REVIEW_REQUIRED")
+        self.assertTrue(data["human_review_required"])
+        self.assertFalse(data["approval_granted"])
+        self.assertFalse(data["execution_authorized"])
+        sources = {advisory["source"] for advisory in data["advisories"]}
+        self.assertEqual(sources, {
+            "aos_next_task_selection.py",
+            "aos_install.py --dry-run",
+            "aos_consumer_self_test.py",
+        })
+
+    def test_selector_unknown_blocked_still_blocks(self):
+        result = self.selector_result({"final_status": "UNKNOWN_BLOCKED", "next_candidate": "AOS-FARM.TEST"})
+        self.assertEqual(MODULE.normalize_child_result(result), "UNKNOWN_BLOCKED")
+
+    def test_selector_not_run_still_blocks(self):
+        result = self.selector_result({"final_status": "NOT_RUN", "next_candidate": "AOS-FARM.TEST"})
+        self.assertEqual(MODULE.normalize_child_result(result), "NOT_RUN")
+
+    def test_selector_malformed_json_blocks(self):
+        result = self.selector_result({}, stdout="{not-json")
+        self.assertEqual(MODULE.normalize_child_result(result), "UNKNOWN_BLOCKED")
+
+    def test_selector_missing_candidate_human_review_blocks(self):
+        result = self.selector_result({"final_status": "HUMAN_REVIEW_REQUIRED", "next_candidate": None})
+        self.assertEqual(MODULE.normalize_child_result(result), "UNKNOWN_BLOCKED")
+
+    def test_advisory_nonzero_exit_blocks(self):
+        self.assertNotEqual(MODULE.normalize_child_result(self.installer_result(return_code=1)), "PASS")
+
+    def test_consumer_self_test_failure_still_blocks(self):
+        result = self.consumer_result(final_status="BLOCKED")
+        self.assertNotEqual(MODULE.normalize_child_result(result), "PASS")
+
+    def test_installer_blocked_reasons_still_block(self):
+        result = self.installer_result(blocked_reasons=["unsafe target path"])
+        self.assertNotEqual(MODULE.normalize_child_result(result), "PASS")
 
     def test_excluded_legacy_does_not_normalize_to_pass(self):
         self.assertEqual(MODULE.normalize_status("EXCLUDED_LEGACY"), "UNKNOWN_BLOCKED")
