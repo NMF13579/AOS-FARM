@@ -656,3 +656,98 @@ class TestAosValidate(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    def test_duplicate_workspace_child_pass(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout='{"final_status": "PASS", "summary": {"suspicious_count": 0}}', stderr="")
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "PASS"
+
+    def test_duplicate_workspace_child_failed_or_blocked(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            def side_effect(cmd, **kwargs):
+                if "aos_duplicate_workspace_check.py" in " ".join(cmd):
+                    return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='{"final_status": "FAILED_OR_BLOCKED", "summary": {}}', stderr="")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='PASS', stderr="")
+            mock_run.side_effect = side_effect
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "FAILED_OR_BLOCKED"
+            assert data["overall_status"] in ("FAILED_OR_BLOCKED", "UNKNOWN_BLOCKED")
+
+    def test_duplicate_workspace_child_human_review_required(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            def side_effect(cmd, **kwargs):
+                if "aos_duplicate_workspace_check.py" in " ".join(cmd):
+                    return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='{"final_status": "HUMAN_REVIEW_REQUIRED", "summary": {}}', stderr="")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='PASS', stderr="")
+            mock_run.side_effect = side_effect
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "HUMAN_REVIEW_REQUIRED"
+            assert data["overall_status"] in ("HUMAN_REVIEW_REQUIRED", "UNKNOWN_BLOCKED", "FAILED_OR_BLOCKED")
+
+    def test_duplicate_workspace_child_unknown_blocked(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            def side_effect(cmd, **kwargs):
+                if "aos_duplicate_workspace_check.py" in " ".join(cmd):
+                    return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='{"final_status": "UNKNOWN_BLOCKED", "summary": {}}', stderr="")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='PASS', stderr="")
+            mock_run.side_effect = side_effect
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "UNKNOWN_BLOCKED"
+            assert data["overall_status"] == "UNKNOWN_BLOCKED"
+
+    def test_duplicate_workspace_child_not_run(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            def side_effect(cmd, **kwargs):
+                if "aos_duplicate_workspace_check.py" in " ".join(cmd):
+                    raise FileNotFoundError("script not found")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='PASS', stderr="")
+            mock_run.side_effect = side_effect
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "UNKNOWN_BLOCKED"
+
+    def test_duplicate_workspace_invalid_json(self):
+        import subprocess
+        from aos.scripts.aos_validate import main
+        import sys
+        import json
+        with patch("subprocess.run") as mock_run, patch("sys.argv", ["aos_validate.py", "--json"]), patch("sys.stdout") as mock_stdout:
+            def side_effect(cmd, **kwargs):
+                if "aos_duplicate_workspace_check.py" in " ".join(cmd):
+                    return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='invalid json', stderr="")
+                return subprocess.CompletedProcess(args=cmd, returncode=0, stdout='PASS', stderr="")
+            mock_run.side_effect = side_effect
+            main()
+            output = "".join(call[0][0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            assert data["duplicate_workspace_status"] == "UNKNOWN_BLOCKED"

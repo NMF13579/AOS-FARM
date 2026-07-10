@@ -1,0 +1,17 @@
+{
+  "task_id": "AOS-FARM.675",
+  "generated_from_commit": "4918b7263d6841ce9cf84a2009624d54b75ecf95",
+  "branch": "build/aos-farm-675-duplicate-cleanup-prevention-gate",
+  "repository_relative_paths_only": true,
+  "final_status": "EXACT_CLEANUP_MANIFEST_READY_DIVERGENT_DECISION_REQUIRED",
+  "summary": {
+    "suspicious_count": 0,
+    "exact_duplicate_count": 0,
+    "content_diverged_count": 0,
+    "orphan_count": 0,
+    "ambiguous_count": 0,
+    "false_positive_count": 0,
+    "staged_duplicate_count": 0
+  },
+  "items": []
+}

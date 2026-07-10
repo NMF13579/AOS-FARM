@@ -23,7 +23,8 @@ VALIDATION_COMMANDS = [
     ["python3", "aos/scripts/aos_task_document_check.py", "task", "--readiness-all"],
     # Do not include aos_doctor.py here because doctor runs broad unittest discover and can recursively re-enter tests/test_aos_validate.py through aos_validate.py.
     ["python3", "aos/scripts/aos_queue_dashboard.py"],
-    ["python3", "aos/scripts/aos_next_task_selection.py", "--json"]
+    ["python3", "aos/scripts/aos_next_task_selection.py", "--json"],
+    [sys.executable, "aos/scripts/aos_duplicate_workspace_check.py", "--json"]
 ]
 
 PASS = "PASS"
@@ -520,7 +521,27 @@ def main():
     control_status = determine_control_status(advisories)
     human_review_required = control_status == HUMAN_REVIEW_REQUIRED
 
+
+    duplicate_workspace_status = "NOT_RUN"
+    duplicate_workspace_summary = {}
+    for r in results:
+        if "aos_duplicate_workspace_check.py" in r.get("command", ""):
+            # It outputs JSON, let's parse stdout
+
+            try:
+                data = json.loads(r.get("stdout", "{}"))
+                duplicate_workspace_status = data.get("final_status", r.get("status", "UNKNOWN_BLOCKED"))
+                duplicate_workspace_summary = data.get("summary", {})
+                
+                if duplicate_workspace_status != "PASS":
+                    technical_status = duplicate_workspace_status
+            except:
+                duplicate_workspace_status = "UNKNOWN_BLOCKED"
+                technical_status = "UNKNOWN_BLOCKED"
+
     output = {
+        "duplicate_workspace_status": duplicate_workspace_status,
+        "duplicate_workspace_summary": duplicate_workspace_summary,
         "command": "aos validate",
         "target": args.target,
         "overall_status": technical_status,

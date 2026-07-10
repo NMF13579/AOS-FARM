@@ -57,3 +57,19 @@
      - NOT_RUN ≠ PASS
      - UNKNOWN ≠ OK
    - **References:** See canonical control sources (`00`, `01`, `02`) for core rules.
+
+## Duplicate Workspace Prevention
+
+*Note: This document contains operational guidelines, not canonical safety rules. For canonical boundaries, always refer to 02_AOS_Governance_Control_Module_and_Safety_Rules.md.*
+
+1. Один логический артефакт должен иметь только один canonical path в репозитории.
+2. Нельзя создавать рядом дубликаты с паттернами вида `file 2`, `file copy` или `file (1)`.
+3. Если target существует — необходимо изменять существующий утверждённый target, а не плодить новые версии.
+4. Если canonical target неясен или есть расхождения в содержимом (diverged) — автоматическое решение невозможно, статус `HUMAN_REVIEW_REQUIRED`.
+5. Временные варианты (черновики, проверки) следует хранить строго в изолированной директории `/.aos-tmp/`.
+6. Директория `/.aos-tmp/` не является Source of Truth, она полностью исключена из tracked repository state.
+7. Duplicate validator должен обязательно запускаться до выполнения `git add` (staging) и `git commit`.
+8. Счетчик `staged duplicate count` перед коммитом всегда должен быть равен `0`.
+9. Само обнаружение duplicate-файла валидатором **не разрешает** его автоматическое удаление. Любой деструктивный cleanup требует явного разрешения.
+10. Cleanup authorization не является commit authorization. Разрешение на удаление мусора не дает права автоматически коммитить измененный стейт.
+11. Commit authorization не является push authorization. Даже успешно созданный локальный коммит требует отдельного подтверждения перед публикацией (push).

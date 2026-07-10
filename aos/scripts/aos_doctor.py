@@ -16,6 +16,7 @@ COMMANDS_TO_AGGREGATE = [
     [sys.executable, "-m", "py_compile", "aos/scripts/aos_install.py"],
     [sys.executable, "-m", "py_compile", "aos/scripts/aos_consumer_self_test.py"],
     [sys.executable, "-m", "py_compile", "aos/scripts/aos_task_document_check.py"],
+    [sys.executable, "aos/scripts/aos_duplicate_workspace_check.py", "--json"],
     [sys.executable, "-m", "py_compile", "aos/scripts/aos_doctor.py"],
     [sys.executable, "aos/scripts/aos_task_document_check.py", "task", "--validate-all"],
     [sys.executable, "aos/scripts/aos_task_document_check.py", "queue", "--list"],
@@ -62,15 +63,35 @@ def determine_overall_status(results):
         status = r.get("status")
         stdout = r.get("stdout", "")
         stderr = r.get("stderr", "")
+        cmd_str = r.get("command", "")
         
-        # If unittest returned PASS but ran 0 tests, do not treat as strong PASS
-        if ("unittest" in r.get("command", "") or "pytest" in r.get("command", "")) and status == "PASS":
+        if ("unittest" in cmd_str or "pytest" in cmd_str) and status == "PASS":
             if "Ran 0 tests" in stdout or "Ran 0 tests" in stderr or "collected 0 items" in stdout or "collected 0 items" in stderr:
                 r["status"] = "FAILED"
                 r["reason"] = "0 tests executed is not a strong PASS"
                 has_failed = True
                 status = "FAILED"
                 
+        if "aos_duplicate_workspace_check.py" in cmd_str:
+            try:
+                import json
+                data = json.loads(stdout)
+                dup_status = data.get("final_status", "UNKNOWN_BLOCKED")
+                r["status"] = dup_status
+                status = dup_status
+                r["checker"] = data.get("checker", "duplicate_workspace")
+            except Exception:
+                r["status"] = "UNKNOWN_BLOCKED"
+                status = "UNKNOWN_BLOCKED"
+                r["reason"] = "Execution or JSON parse failure"
+                
+        if status == "UNKNOWN_BLOCKED":
+            return "UNKNOWN_BLOCKED"
+        if status == "BLOCKED":
+            return "BLOCKED"
+        if status in ("FAILED_OR_BLOCKED", "HUMAN_REVIEW_REQUIRED"):
+            has_failed = True
+            
         if status == "FAILED":
             if "UNKNOWN_BLOCKED" in stdout or "UNKNOWN_BLOCKED" in stderr:
                 return "UNKNOWN_BLOCKED"
@@ -81,7 +102,6 @@ def determine_overall_status(results):
             has_not_run = True
             
         if "HUMAN_REVIEW_REQUIRED" in stdout or "HUMAN_REVIEW_REQUIRED" in stderr:
-            # Not a failure if human review is expected, but if there's a hard block, that wins.
             pass
             
     if has_failed:

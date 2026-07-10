@@ -78,7 +78,7 @@ class TestAOSDoctor(unittest.TestCase):
                 "command": " ".join(cmd),
                 "status": "PASS",
                 "return_code": 0,
-                "stdout": "503 passed in 60s" if "-m pytest" in " ".join(cmd) else "",
+                "stdout": "503 passed in 60s" if "-m pytest" in " ".join(cmd) else ( '{"final_status":"PASS"}' if "aos_duplicate_workspace_check.py" in " ".join(cmd) else ""),
                 "stderr": ""
             }
         
@@ -114,7 +114,7 @@ class TestAOSDoctor(unittest.TestCase):
                 "command": " ".join(cmd),
                 "status": "PASS",
                 "return_code": 0,
-                "stdout": "503 passed in 60s" if "-m pytest" in " ".join(cmd) else "",
+                "stdout": "503 passed in 60s" if "-m pytest" in " ".join(cmd) else ( '{"final_status":"PASS"}' if "aos_duplicate_workspace_check.py" in " ".join(cmd) else ""),
                 "stderr": ""
             }
         mock_run_command.side_effect = side_effect
@@ -134,3 +134,34 @@ class TestAOSDoctor(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+    def test_checker_pass(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "PASS", "stdout": '{"final_status": "PASS"}'}]
+        assert determine_overall_status(results) == "PASS"
+
+    def test_checker_failed_or_blocked(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "PASS", "stdout": '{"final_status": "FAILED_OR_BLOCKED"}'}]
+        assert determine_overall_status(results) == "FAILED_OR_BLOCKED"
+
+    def test_checker_human_review_required(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "PASS", "stdout": '{"final_status": "HUMAN_REVIEW_REQUIRED"}'}]
+        assert determine_overall_status(results) == "FAILED_OR_BLOCKED"
+
+    def test_checker_unknown_blocked(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "PASS", "stdout": '{"final_status": "UNKNOWN_BLOCKED"}'}]
+        assert determine_overall_status(results) == "UNKNOWN_BLOCKED"
+
+    def test_checker_not_run(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "NOT_RUN", "stdout": ''}]
+        assert determine_overall_status(results) == "UNKNOWN_BLOCKED"
+
+    def test_checker_invalid_output(self):
+        from aos.scripts.aos_doctor import determine_overall_status
+        results = [{"command": "aos_duplicate_workspace_check.py", "status": "PASS", "stdout": 'not json'}]
+        assert determine_overall_status(results) == "UNKNOWN_BLOCKED"
