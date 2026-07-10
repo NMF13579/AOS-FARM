@@ -29,3 +29,31 @@
 
 5. **Prompt packs must remain thin guidance, not Source of Truth.**
    - Prompts provide behavioral guidance, but they must never override the repository's canonical governance rules (`00`, `01`, `02`).
+
+6. **Python Environment and Workspace Hygiene**
+   - **Incident:** `aos_doctor.py` implicitly relied on `python3` from the system PATH, leading to PATH drift and unreproducible behavior. 
+   - **PATH Drift:** Relying on `"python3"` literals causes child processes to escape the active `.venv` if the PATH is modified.
+   - **Proper Execution:** Always use `sys.executable` for Python-to-Python subprocess invocations to ensure inheritance of the active interpreter.
+   - **Dependencies:** `requirements-dev.txt` is the authoritative contract for development tools. The working `.venv` uses these, while the system Python lacks them.
+   - **Safe Duplicate Handling:** `* 2` files (like `* 2.py`) are untracked duplicates. Never perform destructive workspace cleanup without human authorization.
+   - **Diagnostics Checklist:**
+     | Missing Dependency | Expected Behavior |
+     | :--- | :--- |
+     | `pytest` | Dependent checks skipped (`NOT_RUN`), independent checks continue, aggregate is fail-closed. |
+   - **Pre-Commit Checklist:**
+     - [ ] Verify branch and HEAD against baseline.
+     - [ ] Verify `sys.executable` instead of `"python3"`.
+     - [ ] Verify installation from `requirements-dev.txt`.
+     - [ ] Confirm non-zero number of executed tests.
+     - [ ] Ensure fail-closed status does not rely on substring matching in `stderr` (e.g. `BLOCKED`).
+     - [ ] Provide full untracked inventory.
+     - [ ] Ensure `/.aos-tmp/` is absent from Git status (requires ignore).
+     - [ ] Verify `* 2` files (duplicates) are untouched.
+     - [ ] Obtain explicit separate commit and push authorization.
+   - **Canonical Boundaries:**
+     - lesson ≠ policy authority
+     - PASS ≠ approval
+     - Evidence ≠ approval
+     - NOT_RUN ≠ PASS
+     - UNKNOWN ≠ OK
+   - **References:** See canonical control sources (`00`, `01`, `02`) for core rules.

@@ -11,17 +11,18 @@ import sys
 import argparse
 
 COMMANDS_TO_AGGREGATE = [
-    ["python3", "aos/scripts/aos_install.py", "--dry-run"],
-    ["python3", "aos/scripts/aos_consumer_self_test.py"],
-    ["python3", "-m", "py_compile", "aos/scripts/aos_install.py"],
-    ["python3", "-m", "py_compile", "aos/scripts/aos_consumer_self_test.py"],
-    ["python3", "-m", "py_compile", "aos/scripts/aos_task_document_check.py"],
-    ["python3", "-m", "py_compile", "aos/scripts/aos_doctor.py"],
-    ["python3", "aos/scripts/aos_task_document_check.py", "task", "--validate-all"],
-    ["python3", "aos/scripts/aos_task_document_check.py", "queue", "--list"],
-    ["python3", "aos/scripts/aos_task_document_check.py", "queue", "--next"],
-    ["python3", "aos/scripts/aos_task_document_check.py", "task", "--readiness-all"],
-    ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"]
+    [sys.executable, "aos/scripts/aos_install.py", "--dry-run"],
+    [sys.executable, "aos/scripts/aos_consumer_self_test.py"],
+    [sys.executable, "-m", "py_compile", "aos/scripts/aos_install.py"],
+    [sys.executable, "-m", "py_compile", "aos/scripts/aos_consumer_self_test.py"],
+    [sys.executable, "-m", "py_compile", "aos/scripts/aos_task_document_check.py"],
+    [sys.executable, "-m", "py_compile", "aos/scripts/aos_doctor.py"],
+    [sys.executable, "aos/scripts/aos_task_document_check.py", "task", "--validate-all"],
+    [sys.executable, "aos/scripts/aos_task_document_check.py", "queue", "--list"],
+    [sys.executable, "aos/scripts/aos_task_document_check.py", "queue", "--next"],
+    [sys.executable, "aos/scripts/aos_task_document_check.py", "task", "--readiness-all"],
+    [sys.executable, "-c", "import pytest"],
+    [sys.executable, "-m", "pytest"]
 ]
 
 def run_command(cmd):
@@ -63,11 +64,11 @@ def determine_overall_status(results):
         stderr = r.get("stderr", "")
         
         # If unittest returned PASS but ran 0 tests, do not treat as strong PASS
-        if "unittest" in r.get("command", "") and status == "PASS":
-            if "Ran 0 tests" in stdout or "Ran 0 tests" in stderr:
-                has_failed = True
+        if ("unittest" in r.get("command", "") or "pytest" in r.get("command", "")) and status == "PASS":
+            if "Ran 0 tests" in stdout or "Ran 0 tests" in stderr or "collected 0 items" in stdout or "collected 0 items" in stderr:
                 r["status"] = "FAILED"
-                r["reason"] = "Ran 0 tests is not a strong PASS"
+                r["reason"] = "0 tests executed is not a strong PASS"
+                has_failed = True
                 status = "FAILED"
                 
         if status == "FAILED":
@@ -95,8 +96,24 @@ def main():
     args = parser.parse_args()
 
     results = []
+    pytest_available = True
     for cmd in COMMANDS_TO_AGGREGATE:
+        if "-m" in cmd and "pytest" in cmd:
+            if not pytest_available:
+                results.append({
+                    "command": " ".join(cmd),
+                    "status": "NOT_RUN",
+                    "reason": "Skipped due to missing pytest dependency"
+                })
+                continue
+                
         res = run_command(cmd)
+        
+        if len(cmd) == 3 and cmd[1] == "-c" and cmd[2] == "import pytest":
+            if res.get("status") == "FAILED":
+                pytest_available = False
+                res["reason"] = f"Missing required development dependency: pytest. Interpreter: {sys.executable}. Authoritative dependency declaration: requirements-dev.txt. Run: {sys.executable} -m pip install -r requirements-dev.txt"
+                
         results.append(res)
         
     overall_status = determine_overall_status(results)
