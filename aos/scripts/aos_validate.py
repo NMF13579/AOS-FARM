@@ -24,7 +24,8 @@ VALIDATION_COMMANDS = [
     # Do not include aos_doctor.py here because doctor runs broad unittest discover and can recursively re-enter tests/test_aos_validate.py through aos_validate.py.
     ["python3", "aos/scripts/aos_queue_dashboard.py"],
     ["python3", "aos/scripts/aos_next_task_selection.py", "--json"],
-    [sys.executable, "aos/scripts/aos_duplicate_workspace_check.py", "--json"]
+    [sys.executable, "aos/scripts/aos_duplicate_workspace_check.py", "--json"],
+    [sys.executable, "aos/scripts/aos_conditional_scope_check.py", "--json"]
 ]
 
 PASS = "PASS"
@@ -469,7 +470,7 @@ def main():
     args = parser.parse_args()
 
     results = []
-    
+
     commands_to_run = VALIDATION_COMMANDS
     if args.target != "all":
         # Extend to support specific targets if needed later
@@ -478,7 +479,7 @@ def main():
     for cmd in commands_to_run:
         res = run_command(cmd)
         results.append(res)
-        
+
     if args.target == "all" or args.target == "architecture":
         try:
             arch_report = aos_architecture_document_check.get_validate_all_report()
@@ -503,7 +504,7 @@ def main():
                 "implementation_authorized": False,
                 "release_authorized": False
             })
-            
+
     readiness_audit = build_readiness_audit()
     technical_status = determine_overall_status(results)
     if readiness_audit.get("status") == "UNKNOWN_BLOCKED":
@@ -532,11 +533,20 @@ def main():
                 data = json.loads(r.get("stdout", "{}"))
                 duplicate_workspace_status = data.get("final_status", r.get("status", "UNKNOWN_BLOCKED"))
                 duplicate_workspace_summary = data.get("summary", {})
-                
+
                 if duplicate_workspace_status != "PASS":
                     technical_status = duplicate_workspace_status
             except:
                 duplicate_workspace_status = "UNKNOWN_BLOCKED"
+                technical_status = "UNKNOWN_BLOCKED"
+
+        if "aos_conditional_scope_check.py" in r.get("command", ""):
+            try:
+                data = json.loads(r.get("stdout", "{}"))
+                cond_status = data.get("final_status", r.get("status", "UNKNOWN_BLOCKED"))
+                if cond_status != "PASS":
+                    technical_status = cond_status
+            except:
                 technical_status = "UNKNOWN_BLOCKED"
 
     output = {
@@ -566,7 +576,7 @@ def main():
         print("=== Unified AOS Validate ===")
         print("Validation orchestration only.")
         print("PASS is not approval. PASS is not execution authorization.\n")
-        
+
         for r in results:
             print(f"Command: {r['command']}")
             print(f"Status:  {r['status']}")
@@ -578,7 +588,7 @@ def main():
                     print("Stderr excerpt:")
                     print("\n".join(r['stderr'].split('\n')[:3]))
             print("-" * 40)
-            
+
         if required_sources_check["status"] != "PASS":
             print("ERROR: Required Root Sources Missing:")
             for m in required_sources_check["missing"]:

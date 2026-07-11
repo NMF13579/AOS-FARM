@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Build Step Scope Contract",
+  "type": "object",
+  "properties": {
+    "schema_name": {
+      "type": "string",
+      "const": "aos_build_step_scope_contract"
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "baseline": {
+      "type": "object",
+      "properties": {
+        "head": {
+          "type": "string"
+        },
+        "preexisting_untracked_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "head",
+        "preexisting_untracked_paths"
+      ]
+    },
+    "primary_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "conditional_scope": {
+      "type": "object",
+      "properties": {
+        "approved": {
+          "type": "boolean"
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "max_total_files": {
+              "type": "integer"
+            },
+            "max_production_files": {
+              "type": "integer"
+            },
+            "max_test_files": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "max_total_files",
+            "max_production_files",
+            "max_test_files"
+          ]
+        },
+        "allowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pattern": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": ["test", "production"]
+              },
+              "allowed_change_types": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["added", "modified"]
+                }
+              }
+            },
+            "required": [
+              "pattern",
+              "role",
+              "allowed_change_types"
+            ]
+          }
+        },
+        "forbidden_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_change_classes": {
+          "type": "object",
+          "properties": {
+            "machine_enforced": {
+              "type": "boolean"
+            },
+            "semantic_review_required": {
+              "type": "boolean"
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "approved",
+        "limits",
+        "allowed_paths",
+        "forbidden_paths"
+      ]
+    }
+  },
+  "required": [
+    "schema_name",
+    "schema_version",
+    "baseline",
+    "primary_files",
+    "conditional_scope"
+  ]
+}
