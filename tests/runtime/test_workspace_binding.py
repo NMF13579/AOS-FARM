@@ -46,12 +46,12 @@ def test_validate_workspace_lock_record_negative():
         "expires_at": "2026-07-10T13:00:00Z",
         "source_type": WorkspaceLockSourceType.EXPLICIT_VALIDATION_INPUT.value
     }
-    
+
     # Unknown field
     bad = dict(record)
     bad["unknown"] = 1
     assert validate_workspace_lock_record(bad, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1")["error_code"] == "UNKNOWN_FIELD_IN_WORKSPACE_LOCK"
-    
+
     # Missing required field
     bad = dict(record)
     del bad["lock_id"]
@@ -68,7 +68,7 @@ def test_validate_workspace_lock_record_negative():
     assert validate_workspace_lock_record(record, "ws_1", "sess_1_valid", "pkg_2", "a" * 64, "auth_1")["error_code"] == "PACKAGE_ID_MISMATCH"
     assert validate_workspace_lock_record(record, "ws_1", "sess_1_valid", "pkg_1", "b" * 64, "auth_1")["error_code"] == "PACKAGE_DIGEST_MISMATCH"
     assert validate_workspace_lock_record(record, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_2")["error_code"] == "AUTHORIZATION_ID_MISMATCH"
-    
+
     # Authoritative source rejection
     bad = dict(record)
     bad["source_type"] = WorkspaceLockSourceType.AUTHORITATIVE_SYSTEM_LOCK.value
@@ -84,13 +84,13 @@ def test_evaluate_workspace_lock_lookup():
         "durable": True,
         "cross_process_safe": True
     }
-    
+
     # Missing verified context
     assert evaluate_workspace_lock_lookup(None, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1")["error_code"] == "MISSING_VERIFIED_ADAPTER_CONTEXT"
 
     # Missing lookup result
     assert evaluate_workspace_lock_lookup(None, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", valid_ctx)["error_code"] == "MISSING_LOOKUP_RESULT"
-    
+
     lookup = {
         "lookup_status": "FOUND",
         "source_type": WorkspaceLockSourceType.EXPLICIT_VALIDATION_INPUT.value,
@@ -111,7 +111,7 @@ def test_evaluate_workspace_lock_lookup():
         "expires_at": "2026-07-10T13:00:00Z",
         "source_type": WorkspaceLockSourceType.EXPLICIT_VALIDATION_INPUT.value
     }
-    
+
     lookup["record"] = record
     assert evaluate_workspace_lock_lookup(lookup, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", valid_ctx)["status"] == "PASS"
 
@@ -122,19 +122,19 @@ def test_evaluate_workspace_lock_lookup():
     # 1. Adapter ID mismatch
     lookup["adapter_id"] = "spoofed_adapter"
     assert evaluate_workspace_lock_lookup(lookup, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", valid_ctx)["error_code"] == "ADAPTER_ID_MISMATCH"
-    
+
     # 2. Lock lookup NOT_FOUND with unverified authority claim
     lookup["lookup_status"] = "NOT_FOUND"
     lookup["adapter_id"] = "test_adapter_01"
     bad_ctx = dict(valid_ctx)
     bad_ctx["authority_verified"] = False
     assert evaluate_workspace_lock_lookup(lookup, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", bad_ctx)["error_code"] == "UNVERIFIED_AUTHORITY_CLAIM"
-    
+
     # 3. Lock lookup NOT_FOUND with non-authoritative absence (durable=False)
     bad_ctx = dict(valid_ctx)
     bad_ctx["durable"] = False
     assert evaluate_workspace_lock_lookup(lookup, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", bad_ctx)["error_code"] == "NON_AUTHORITATIVE_ABSENCE"
-    
+
     # 4. Valid NOT_FOUND
     assert evaluate_workspace_lock_lookup(lookup, "ws_1", "sess_1_valid", "pkg_1", "a" * 64, "auth_1", valid_ctx)["status"] == "PASS"
 
@@ -142,7 +142,7 @@ def test_in_memory_adapter():
     adapter = InMemoryTestWorkspaceLockAdapter()
     assert adapter.capability_declaration["durable"] is False
     assert adapter.capability_declaration["atomic_acquire"] is False
-    
+
     adapter.set_test_lock_record("ws_1", {"lock_state": WorkspaceLockState.PRESENT_SELF.value})
     assert adapter.lookup_lock("ws_1")["record"]["lock_state"] == WorkspaceLockState.PRESENT_SELF.value
 
@@ -299,3 +299,116 @@ def test_validate_workspace_state_binding():
     assert res_1["status"] == "PASS"
     # PASS from this validator is a technical result only. It is not human approval.
 
+
+# --- F-2 Parity and Contract Tests ---
+
+@pytest.mark.parametrize(
+    ("session_id", "expected_accepts"),
+    [
+        ("session_123", True),
+        ("session-123", True),
+        ("Session_ABC-123", True),
+        ("", False),
+        ("short", False),
+        ("a" * 257, False),
+        ("sess 123", False),
+        ("sess/123", False),
+        ("sess:123", False),
+        ("sess.123", False),
+        ("sess!123", False),
+        ("sessю123", False),
+        (None, False),
+        (123, False),
+    ],
+)
+def test_workspace_lock_session_id_accept_reject_parity(session_id, expected_accepts):
+    import copy
+    from aos.runtime.session_binding import validate_session_id
+
+    # invalid-type tests (None, 123) should use a stable valid ID as expected_session_id
+    # invalid characters should use the same ID as expected_session_id for invalid-but-equal check
+    if session_id is None or isinstance(session_id, int):
+        expected_session_id = "session_123"
+    else:
+        expected_session_id = session_id
+
+    record = {
+        "workspace_instance_id": "valid_workspace",
+        "package_id": "pkg_1",
+        "package_digest": "a"*64,
+        "authorization_id": "auth_1",
+        "lock_id": "lock",
+        "lock_state": "PRESENT_SELF",
+        "created_at": "2026-07-10T12:00:00Z",
+        "expires_at": "2026-07-10T13:00:00Z",
+        "source_type": "EXPLICIT_VALIDATION_INPUT",
+        "session_id": session_id
+    }
+    record_before = copy.deepcopy(record)
+
+    try:
+        session_result = validate_session_id(session_id)
+        session_accepts = session_result["status"] == "PASS"
+    except TypeError:
+        session_accepts = False
+
+    w_res = validate_workspace_lock_record(record, "valid_workspace", expected_session_id, "pkg_1", "a"*64, "auth_1")
+    workspace_accepts = w_res["status"] == "PASS"
+
+    assert session_accepts is expected_accepts
+    assert workspace_accepts is expected_accepts
+    assert session_accepts == workspace_accepts
+
+    if not workspace_accepts:
+        assert w_res["error_code"] == "INVALID_SESSION_ID_FORMAT"
+
+    assert record == record_before
+
+def test_workspace_lock_invalid_but_equal():
+    import copy
+    record = {
+        "workspace_instance_id": "valid_workspace",
+        "package_id": "pkg_1",
+        "package_digest": "a"*64,
+        "authorization_id": "auth_1",
+        "lock_id": "lock",
+        "lock_state": "PRESENT_SELF",
+        "created_at": "2026-07-10T12:00:00Z",
+        "expires_at": "2026-07-10T13:00:00Z",
+        "source_type": "EXPLICIT_VALIDATION_INPUT",
+        "session_id": "sess/123"
+    }
+    record_before = copy.deepcopy(record)
+
+    w_res = validate_workspace_lock_record(record, "valid_workspace", "sess/123", "pkg_1", "a"*64, "auth_1")
+
+    assert w_res["status"] == "BLOCKED"
+    assert w_res["error_code"] == "INVALID_SESSION_ID_FORMAT"
+    assert record == record_before
+
+def test_workspace_lock_valid_format_mismatch():
+    import copy
+    record = {
+        "workspace_instance_id": "valid_workspace",
+        "package_id": "pkg_1",
+        "package_digest": "a"*64,
+        "authorization_id": "auth_1",
+        "lock_id": "lock",
+        "lock_state": "PRESENT_SELF",
+        "created_at": "2026-07-10T12:00:00Z",
+        "expires_at": "2026-07-10T13:00:00Z",
+        "source_type": "EXPLICIT_VALIDATION_INPUT",
+        "session_id": "session_123"
+    }
+    record_before = copy.deepcopy(record)
+
+    w_res = validate_workspace_lock_record(record, "valid_workspace", "session_456", "pkg_1", "a"*64, "auth_1")
+
+    assert w_res["status"] == "BLOCKED"
+    assert w_res["error_code"] == "SESSION_ID_MISMATCH"
+    assert record == record_before
+
+def test_workspace_id_empty_string():
+    res = validate_workspace_instance_id("")
+    assert res["status"] == "BLOCKED"
+    assert res["error_code"] == "MISSING_WORKSPACE_INSTANCE_ID"

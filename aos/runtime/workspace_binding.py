@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict, Any, Optional
 import re
 from datetime import datetime, timezone
+from .session_binding import validate_session_id
 
 class WorkspaceLockState(Enum):
     ABSENT = "ABSENT"
@@ -20,8 +21,6 @@ class WorkspaceLockSourceType(Enum):
 def validate_workspace_instance_id(workspace_id: str) -> Dict[str, Any]:
     if not workspace_id:
         return {"status": "BLOCKED", "error_code": "MISSING_WORKSPACE_INSTANCE_ID"}
-    if len(workspace_id) == 0:
-        return {"status": "BLOCKED", "error_code": "EMPTY_WORKSPACE_INSTANCE_ID"}
     
     # Must only contain letters, numbers, dashes, underscores. No paths.
     if not re.match(r'^[a-zA-Z0-9_-]+$', workspace_id):
@@ -87,7 +86,10 @@ def validate_workspace_lock_record(record: Dict[str, Any], expected_workspace_id
     if validate_workspace_instance_id(record["workspace_instance_id"])["status"] != "PASS":
         return {"status": "BLOCKED", "error_code": "INVALID_WORKSPACE_INSTANCE_ID_FORMAT"}
         
-    if not isinstance(record["session_id"], str) or len(record["session_id"]) < 8 or len(record["session_id"]) > 256:
+    try:
+        if validate_session_id(record["session_id"])["status"] != "PASS":
+            return {"status": "BLOCKED", "error_code": "INVALID_SESSION_ID_FORMAT"}
+    except TypeError:
         return {"status": "BLOCKED", "error_code": "INVALID_SESSION_ID_FORMAT"}
         
     if not isinstance(record["package_digest"], str) or len(record["package_digest"]) != 64 or not record["package_digest"].islower() or not all(c in '0123456789abcdef' for c in record["package_digest"]):

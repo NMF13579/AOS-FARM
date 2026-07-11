@@ -53,7 +53,7 @@ def test_aggregate_binding_results():
         {"status": "BLOCKED"},
         {"status": "UNKNOWN_BLOCKED"}
     ])["status"] == "UNKNOWN_BLOCKED"
-    
+
     res = aggregate_binding_results([
         {"check": "a", "status": "NOT_RUN"},
         {"check": "b", "status": "PASS"}
@@ -66,10 +66,10 @@ def test_bind_platform():
         "execution_environment_id": "env_1",
         "execution_mode": "strict"
     }
-    
+
     res = bind_platform(package, "mac_m1", "env_1", "strict")
     assert all(r["status"] == "PASS" for r in res)
-    
+
     res_mismatch = bind_platform(package, "mac_intel", "env_1", "strict")
     for r in res_mismatch:
         if r["check"] == "platform_profile":
@@ -78,7 +78,7 @@ def test_bind_platform():
 
 def test_bind_repository_mocked(monkeypatch):
     import aos.runtime.package_binding as pb
-    
+
     def mock_run_git(args, cwd):
         if args == ["rev-parse", "--show-toplevel"]:
             return cwd
@@ -93,18 +93,18 @@ def test_bind_repository_mocked(monkeypatch):
         if args == ["status", "--porcelain=v1"]:
             return ""
         raise pb.AOSBindingError("mock error")
-        
+
     monkeypatch.setattr(pb, "_run_git", mock_run_git)
     monkeypatch.setattr(pb.Path, "exists", lambda self: True)
     monkeypatch.setattr(pb.Path, "is_dir", lambda self: True)
     monkeypatch.setattr(pb.Path, "resolve", lambda self: self)
-    
+
     package = {
         "remote_identity": "github.com/test/repo",
         "branch": "main",
         "baseline_head": "a" * 40
     }
-    
+
     res = pb.bind_repository(package, "/dummy")
     for r in res:
         assert r["status"] == "PASS"
@@ -115,7 +115,7 @@ def test_bind_repository_mocked(monkeypatch):
         "baseline_head": "b" * 40
     }
     res_mismatch = pb.bind_repository(package_mismatch, "/dummy")
-    
+
     for r in res_mismatch:
         if r["check"] == "baseline_state":
             assert r["status"] == "PASS"
@@ -129,7 +129,7 @@ def test_git_unmerged_state(monkeypatch):
             return "UU file.txt"
         return ""
     monkeypatch.setattr(pb, "_run_git", mock_run_git)
-    
+
     with pytest.raises(AOSBindingError) as exc:
         pb._get_baseline_state("/dummy")
     assert "UNMERGED_STATE_BLOCKED" in str(exc.value)
@@ -150,7 +150,7 @@ def test_git_detached_head_blocks(monkeypatch):
     monkeypatch.setattr(pb.Path, "exists", lambda self: True)
     monkeypatch.setattr(pb.Path, "is_dir", lambda self: True)
     monkeypatch.setattr(pb.Path, "resolve", lambda self: self)
-    
+
     package = {
         "remote_identity": "github.com/test/repo",
         "branch": "main",
@@ -161,3 +161,54 @@ def test_git_detached_head_blocks(monkeypatch):
         if r["check"] == "branch":
             assert r["status"] == "BLOCKED"
             assert r["error_code"] == "DETACHED_HEAD_BLOCKED"
+
+@pytest.mark.parametrize(
+    "status_output,expected_staged,expected_unstaged,expected_untracked,expected_clean",
+    [
+        # Clean repository
+        ("", False, False, False, True),
+        # Unstaged tracked changes (leading space is critical!)
+        (" M file.txt", False, True, False, False),
+        # Staged changes (no leading space)
+        ("M  file.txt", True, False, False, False),
+        ("A  file.txt", True, False, False, False),
+        # Staged + Unstaged (e.g. MM)
+        ("MM file.txt", True, True, False, False),
+        ("AM file.txt", True, True, False, False),
+        # Untracked only
+        ("?? file.txt", False, False, True, True),
+        # Mixed state (untracked + unstaged tracked)
+        ("?? file.txt\n M file2.txt", False, True, True, False),
+        # Mixed state (staged + untracked)
+        ("M  file.txt\n?? file2.txt", True, False, True, False),
+        # Mixed state (staged + unstaged + untracked)
+        ("M  file1.txt\n M file2.txt\n?? file3.txt", True, True, True, False),
+    ]
+)
+def test_git_baseline_state_parsing(monkeypatch, status_output, expected_staged, expected_unstaged, expected_untracked, expected_clean):
+    """
+    Regression test for porcelain parsing.
+    Validates:
+    - clean repository
+    - unstaged tracked changes (ensures leading whitespace preservation)
+    - staged changes
+    - staged + unstaged
+    - untracked only
+    - mixed state
+    - absence of false staged_changes_present
+    """
+    import aos.runtime.package_binding as pb
+
+    def mock_run_git(args, cwd):
+        if args == ["status", "--porcelain=v1"]:
+            return status_output
+        return ""
+
+    monkeypatch.setattr(pb, "_run_git", mock_run_git)
+
+    state = pb._get_baseline_state("/dummy")
+
+    assert state["staged_changes_present"] is expected_staged
+    assert state["unstaged_tracked_changes_present"] is expected_unstaged
+    assert state["untracked_inventory_present"] is expected_untracked
+    assert state["tracked_clean"] is expected_clean

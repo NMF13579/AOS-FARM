@@ -220,3 +220,57 @@ def test_full_integration_pipeline():
     )
     assert resume["status"] == "PASS"
 
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("schema_version", True),
+        ("schema_version", False),
+        ("package_revision", True),
+        ("package_revision", False),
+        ("policy_version", True),
+        ("policy_version", False),
+        ("protected_path_registry_version", True),
+        ("protected_path_registry_version", False),
+        ("maximum_sessions", True),
+        ("maximum_sessions", False),
+    ],
+)
+def test_bool_rejected_for_integer_fields(field, value):
+    import copy
+    obj = load_fixture('positive/valid_package.json')
+    obj[field] = value
+    obj_before = copy.deepcopy(obj)
+    with pytest.raises(AOSRuntimeError) as exc:
+        validate_execution_package_schema(obj)
+    assert exc.value.error_code == "INVALID_FIELD_TYPE"
+    assert exc.value.path == field
+    assert "got bool" in exc.value.message
+    assert obj == obj_before
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("schema_version", 1),
+        ("package_revision", 1),
+        ("policy_version", 1),
+        ("protected_path_registry_version", 1),
+        ("maximum_sessions", 1),
+    ],
+)
+def test_positive_integer_fields(field, value):
+    obj = load_fixture('positive/valid_package.json')
+    obj[field] = value
+    # Check that the value is an exact integer
+    assert type(obj[field]) is int
+    assert validate_execution_package_schema(obj) is True
+
+def test_schema_version_string():
+    import copy
+    obj = load_fixture('positive/valid_package.json')
+    obj['schema_version'] = '1'
+    obj_before = copy.deepcopy(obj)
+    with pytest.raises(AOSRuntimeError) as exc:
+        validate_execution_package_schema(obj)
+    assert exc.value.error_code == 'INVALID_FIELD_TYPE'
+    assert obj == obj_before

@@ -22,7 +22,7 @@ def _run_git(args, cwd):
         )
         if res.returncode != 0:
             raise AOSBindingError(f"Git command failed: {res.stderr.strip()}")
-        return res.stdout.strip()
+        return res.stdout.rstrip('\r\n')
     except Exception as e:
         raise AOSBindingError(f"Git execution error: {str(e)}")
 

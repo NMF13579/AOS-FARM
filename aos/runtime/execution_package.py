@@ -57,25 +57,22 @@ def validate_execution_package_schema(obj):
     if "schema_version" not in obj:
         raise AOSRuntimeError("ERROR", "SCHEMA_VERSION_MISSING", "schema_version is missing", "schema")
     
-    if obj["schema_version"] != 1:
-        raise AOSRuntimeError("ERROR", "SCHEMA_VERSION_UNSUPPORTED", f"Unsupported schema_version: {obj['schema_version']}", "schema")
-    
     for field, (is_required, expected_type) in SCHEMA_FIELDS.items():
         if field in obj:
             v = obj[field]
             if v is None:
                 raise AOSRuntimeError("ERROR", "INVALID_FIELD_TYPE", f"Field {field} cannot be null", "schema", path=field)
+            if expected_type is int and isinstance(v, bool):
+                raise AOSRuntimeError("ERROR", "INVALID_FIELD_TYPE", f"Field {field} must be int, got bool", "schema", path=field)
             if not isinstance(v, expected_type):
-                # Note: bool is a subclass of int in python, so isinstance(True, int) is True, 
-                # but isinstance(1, bool) is False. To be safe:
-                if expected_type is int and isinstance(v, bool):
-                    raise AOSRuntimeError("ERROR", "INVALID_FIELD_TYPE", f"Field {field} must be {expected_type.__name__}, got bool", "schema", path=field)
-                if not isinstance(v, expected_type):
-                    raise AOSRuntimeError("ERROR", "INVALID_FIELD_TYPE", f"Field {field} must be {expected_type.__name__}", "schema", path=field)
+                raise AOSRuntimeError("ERROR", "INVALID_FIELD_TYPE", f"Field {field} must be {expected_type.__name__}", "schema", path=field)
         else:
             if is_required:
                 raise AOSRuntimeError("ERROR", "MISSING_REQUIRED_FIELD", f"Missing required field: {field}", "schema", path=field)
     
+    if obj["schema_version"] != 1:
+        raise AOSRuntimeError("ERROR", "SCHEMA_VERSION_UNSUPPORTED", f"Unsupported schema_version: {obj['schema_version']}", "schema")
+
     for k in obj.keys():
         if k not in SCHEMA_FIELDS:
             raise AOSRuntimeError("ERROR", "UNKNOWN_FIELD", f"Unknown field: {k}", "schema", path=k)
