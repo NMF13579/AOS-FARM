@@ -1,0 +1,11 @@
+{
+    "replay_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "package_id": "pkg_1",
+    "package_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "authorization_id": "auth_1",
+    "nonce": "n1_abcde",
+    "session_id": "sess_1_valid",
+    "record_state": "CONSUMED",
+    "recorded_at": "2026-07-10T12:00:00Z",
+    "source_type": "EXPLICIT_VALIDATION_INPUT"
+}
