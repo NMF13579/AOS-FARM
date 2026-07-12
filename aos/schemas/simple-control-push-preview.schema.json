@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Push Preview",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["preview_version", "preview_id", "source_commit_oid", "remote_oid", "target_ref", "preview_created", "push_started", "integration_started"],
+  "properties": {
+    "preview_version": {"const": 1},
+    "preview_created": {"const": true},
+    "push_started": {"const": false},
+    "integration_started": {"const": false}
+  }
+}

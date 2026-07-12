@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Simple Control Analysis Package",
+  "type": "object",
+  "required": [
+    "analysis_id",
+    "intent_binding",
+    "repository_binding",
+    "documentation_route",
+    "goal",
+    "affected_components",
+    "candidate_read_paths",
+    "candidate_write_paths",
+    "protected_or_canonical_impact",
+    "destructive_impact",
+    "lifecycle_impact",
+    "required_product_actions",
+    "mandatory_control_actions",
+    "optional_improvements",
+    "validation_requirements",
+    "unknowns",
+    "blockers",
+    "evidence_references"
+  ],
+  "properties": {
+    "analysis_id": {"type": "string"},
+    "intent_binding": {"type": "string"},
+    "repository_binding": {"type": "object"},
+    "documentation_route": {
+      "type": "string",
+      "enum": ["NARROW_LOCAL_TASK", "FEATURE_OR_BEHAVIOR_CHANGE", "ARCHITECTURE_OR_CONTROL_CHANGE", "UNKNOWN"]
+    },
+    "goal": {"type": "string"},
+    "affected_components": {"type": "array"},
+    "candidate_read_paths": {"type": "array"},
+    "candidate_write_paths": {"type": "array"},
+    "protected_or_canonical_impact": {"type": "string", "enum": ["true", "false", "unknown"]},
+    "destructive_impact": {"type": "string", "enum": ["true", "false", "unknown"]},
+    "lifecycle_impact": {"type": "string", "enum": ["true", "false", "unknown"]},
+    "required_product_actions": {"type": "array"},
+    "mandatory_control_actions": {"type": "array"},
+    "optional_improvements": {"type": "array"},
+    "validation_requirements": {"type": "array"},
+    "unknowns": {"type": "array"},
+    "blockers": {"type": "array"},
+    "evidence_references": {"type": "array"},
+    "grants": {"type": "array", "maxItems": 0}
+  }
+}

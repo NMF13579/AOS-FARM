@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Validation Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "validation_version",
+    "task_id",
+    "validation_status",
+    "checks",
+    "unknowns",
+    "blockers",
+    "warnings",
+    "evidence_status",
+    "approval_status",
+    "execution_authorized",
+    "derived_control_state"
+  ],
+  "properties": {
+    "validation_version": {"const": 1},
+    "task_id": {"type": ["string", "null"]},
+    "validation_status": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN"]},
+    "checks": {"type": "array", "items": {"type": "object"}},
+    "unknowns": {"type": "array"},
+    "blockers": {"type": "array"},
+    "warnings": {"type": "array"},
+    "evidence_status": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN"]},
+    "approval_status": {"enum": ["NOT_PROVIDED"]},
+    "execution_authorized": {"const": false},
+    "derived_control_state": {
+      "enum": [
+        "CONTROL_ANALYZING",
+        "CONTROL_ANALYZED",
+        "CONTROL_SCOPE_CONFIRMATION_REQUIRED",
+        "CONTROL_RISK_SELECTION_REQUIRED",
+        "CONTROL_EXECUTION_AUTHORIZATION_REQUIRED",
+        "CONTROL_BLOCKED",
+        "CONTROL_UNKNOWN_BLOCKED"
+      ]
+    }
+  }
+}

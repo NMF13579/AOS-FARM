@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Execution Request",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "request_version",
+    "request_id",
+    "task_id",
+    "proposal_binding",
+    "scope_confirmation_binding",
+    "Risk_Profile_assignment_binding",
+    "validation_result_binding",
+    "requested_operation",
+    "repository_baseline",
+    "read_scope",
+    "write_scope",
+    "forbidden_paths",
+    "planned_actions",
+    "required_validation",
+    "mandatory_controls",
+    "protected_or_canonical_impact",
+    "destructive_impact",
+    "lifecycle_impact",
+    "non_grants"
+  ],
+  "properties": {
+    "request_version": {"const": 1},
+    "requested_operation": {"const": "PREPARE_SCOPED_EXECUTION"},
+    "repository_baseline": {"type": "object"},
+    "planned_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action_id", "action_type", "relative_path", "expected_preimage", "proposed_content", "scope_binding", "reason", "source_reference"],
+        "properties": {
+          "action_type": {"enum": ["CREATE_FILE", "REPLACE_FILE"]},
+          "relative_path": {"type": "string"},
+          "expected_preimage": {"type": "object"},
+          "proposed_content": {"type": "object"}
+        }
+      }
+    },
+    "protected_or_canonical_impact": {"enum": ["true", "false", "unknown"]},
+    "destructive_impact": {"enum": ["true", "false", "unknown"]},
+    "lifecycle_impact": {"enum": ["true", "false", "unknown"]},
+    "non_grants": {"type": "array", "items": {"type": "string"}}
+  }
+}

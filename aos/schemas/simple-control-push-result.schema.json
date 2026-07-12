@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Push Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["result_version", "operation_id", "push_state", "commit_oid", "target_ref", "remote_oid", "integration_performed", "release_performed", "approval_granted"],
+  "properties": {
+    "result_version": {"const": 1},
+    "push_state": {"enum": ["PUSH_COMPLETED", "PUSH_BLOCKED", "PUSH_RECONCILIATION_REQUIRED"]},
+    "integration_performed": {"const": false},
+    "release_performed": {"const": false},
+    "approval_granted": {"const": false}
+  }
+}

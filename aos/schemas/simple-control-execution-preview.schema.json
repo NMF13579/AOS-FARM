@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Execution Preview",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "preview_version",
+    "task_id",
+    "repository",
+    "branch",
+    "head",
+    "planned_actions",
+    "execution_preview_created",
+    "production_operation_started",
+    "repository_files_modified",
+    "control_state",
+    "operation_state",
+    "production_execution_available",
+    "reason_code"
+  ],
+  "properties": {
+    "preview_version": {"const": 1},
+    "execution_preview_created": {"const": true},
+    "production_operation_started": {"const": false},
+    "repository_files_modified": {"const": false},
+    "control_state": {"enum": ["CONTROL_READY_FOR_EXECUTION", "CONTROL_SCOPE_EXPANSION_REQUIRED", "CONTROL_BLOCKED", "CONTROL_UNKNOWN_BLOCKED"]},
+    "operation_state": {"enum": ["OPERATION_PREVIEWED", "OPERATION_REQUESTED"]},
+    "production_execution_available": {"const": false},
+    "reason_code": {"type": "string"}
+  }
+}

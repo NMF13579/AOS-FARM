@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Derived Status",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "kind",
+    "task_id",
+    "lifecycle",
+    "control_state",
+    "validation_status",
+    "evidence_status",
+    "approval_status",
+    "execution_authorized",
+    "next_recommended_command",
+    "non_grants",
+    "status_is_source_of_truth"
+  ],
+  "properties": {
+    "kind": {"const": "status"},
+    "task_id": {"type": ["string", "null"]},
+    "lifecycle": {
+      "type": "object",
+      "required": ["status", "mutated"],
+      "properties": {
+        "status": {"type": "string"},
+        "mutated": {"const": false}
+      }
+    },
+    "control_state": {"type": "string"},
+    "validation_status": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN"]},
+    "evidence_status": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN"]},
+    "approval_status": {"enum": ["NOT_PROVIDED"]},
+    "execution_authorized": {"const": false},
+    "next_recommended_command": {"type": "string"},
+    "non_grants": {"type": "array", "items": {"type": "string"}},
+    "status_is_source_of_truth": {"const": false}
+  }
+}

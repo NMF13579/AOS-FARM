@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Git Reconciliation Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["reconciliation_result", "side_effect_repeated"],
+  "properties": {
+    "reconciliation_result": {
+      "enum": [
+        "COMMIT_ALREADY_COMPLETED_VERIFIED",
+        "SAFE_TO_RETRY_COMMIT",
+        "COMMIT_NOT_CREATED_INDEX_STAGED",
+        "COMMIT_CREATED_TREE_MISMATCH",
+        "PUSH_ALREADY_COMPLETED_VERIFIED",
+        "SAFE_TO_RETRY_PUSH",
+        "REMOTE_ADVANCED_UNEXPECTEDLY",
+        "PUSH_PARTIAL_OR_UNKNOWN",
+        "BLOCKED",
+        "UNKNOWN_BLOCKED"
+      ]
+    },
+    "side_effect_repeated": {"const": false}
+  }
+}

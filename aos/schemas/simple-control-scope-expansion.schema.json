@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Scope Expansion Proposal",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "discovered_requirement",
+    "additional_write_paths",
+    "additional_actions",
+    "Risk_Profile_impact",
+    "protected_or_canonical_impact",
+    "destructive_impact",
+    "recommended_decision"
+  ],
+  "properties": {
+    "additional_write_paths": {"type": "array", "items": {"type": "string"}},
+    "additional_actions": {"type": "array"},
+    "recommended_decision": {
+      "type": "array",
+      "items": {"enum": ["expand_scope", "create_separate_task", "reduce_goal", "stop"]}
+    }
+  }
+}

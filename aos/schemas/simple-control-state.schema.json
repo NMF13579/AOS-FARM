@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Simple Control Surface Typed State Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "External canonical lifecycle value. This schema does not create new lifecycle statuses."
+        }
+      },
+      "required": ["status"]
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "CONTROL_INTENT_RECEIVED",
+            "CONTROL_ANALYZING",
+            "CONTROL_ANALYZED",
+            "CONTROL_PLAN_PROPOSED",
+            "CONTROL_PLAN_REVISION_REQUIRED",
+            "CONTROL_SCOPE_CONFIRMATION_REQUIRED",
+            "CONTROL_RISK_SELECTION_REQUIRED",
+            "CONTROL_EXECUTION_AUTHORIZATION_REQUIRED",
+            "CONTROL_READY_FOR_EXECUTION",
+            "CONTROL_EXECUTING",
+            "CONTROL_SCOPE_EXPANSION_REQUIRED",
+            "CONTROL_CHANGES_PREPARED",
+            "CONTROL_VALIDATING",
+            "CONTROL_HUMAN_REVIEW_REQUIRED",
+            "CONTROL_READY_TO_COMMIT",
+            "CONTROL_COMMITTED",
+            "CONTROL_PUSHED",
+            "CONTROL_READY_TO_INTEGRATE",
+            "CONTROL_INTEGRATED",
+            "CONTROL_CLOSURE_REVIEW_REQUIRED",
+            "CONTROL_BLOCKED",
+            "CONTROL_UNKNOWN_BLOCKED"
+          ]
+        }
+      },
+      "required": ["state"]
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "OPERATION_REQUESTED",
+            "OPERATION_PREVIEWED",
+            "OPERATION_CONFIRMED",
+            "OPERATION_PRECONDITIONS_VERIFIED",
+            "OPERATION_STARTED",
+            "OPERATION_VERIFYING",
+            "OPERATION_COMPLETED",
+            "OPERATION_FAILED",
+            "OPERATION_STOP_REQUESTED",
+            "OPERATION_CANCELLED_BEFORE_START",
+            "OPERATION_RECONCILIATION_REQUIRED"
+          ]
+        }
+      },
+      "required": ["state"]
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "NOT_RUN", "UNKNOWN"]
+        },
+        "required_not_run_blocks_closure": {
+          "type": "boolean",
+          "const": true
+        },
+        "not_run_counts_as_pass": {
+          "type": "boolean",
+          "const": false
+        },
+        "unknown_counts_as_ok": {
+          "type": "boolean",
+          "const": false
+        },
+        "pass_grants_approval": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "status",
+        "required_not_run_blocks_closure",
+        "not_run_counts_as_pass",
+        "unknown_counts_as_ok",
+        "pass_grants_approval"
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope_confirmed_by_human": {"type": "boolean", "default": false},
+        "Risk_Profile_assigned_by_human": {"type": "boolean", "default": false},
+        "execution_authorized": {"type": "boolean", "default": false},
+        "commit_authorized": {"type": "boolean", "default": false},
+        "push_authorized": {"type": "boolean", "default": false},
+        "integration_authorized": {"type": "boolean", "default": false},
+        "release_authorized": {"type": "boolean", "default": false},
+        "lifecycle_mutation_authorized": {"type": "boolean", "default": false}
+      },
+      "required": [
+        "scope_confirmed_by_human",
+        "Risk_Profile_assigned_by_human",
+        "execution_authorized",
+        "commit_authorized",
+        "push_authorized",
+        "integration_authorized",
+        "release_authorized",
+        "lifecycle_mutation_authorized"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["COMPLETE", "INCOMPLETE", "NOT_RUN", "UNKNOWN"]
+        },
+        "evidence_is_approval": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": ["status", "evidence_is_approval"]
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "approval_status": {
+          "type": "string",
+          "enum": ["NOT_APPROVED", "HUMAN_REVIEW_REQUIRED", "HUMAN_APPROVED", "HUMAN_REJECTED"]
+        },
+        "approval_source": {
+          "type": "string",
+          "enum": ["NONE", "HUMAN_DECISION_WITNESS"]
+        },
+        "pass_is_approval": {
+          "type": "boolean",
+          "const": false
+        },
+        "ci_pass_is_approval": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "approval_status",
+        "approval_source",
+        "pass_is_approval",
+        "ci_pass_is_approval"
+      ]
+    }
+  },
+  "required": [
+    "lifecycle",
+    "control",
+    "operation",
+    "validation",
+    "authorization",
+    "evidence",
+    "approval"
+  ]
+}
