@@ -3,6 +3,7 @@ import os
 import json
 import pytest
 import sys
+import re
 from pathlib import Path
 
 def run_git(cmd, cwd):
@@ -89,6 +90,53 @@ def run_checker(repo, args):
     cmd = [sys.executable, checker_script] + args
     res = subprocess.run(cmd, cwd=repo, capture_output=True, text=True)
     return res
+
+def write_freeze_contract(repo, candidate_files=None, commit_message="AOS-FARM.680 candidate freeze"):
+    if candidate_files is None:
+        candidate_files = ["src/new.txt"]
+    contract = {
+        "schema_name": "aos_build_step_scope_contract",
+        "schema_version": 1,
+        "task_id": "AOS-FARM.680",
+        "repository": "NMF13579/AOS-FARM",
+        "branch": "build/aos-farm-680-candidate-freeze",
+        "commit_message": commit_message,
+        "baseline": {
+            "head": get_head(repo),
+            "preexisting_untracked_paths": ["contract.json"]
+        },
+        "primary_files": candidate_files,
+        "candidate_files": candidate_files,
+        "conditional_scope": {
+            "approved": True,
+            "limits": {
+                "max_total_files": 0,
+                "max_production_files": 0,
+                "max_test_files": 0
+            },
+            "allowed_paths": [],
+            "forbidden_paths": ["00_AOS_Core_Control.md"],
+            "forbidden_change_classes": {
+                "machine_enforced": False,
+                "semantic_review_required": True,
+                "values": []
+            }
+        }
+    }
+    contract_path = repo / "contract.json"
+    with open(contract_path, "w") as f:
+        json.dump(contract, f)
+    return str(contract_path)
+
+def write_candidate_files(repo, paths, content_prefix="candidate"):
+    for idx, rel_path in enumerate(paths, start=1):
+        path = repo / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{content_prefix}-{idx}\n")
+
+def assert_real_index_clean(repo):
+    res = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=repo, capture_output=True, text=True, check=True)
+    assert res.stdout == ""
 
 # 1. --help не выполняет основную логику
 def test_1_help():
@@ -278,3 +326,333 @@ print(json.dumps({{
 }}))
 """)
     pass
+
+# 19. freeze derives candidate content tree without mutating the real index or persisting identity fields
+def test_19_freeze_outputs_tree_without_persisting_identity(repo):
+    write_freeze_contract(repo)
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+
+    res = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+
+    assert res.returncode == 0
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "PASS"
+    assert data["reason_code"] == "CANDIDATE_FREEZE_VERIFIED"
+    assert re.fullmatch(r"[0-9a-f]{40}", data["candidate_content_oid"])
+    assert "candidate_change_key" not in data
+    assert "candidate_tree" not in data
+    assert "tree_oid" not in data
+    assert_real_index_clean(repo)
+
+# 20. verify-freeze blocks when candidate content changes after the expected tree is known
+def test_20_verify_freeze_blocks_after_candidate_mutation(repo):
+    write_freeze_contract(repo)
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    (repo / "src" / "new.txt").write_text("mutated\n")
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "verify-freeze",
+        "--contract",
+        "contract.json",
+        "--expected-tree-oid",
+        expected_tree,
+    ])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "CANDIDATE_FREEZE_MISMATCH"
+    assert_real_index_clean(repo)
+
+# 20a. exact five-file candidate set passes and reports candidate_file_count 5
+def test_20a_exact_five_file_candidate_set_passes(repo):
+    candidate_files = [
+        "src/one.txt",
+        "src/two.txt",
+        "src/three.txt",
+        "tests/four.txt",
+        "reports/five.md",
+    ]
+    write_freeze_contract(repo, candidate_files=candidate_files)
+    write_candidate_files(repo, candidate_files)
+
+    res = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+
+    assert res.returncode == 0
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "PASS"
+    assert data["reason_code"] == "CANDIDATE_FREEZE_VERIFIED"
+    assert data["stats"]["candidate_file_count"] == 5
+
+# 20b. extra unchanged contract path blocks exact candidate set enforcement
+def test_20b_extra_unchanged_contract_path_blocks(repo):
+    changed_files = ["src/new.txt"]
+    contract_files = ["src/new.txt", "aos/scripts/aos_validate.py"]
+    write_freeze_contract(repo, candidate_files=contract_files)
+    write_candidate_files(repo, changed_files)
+
+    res = run_checker(repo, ["--json", "--contract", "contract.json"])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "CANDIDATE_FILE_SET_MISMATCH"
+    assert data["mismatch_type"] == "EXTRA_UNCHANGED_CONTRACT_PATH"
+
+# 20c. missing changed path blocks exact candidate set enforcement
+def test_20c_missing_changed_path_blocks(repo):
+    changed_files = ["src/included.txt", "src/missing.txt"]
+    contract_files = ["src/included.txt"]
+    write_freeze_contract(repo, candidate_files=contract_files)
+    write_candidate_files(repo, changed_files)
+
+    res = run_checker(repo, ["--json", "--contract", "contract.json"])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "CANDIDATE_FILE_SET_MISMATCH"
+    assert data["mismatch_type"] == "CHANGED_PATH_MISSING_FROM_CONTRACT"
+
+# 20d. duplicate contract path blocks exact candidate set enforcement
+def test_20d_duplicate_contract_path_blocks(repo):
+    candidate_files = ["src/dup.txt", "src/dup.txt"]
+    write_freeze_contract(repo, candidate_files=candidate_files)
+    write_candidate_files(repo, ["src/dup.txt"])
+
+    res = run_checker(repo, ["--json", "--contract", "contract.json"])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "CANDIDATE_FILE_SET_MISMATCH"
+    assert data["mismatch_type"] == "DUPLICATE_CONTRACT_PATH"
+
+# 20e. exact candidate set comparison is order-independent
+def test_20e_exact_candidate_set_is_order_independent(repo):
+    changed_files = ["src/one.txt", "src/two.txt", "src/three.txt"]
+    contract_files = ["src/three.txt", "src/one.txt", "src/two.txt"]
+    write_freeze_contract(repo, candidate_files=contract_files)
+    write_candidate_files(repo, changed_files)
+
+    res = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+
+    assert res.returncode == 0
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "PASS"
+    assert data["stats"]["candidate_file_count"] == 3
+
+# 21. post-commit verify blocks a commit whose message does not match the authorized message
+def test_21_post_commit_verify_blocks_message_mismatch(repo):
+    write_freeze_contract(repo, commit_message="exact authorized message")
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    parent = get_head(repo)
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    run_git(["add", "src/new.txt"], cwd=repo)
+    run_git(["commit", "-m", "wrong message"], cwd=repo)
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "post-commit-verify",
+        "--contract",
+        "contract.json",
+        "--expected-parent-oid",
+        parent,
+        "--expected-tree-oid",
+        expected_tree,
+        "--expected-commit-message",
+        "exact authorized message",
+    ])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "POST_COMMIT_BINDING_MISMATCH"
+
+# 22. verify-authorization binds repository, branch, baseline, derived tree, and exact commit message
+def test_22_verify_authorization_checks_candidate_change_binding(repo):
+    write_freeze_contract(repo, commit_message="exact authorized message")
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    baseline = get_head(repo)
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "verify-authorization",
+        "--contract",
+        "contract.json",
+        "--expected-task-id",
+        "AOS-FARM.680",
+        "--authorization-task-id",
+        "AOS-FARM.680",
+        "--expected-repository",
+        "NMF13579/AOS-FARM",
+        "--expected-branch",
+        "build/aos-farm-680-candidate-freeze",
+        "--expected-baseline-oid",
+        baseline,
+        "--expected-tree-oid",
+        expected_tree,
+        "--expected-commit-message",
+        "exact authorized message",
+    ])
+
+    assert res.returncode == 0
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "PASS"
+    assert data["reason_code"] == "AUTHORIZATION_BINDING_VERIFIED"
+
+# 23. verify-authorization blocks missing authorization task_id
+def test_23_verify_authorization_blocks_missing_task_id(repo):
+    write_freeze_contract(repo, commit_message="exact authorized message")
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    baseline = get_head(repo)
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "verify-authorization",
+        "--contract",
+        "contract.json",
+        "--expected-task-id",
+        "AOS-FARM.680",
+        "--expected-repository",
+        "NMF13579/AOS-FARM",
+        "--expected-branch",
+        "build/aos-farm-680-candidate-freeze",
+        "--expected-baseline-oid",
+        baseline,
+        "--expected-tree-oid",
+        expected_tree,
+        "--expected-commit-message",
+        "exact authorized message",
+    ])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "AUTHORIZATION_TASK_ID_MISSING"
+    assert "task_id" in data["errors"][0]
+
+# 24. verify-authorization blocks wrong task_id
+def test_24_verify_authorization_blocks_wrong_task_id(repo):
+    write_freeze_contract(repo, commit_message="exact authorized message")
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    baseline = get_head(repo)
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "verify-authorization",
+        "--contract",
+        "contract.json",
+        "--expected-task-id",
+        "AOS-FARM.680",
+        "--authorization-task-id",
+        "AOS-FARM.679",
+        "--expected-repository",
+        "NMF13579/AOS-FARM",
+        "--expected-branch",
+        "build/aos-farm-680-candidate-freeze",
+        "--expected-baseline-oid",
+        baseline,
+        "--expected-tree-oid",
+        expected_tree,
+        "--expected-commit-message",
+        "exact authorized message",
+    ])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "AUTHORIZATION_TASK_ID_MISMATCH"
+    assert "task_id" in data["errors"][0]
+
+# 25. authorization replay for another task is blocked even when other binding fields match
+def test_25_verify_authorization_blocks_other_task_replay(repo):
+    write_freeze_contract(repo, commit_message="exact authorized message")
+    (repo / "src").mkdir(parents=True, exist_ok=True)
+    (repo / "src" / "new.txt").write_text("candidate\n")
+    baseline = get_head(repo)
+    freeze = run_checker(repo, ["--json", "--mode", "freeze", "--contract", "contract.json"])
+    expected_tree = json.loads(freeze.stdout)["candidate_content_oid"]
+
+    res = run_checker(repo, [
+        "--json",
+        "--mode",
+        "verify-authorization",
+        "--contract",
+        "contract.json",
+        "--expected-task-id",
+        "AOS-FARM.680",
+        "--authorization-task-id",
+        "AOS-FARM.681",
+        "--expected-repository",
+        "NMF13579/AOS-FARM",
+        "--expected-branch",
+        "build/aos-farm-680-candidate-freeze",
+        "--expected-baseline-oid",
+        baseline,
+        "--expected-tree-oid",
+        expected_tree,
+        "--expected-commit-message",
+        "exact authorized message",
+    ])
+
+    assert res.returncode == 4
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "BLOCKED"
+    assert data["reason_code"] == "AUTHORIZATION_TASK_ID_MISMATCH"
+
+# 26. tracked template does not persist derived identity, future results, or approval fields
+def test_26_template_excludes_persisted_identity_and_result_fields():
+    template = Path("aos/templates/execution-artifacts/aos-build-step-scope-contract-template.json")
+    data = json.loads(template.read_text())
+
+    forbidden = {
+        "candidate_content_oid",
+        "candidate_change_key",
+        "candidate_tree",
+        "candidate_tree_id",
+        "tree_oid",
+        "tree_id",
+        "commit_sha",
+        "created_commit_sha",
+        "push_result",
+        "merge_result",
+        "approval",
+        "approved",
+    }
+    serialized = json.dumps(data)
+    for key in forbidden:
+        assert key not in serialized
+
+# 27. ignored disposable workspace symlinks do not create false PATH_SAFETY_UNKNOWN blockers
+def test_27_ignored_venv_symlink_is_not_candidate_blocker(repo):
+    write_contract(repo)
+    (repo / ".venv" / "bin").mkdir(parents=True, exist_ok=True)
+    os.symlink("/usr/bin/python3", repo / ".venv" / "bin" / "python")
+
+    res = run_checker(repo, ["--json", "--contract", "contract.json"])
+
+    assert res.returncode == 0
+    data = json.loads(res.stdout)
+    assert data["final_status"] == "PASS"
