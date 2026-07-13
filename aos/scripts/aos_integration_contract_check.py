@@ -435,6 +435,23 @@ def git_object_exists(repo_root, oid):
     subprocess.run(["git", "cat-file", "-e", f"{oid}^{{commit}}"], cwd=repo_root, check=True, capture_output=True, text=True)
 
 
+def check_target_is_ancestor(repo_root, target_oid, source_oid):
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", target_oid, source_oid],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+        env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+    )
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        raise ContractError(BLOCKED, "SOURCE_NOT_FRESH", ["target expected head is not an ancestor of source commit"])
+    raise ContractError(UNKNOWN_BLOCKED, "GIT_OBSERVATION_ERROR", [result.stderr.strip() or result.stdout.strip() or "merge-base observation failed"])
+
+
 def git_semantic_validation(repo_root, contract):
     source = contract["source"]
     target = contract["target"]
@@ -449,10 +466,7 @@ def git_semantic_validation(repo_root, contract):
     tree_oid = run_git(repo_root, ["rev-parse", f"{source['commit_oid']}^{{tree}}"])
     if tree_oid != source["tree_oid"]:
         raise ContractError(BLOCKED, "SOURCE_TREE_MISMATCH", ["source tree mismatch"])
-    merge_base = run_git(repo_root, ["merge-base", "--is-ancestor", target["expected_head_oid"], source["commit_oid"]])
-    if merge_base:
-        pass
-    # merge-base --is-ancestor prints no stdout; success is enough.
+    check_target_is_ancestor(repo_root, target["expected_head_oid"], source["commit_oid"])
 
 
 def diff_entries(repo_root, parent_oid, source_oid):

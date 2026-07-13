@@ -273,6 +273,12 @@ def _validate_request(bundle, request):
         raise ExecutionError("execution request Risk Profile binding mismatch")
     if request.get("requested_operation") != "PREPARE_SCOPED_EXECUTION":
         raise ExecutionError("unsupported requested operation")
+    baseline = request.get("repository_baseline")
+    if not isinstance(baseline, dict):
+        raise ExecutionError("execution request repository baseline is required")
+    for field in ["repository", "branch", "head"]:
+        if not isinstance(baseline.get(field), str) or not baseline.get(field):
+            raise ExecutionError(f"execution request repository baseline missing {field}")
     if request.get("repository_baseline") != proposal.get("repository_baseline_binding"):
         raise ExecutionError("execution request repository baseline mismatch")
     if any(value == "unknown" for value in [request.get("protected_or_canonical_impact"), request.get("destructive_impact"), request.get("lifecycle_impact")]):
@@ -339,6 +345,7 @@ def assemble_execution_package(bundle, request, witness, preview):
         "preview_binding": preview["preview_binding"],
         "authorization_binding": bind_payload(witness),
         "repository_observation_binding": bind_payload(observation),
+        "repository_baseline_binding": request["repository_baseline"],
         "candidate_actions": preview["planned_actions"],
         "required_validation": request.get("required_validation", []),
         "mandatory_controls": request.get("mandatory_controls", []),

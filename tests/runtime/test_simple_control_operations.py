@@ -95,6 +95,7 @@ class TestSimpleControlOperations(unittest.TestCase):
         from aos.runtime.simple_control_operations import (
             OperationError,
             create_operation_id,
+            create_production_execution_witness,
             validate_production_witness,
         )
 
@@ -121,6 +122,30 @@ class TestSimpleControlOperations(unittest.TestCase):
         expired = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
         with self.assertRaises(OperationError):
             validate_production_witness(self.make_witness(operation_id, package, expires_at=expired), operation_id, package)
+
+        missing_package_baseline = dict(package)
+        missing_package_baseline.pop("repository_baseline_binding")
+        missing_package_baseline["package_binding"] = bind_payload({k: v for k, v in missing_package_baseline.items() if k != "package_binding"})
+        missing_operation_id = create_operation_id(missing_package_baseline)
+        with self.assertRaises(OperationError):
+            create_production_execution_witness(missing_operation_id, missing_package_baseline, "human-owner")
+
+        missing_witness_baseline = self.make_witness(operation_id, package)
+        missing_witness_baseline.pop("repository_baseline_binding")
+        with self.assertRaises(OperationError):
+            validate_production_witness(missing_witness_baseline, operation_id, package)
+
+        null_baseline_package = dict(package, repository_baseline_binding=None)
+        null_baseline_package["package_binding"] = bind_payload({k: v for k, v in null_baseline_package.items() if k != "package_binding"})
+        null_operation_id = create_operation_id(null_baseline_package)
+        null_witness = dict(
+            self.make_witness(operation_id, package),
+            operation_binding=null_operation_id,
+            execution_package_binding=null_baseline_package["package_binding"],
+            repository_baseline_binding=None,
+        )
+        with self.assertRaises(OperationError):
+            validate_production_witness(null_witness, null_operation_id, null_baseline_package)
 
     def test_create_file_apply_and_completed_retry(self):
         from aos.runtime.simple_control_operations import apply_execution_package, create_operation_id
@@ -223,6 +248,42 @@ class TestSimpleControlOperations(unittest.TestCase):
             self.assertFalse(result["rollback_available"])
             self.assertEqual(result["completed_actions"], ["action-a.txt"])
             self.assertTrue((root / "a.txt").exists())
+
+    def test_create_file_directory_fsync_failure_requires_reconciliation(self):
+        from aos.runtime import simple_control_operations as ops
+        from aos.runtime.simple_control_operations import apply_execution_package, create_operation_id
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = self.make_package([self.make_action("out.txt", content="hello")])
+            operation_id = create_operation_id(package)
+
+            with mock.patch("aos.runtime.simple_control_operations.fsync_parent", side_effect=ops.OperationError("directory fsync failed")):
+                result = apply_execution_package(package, self.make_witness(operation_id, package), operation_id, root)
+
+            self.assertEqual(result["operation_state"], "OPERATION_RECONCILIATION_REQUIRED")
+            self.assertTrue(result["side_effect_started"])
+            self.assertFalse(result["side_effect_verified"])
+            self.assertFalse(result["rollback_available"])
+
+    def test_replace_file_directory_fsync_failure_requires_reconciliation(self):
+        from aos.runtime import simple_control_operations as ops
+        from aos.runtime.simple_control_operations import apply_execution_package, create_operation_id, sha256_file
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "replace.txt"
+            target.write_text("old", encoding="utf-8")
+            package = self.make_package([self.make_action("replace.txt", "REPLACE_FILE", "new", sha256_file(target))])
+            operation_id = create_operation_id(package)
+
+            with mock.patch("aos.runtime.simple_control_operations.fsync_parent", side_effect=ops.OperationError("directory fsync failed")):
+                result = apply_execution_package(package, self.make_witness(operation_id, package), operation_id, root)
+
+            self.assertEqual(result["operation_state"], "OPERATION_RECONCILIATION_REQUIRED")
+            self.assertTrue(result["side_effect_started"])
+            self.assertFalse(result["side_effect_verified"])
+            self.assertFalse(result["rollback_available"])
 
     def test_active_repository_apply_guard(self):
         from aos.runtime.simple_control_operations import OperationError, active_repository_root, apply_execution_package, create_operation_id

@@ -5,6 +5,7 @@ import json
 import subprocess
 import unittest
 from copy import deepcopy
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
@@ -207,6 +208,38 @@ class TestSimpleControlExecution(unittest.TestCase):
         self.assertFalse(package["approval"])
         self.assertFalse(package["evidence_of_success"])
         self.assertFalse(result["repository_files_modified"])
+
+    def test_execution_package_contains_exact_repository_baseline(self):
+        from aos.runtime.simple_control_execution import assemble_orchestrator_result
+
+        bundle = self.make_bundle()
+        request = self.make_request(bundle)
+        with self.clean_repository_observation():
+            result = assemble_orchestrator_result(bundle, request, self.make_witness(request), repository_root=".")
+        package = result["execution_package"]
+
+        self.assertEqual(package["repository_baseline_binding"], REPO_BINDING)
+
+    def test_execution_package_rejects_missing_or_malformed_repository_baseline(self):
+        from aos.runtime.simple_control_execution import ExecutionError, assemble_orchestrator_result
+
+        bundle = self.make_bundle()
+        for baseline in [None, {}, {"repository": "", "branch": "build/x", "head": "0" * 40}, {"repository": "NMF13579/AOS-FARM", "branch": "", "head": "0" * 40}, {"repository": "NMF13579/AOS-FARM", "branch": "build/x", "head": ""}]:
+            request = self.make_request(bundle)
+            request["repository_baseline"] = baseline
+            with self.assertRaises(ExecutionError, msg=str(baseline)):
+                assemble_orchestrator_result(bundle, request, self.make_witness(request), repository_root=".")
+
+    def test_execution_package_schema_requires_repository_baseline(self):
+        schema = json.loads(Path("aos/schemas/simple-control-execution-package.schema.json").read_text(encoding="utf-8"))
+
+        self.assertIn("repository_baseline_binding", schema["required"])
+        baseline_schema = schema["properties"]["repository_baseline_binding"]
+        self.assertEqual(baseline_schema["type"], "object")
+        self.assertEqual(set(baseline_schema["required"]), {"repository", "branch", "head"})
+        for field in ["repository", "branch", "head"]:
+            self.assertEqual(baseline_schema["properties"][field]["type"], "string")
+            self.assertEqual(baseline_schema["properties"][field]["minLength"], 1)
 
     def test_repository_observation_blocks_wrong_baseline(self):
         from aos.runtime.simple_control_execution import ExecutionError, observe_repository

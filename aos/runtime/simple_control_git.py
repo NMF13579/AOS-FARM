@@ -14,6 +14,7 @@ MAX_MESSAGE_SUBJECT = 120
 MAX_MESSAGE_BODY = 4000
 GIT_TIMEOUT = 15
 BUILD_REF_RE = re.compile(r"^refs/heads/build/[A-Za-z0-9._/-]+$")
+OID_RE = re.compile(r"^[a-f0-9]{40}$")
 
 
 class GitControlError(Exception):
@@ -41,24 +42,7 @@ def parse_time(value):
 def run_git(cwd, args, timeout=GIT_TIMEOUT):
     if not isinstance(args, list):
         raise GitControlError("git args must be an argv list")
-    forbidden = [
-        ["add", "-A"],
-        ["add", "."],
-        ["commit", "-a"],
-        ["commit", "--amend"],
-        ["reset"],
-        ["clean"],
-        ["checkout"],
-        ["switch"],
-        ["rebase"],
-        ["merge"],
-    ]
-    for pattern in forbidden:
-        if args[: len(pattern)] == pattern:
-            raise GitControlError(f"forbidden git invocation: {' '.join(args)}")
-    if args and args[0] == "push":
-        if any(part.startswith("--force") or part in {"--mirror", "--all", "--tags"} for part in args):
-            raise GitControlError("forbidden push option")
+    validate_git_argv(args)
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
     result = subprocess.run(
         ["git", *args],
@@ -74,6 +58,61 @@ def run_git(cwd, args, timeout=GIT_TIMEOUT):
     if result.returncode != 0:
         raise GitControlError(stderr or stdout or f"git {' '.join(args)} failed")
     return stdout.strip()
+
+
+def validate_git_argv(args):
+    if not args:
+        raise GitControlError("git args must not be empty")
+    command = args[0]
+    if not isinstance(command, str) or not command or command.startswith("-"):
+        raise GitControlError("global git options are forbidden")
+    if command in {"reset", "clean", "checkout", "switch", "rebase", "merge"}:
+        raise GitControlError(f"forbidden git invocation: {command}")
+    if command == "add":
+        validate_git_add_args(args)
+    elif command == "commit":
+        validate_git_commit_args(args)
+    elif command == "push":
+        validate_git_push_args(args)
+
+
+def validate_git_add_args(args):
+    if len(args) < 3 or args[1] != "--":
+        raise GitControlError("git add must use -- and exact paths")
+    paths = args[2:]
+    forbidden = {"-A", "--all", ".", ":/"}
+    for path in paths:
+        if path in forbidden or path.startswith("-") or path.startswith(":"):
+            raise GitControlError("forbidden git add pathspec")
+
+
+def validate_git_commit_args(args):
+    forbidden = {"-a", "--all", "--amend", "--no-verify", "-C", "-c", "--fixup", "--squash"}
+    if any(part in forbidden for part in args[1:]):
+        raise GitControlError("forbidden git commit option")
+    if len(args) == 3 and args[1] == "-m" and isinstance(args[2], str) and args[2]:
+        return
+    if len(args) == 5 and args[1] == "-m" and args[3] == "-m" and isinstance(args[2], str) and isinstance(args[4], str) and args[2]:
+        return
+    raise GitControlError("unsupported git commit invocation")
+
+
+def validate_git_push_args(args):
+    forbidden = {"-f", "--force", "--force-with-lease", "--mirror", "--all", "--tags"}
+    if any(part in forbidden or part.startswith("--force") for part in args[1:]):
+        raise GitControlError("forbidden push option")
+    if len(args) != 4 or args[1] != "--porcelain":
+        raise GitControlError("unsupported git push invocation")
+    remote = args[2]
+    refspec = args[3]
+    if not remote or remote.startswith("-"):
+        raise GitControlError("invalid push remote")
+    if refspec.startswith(":") or refspec.count(":") != 1:
+        raise GitControlError("invalid push refspec")
+    source, target = refspec.split(":", 1)
+    if not OID_RE.fullmatch(source):
+        raise GitControlError("push source must be exact commit OID")
+    validate_build_ref(target)
 
 
 def sha256_bytes(data):

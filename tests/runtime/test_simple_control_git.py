@@ -206,6 +206,49 @@ class TestSimpleControlGit(unittest.TestCase):
             with self.assertRaises(GitControlError, msg=bad):
                 validate_build_ref(bad)
 
+    def test_run_git_rejects_forbidden_add_commit_and_push_shapes(self):
+        from aos.runtime.simple_control_git import GitControlError, run_git
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            git(root, "init", "-b", "build/test")
+            (root / "file.txt").write_text("x", encoding="utf-8")
+
+            forbidden = [
+                ["--work-tree=.", "status"],
+                [],
+                ["add", "-A"],
+                ["add", "--all"],
+                ["add", "."],
+                ["add", "--", "."],
+                ["add", "--", ":/"],
+                ["add", "--", "file.txt", "-A"],
+                ["add", "file.txt"],
+                ["add", "--"],
+                ["commit", "-m", "subject", "--amend"],
+                ["commit", "--amend", "-m", "subject"],
+                ["commit", "-m", "subject", "-m", "body", "--no-verify"],
+                ["commit", "-a", "-m", "subject"],
+                ["commit", "-m", "subject", "-a"],
+                ["commit", "-m", "subject", "-C", "HEAD"],
+                ["push", "--porcelain", "origin", "0" * 40 + ":refs/heads/build/test", "--force"],
+                ["push", "--porcelain", "origin", "0" * 40 + ":refs/heads/build/test", "extra"],
+                ["push", "--porcelain", "origin", "0" * 40 + ":refs/heads/dev"],
+                ["push", "--porcelain", "origin", "0" * 40 + ":refs/tags/v1"],
+                ["push", "--porcelain", "origin", ":refs/heads/build/test"],
+                ["push", "--force", "--porcelain", "origin", "0" * 40 + ":refs/heads/build/test"],
+                ["reset"],
+                ["clean"],
+                ["checkout", "dev"],
+                ["switch", "dev"],
+                ["rebase", "dev"],
+                ["merge", "dev"],
+            ]
+            for args in forbidden:
+                with self.subTest(args=args):
+                    with self.assertRaises(GitControlError):
+                        run_git(root, args)
+
     def test_active_repository_git_write_guard(self):
         from aos.runtime.simple_control_git import GitControlError, active_repository_root, apply_commit
 

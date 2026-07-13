@@ -380,6 +380,42 @@ class TestAosIntegrationContractCheck(unittest.TestCase):
                 self.assertEqual(exit_code, 2)
                 self.assertEqual(result["reason_code"], reason)
 
+    def test_non_ancestor_source_is_blocked_not_unknown(self):
+        self.fixture._git(["checkout", "dev"])
+        (self.fixture.root / "target-new.txt").write_text("target\n", encoding="utf-8")
+        self.fixture._git(["add", "target-new.txt"])
+        self.fixture._git(["commit", "-m", "target moves"])
+        moved_target_oid = self.fixture._git(["rev-parse", "HEAD"])
+
+        contract = self.fixture.base_contract()
+        contract["target"]["expected_head_oid"] = moved_target_oid
+        binding = MODULE.compute_contract_binding(contract)
+        contract["contract_binding"] = binding
+        contract["contract_id"] = MODULE.expected_contract_id(binding)
+        path = self.fixture.write_contract(contract, "source-not-fresh.yaml")
+
+        exit_code, result = self.fixture.run_checker(path, target_oid=moved_target_oid)
+
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(result["final_status"], "BLOCKED")
+        self.assertEqual(result["reason_code"], "SOURCE_NOT_FRESH")
+
+    def test_merge_base_ancestor_return_codes_are_classified(self):
+        with mock.patch("subprocess.run", return_value=mock.Mock(returncode=0, stderr="", stdout="")):
+            MODULE.check_target_is_ancestor(self.fixture.root, self.fixture.target_oid, self.fixture.source_oid)
+
+        with mock.patch("subprocess.run", return_value=mock.Mock(returncode=1, stderr="", stdout="")):
+            with self.assertRaises(MODULE.ContractError) as ctx:
+                MODULE.check_target_is_ancestor(self.fixture.root, self.fixture.target_oid, self.fixture.source_oid)
+            self.assertEqual(ctx.exception.status, MODULE.BLOCKED)
+            self.assertEqual(ctx.exception.reason, "SOURCE_NOT_FRESH")
+
+        with mock.patch("subprocess.run", return_value=mock.Mock(returncode=128, stderr="fatal: bad object", stdout="")):
+            with self.assertRaises(MODULE.ContractError) as ctx:
+                MODULE.check_target_is_ancestor(self.fixture.root, self.fixture.target_oid, self.fixture.source_oid)
+            self.assertEqual(ctx.exception.status, MODULE.UNKNOWN_BLOCKED)
+            self.assertEqual(ctx.exception.reason, "GIT_OBSERVATION_ERROR")
+
     def test_candidate_manifest_and_file_semantics(self):
         cases = [
             ("duplicate-path.yaml", lambda c: c["candidate"]["files"].append(copy.deepcopy(c["candidate"]["files"][0])), "CANDIDATE_FILES_INVALID", False),

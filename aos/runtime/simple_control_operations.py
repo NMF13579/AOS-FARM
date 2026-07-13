@@ -92,6 +92,16 @@ def require_package_binding(execution_package):
     return expected
 
 
+def require_repository_baseline(execution_package, owner):
+    baseline = execution_package.get("repository_baseline_binding")
+    if not isinstance(baseline, dict):
+        raise OperationError(f"{owner} repository baseline is required")
+    for field in ["repository", "branch", "head"]:
+        if not isinstance(baseline.get(field), str) or not baseline.get(field):
+            raise OperationError(f"{owner} repository baseline missing {field}")
+    return baseline
+
+
 def witness_binding(witness):
     return bind_payload(witness)
 
@@ -101,6 +111,7 @@ def create_production_execution_witness(operation_id, execution_package, actor_r
     if not actor_reference:
         raise OperationError("actor_reference is required")
     package_binding = require_package_binding(execution_package)
+    package_baseline = require_repository_baseline(execution_package, "execution package")
     return {
         "decision_type": "PRODUCTION_EXECUTION_AUTHORIZATION",
         "decision_id": "production-" + operation_id[3:19],
@@ -112,7 +123,7 @@ def create_production_execution_witness(operation_id, execution_package, actor_r
         "execution_preview_binding": execution_package.get("preview_binding"),
         "execution_package_binding": package_binding,
         "command_contract_binding": bind_payload({"command_id": "EXECUTE", "contract_version": 1, "mode": "controlled_local_write"}),
-        "repository_baseline_binding": execution_package.get("repository_baseline_binding"),
+        "repository_baseline_binding": package_baseline,
         "candidate_binding": package_binding,
         "actor_reference": actor_reference,
         "actor_role": "human",
@@ -147,6 +158,10 @@ def validate_production_witness(witness, operation_id, execution_package):
     package_binding = require_package_binding(execution_package)
     if not isinstance(witness, dict):
         raise OperationError("production execution witness is required")
+    package_baseline = require_repository_baseline(execution_package, "execution package")
+    witness_baseline = witness.get("repository_baseline_binding")
+    if not isinstance(witness_baseline, dict):
+        raise OperationError("production witness repository baseline is required")
     if witness.get("decision_type") != "PRODUCTION_EXECUTION_AUTHORIZATION":
         raise OperationError("wrong production witness decision type")
     if not witness.get("actor_reference"):
@@ -155,7 +170,7 @@ def validate_production_witness(witness, operation_id, execution_package):
         raise OperationError("production witness operation binding mismatch")
     if witness.get("execution_package_binding") != package_binding:
         raise OperationError("production witness package binding mismatch")
-    if witness.get("repository_baseline_binding") != execution_package.get("repository_baseline_binding"):
+    if witness_baseline != package_baseline:
         raise OperationError("production witness repository baseline mismatch")
     if witness.get("single_use") is not True:
         raise OperationError("production witness must be single-use")
@@ -388,13 +403,15 @@ def verify_preconditions(repository_root, actions):
 
 def fsync_parent(path):
     if not hasattr(os, "O_DIRECTORY"):
-        return
+        raise OperationError("directory fsync is unavailable")
     try:
         fd = os.open(str(Path(path).parent), os.O_RDONLY | os.O_DIRECTORY)
-    except OSError:
-        return
+    except OSError as exc:
+        raise OperationError("directory fsync open failed") from exc
     try:
         os.fsync(fd)
+    except OSError as exc:
+        raise OperationError("directory fsync failed") from exc
     finally:
         os.close(fd)
 
@@ -517,7 +534,7 @@ def apply_execution_package(execution_package, witness, operation_id, repository
                     postimage_results=postimages,
                     last_error=message,
                     reconciliation_required=True,
-                    side_effect_started=bool(completed),
+                    side_effect_started=True,
                 )
                 return operation_result(
                     operation_id,
@@ -525,7 +542,8 @@ def apply_execution_package(execution_package, witness, operation_id, repository
                     reason_code="PARTIAL_OPERATION_RECONCILIATION_REQUIRED",
                     completed_actions=[item["action_id"] for item in completed],
                     reconciliation_required=True,
-                    side_effect_started=bool(completed),
+                    side_effect_started=True,
+                    side_effect_verified=False,
                 )
             completed.append(action)
             postimages.append(post)

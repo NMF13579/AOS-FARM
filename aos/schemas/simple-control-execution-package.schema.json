@@ -12,6 +12,7 @@
     "preview_binding",
     "authorization_binding",
     "repository_observation_binding",
+    "repository_baseline_binding",
     "candidate_actions",
     "required_validation",
     "mandatory_controls",
@@ -23,6 +24,19 @@
   "properties": {
     "package_version": {"const": 1},
     "operation_class": {"const": "SCOPED_EXECUTION_PREPARATION"},
+    "repository_baseline_binding": {
+      "type": "object",
+      "required": [
+        "repository",
+        "branch",
+        "head"
+      ],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "branch": {"type": "string", "minLength": 1},
+        "head": {"type": "string", "minLength": 1}
+      }
+    },
     "execution_backend": {
       "type": "object",
       "properties": {
