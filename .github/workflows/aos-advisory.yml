@@ -1,46 +1,70 @@
-name: AOS Advisory Validation
-
-# Advisory validation only.
-# CI PASS is not approval.
-# CI PASS does not authorize execution, commit, push, merge, release, or lifecycle mutation.
-# This workflow must not be configured as a required check by this stage.
+name: AOS Integration Shadow
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
+    branches:
+      - build/**
+  pull_request:
     branches:
       - dev
 
+permissions:
+  contents: read
+
+concurrency:
+  group: aos-integration-shadow-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  aos-advisory-validation:
-    runs-on: ubuntu-latest
+  aos-integration-shadow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          python-version: '3.x'
-          
-      - name: Python compile checks
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.9"
+
+      - name: Environment report
         run: |
-          python3 -m py_compile aos/scripts/aos_semantic_guard.py
-          python3 -m py_compile aos/scripts/aos_task_document_check.py
-          python3 -m py_compile aos/scripts/aos_result_acceptance.py
-          python3 -m py_compile aos/scripts/aos_task_quality_check.py
-          
-      - name: Semantic guard tests
+          set -euo pipefail
+          python --version
+          python -m pip --version
+
+      - name: Install development dependencies
         run: |
-          python3 -m unittest discover -s tests -p "test_aos_*.py"
-          
-      - name: Task validator validate-all
+          set -euo pipefail
+          python -m pip install --requirement requirements-dev.txt
+
+      - name: Validate workflow contract
         run: |
-          python3 aos/scripts/aos_task_document_check.py task --validate-all
-          
-      - name: Queue list
+          set -euo pipefail
+          python -B aos/scripts/aos_integration_shadow_workflow_check.py --workflow .github/workflows/aos-advisory.yml --json
+
+      - name: Integration contract verifier tests
         run: |
-          python3 aos/scripts/aos_task_document_check.py queue --list
-          
-      - name: Queue next
+          set -euo pipefail
+          python -m pytest tests/scripts/test_aos_integration_contract_check.py tests/test_aos_validate.py tests/scripts/test_aos_conditional_scope_check.py -p no:cacheprovider
+
+      - name: Control checks
         run: |
-          python3 aos/scripts/aos_task_document_check.py queue --next
+          set -euo pipefail
+          python -B aos/scripts/aos_simple_control_contract_check.py --json
+          python -m pytest tests/test_aos_semantic_guard.py -p no:cacheprovider
+          python -B aos/scripts/aos_task_document_check.py task --validate-all
+          git diff --check
+
+      - name: Full validation
+        run: |
+          set -euo pipefail
+          python -m pytest -p no:cacheprovider
