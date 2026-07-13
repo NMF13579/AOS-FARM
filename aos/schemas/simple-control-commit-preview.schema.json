@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Commit Preview",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["preview_version", "preview_id", "candidate_paths", "expected_staged_tree_binding", "commit_message", "grants", "non_grants", "preview_created", "staging_started", "commit_started", "push_started"],
+  "properties": {
+    "preview_version": {"const": 1},
+    "preview_created": {"const": true},
+    "staging_started": {"const": false},
+    "commit_started": {"const": false},
+    "push_started": {"const": false}
+  }
+}

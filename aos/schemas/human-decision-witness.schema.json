@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Human Decision Witness",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {"type": "string"},
+    "task_id": {"type": ["string", "null"]},
+    "decision_type": {
+      "type": "string",
+      "enum": ["scope", "risk", "execution", "EXECUTION_AUTHORIZATION", "PRODUCTION_EXECUTION_AUTHORIZATION", "COMMIT_AUTHORIZATION", "PUSH_AUTHORIZATION", "commit", "push", "integration", "lifecycle", "release"]
+    },
+    "actor_reference": {"type": "string", "minLength": 1},
+    "actor_role": {"type": "string", "minLength": 1},
+    "authentication_level": {
+      "type": "string",
+      "enum": ["LOCAL_CLAIM", "LOCAL_DECLARED", "REPOSITORY_ACCOUNT", "EXTERNAL_AUTHENTICATED"]
+    },
+    "decision_channel": {"type": "string", "minLength": 1},
+    "task_binding": {"type": "string", "minLength": 1},
+    "command_contract_binding": {"type": "string", "minLength": 1},
+    "repository_baseline_binding": {"type": ["string", "object", "null"]},
+    "proposal_binding": {"type": ["string", "null"]},
+    "execution_request_binding": {"type": ["string", "null"]},
+    "execution_preview_binding": {"type": ["string", "null"]},
+    "execution_package_binding": {"type": ["string", "null"]},
+    "candidate_binding": {"type": ["string", "null"]},
+    "operation_id": {"type": ["string", "null"]},
+    "operation_binding": {"type": ["string", "null"]},
+    "candidate_manifest_binding": {"type": ["string", "null"]},
+    "commit_request_binding": {"type": ["string", "null"]},
+    "commit_preview_binding": {"type": ["string", "null"]},
+    "expected_staged_tree_binding": {"type": ["string", "null"]},
+    "commit_message_binding": {"type": ["string", "null"]},
+    "commit_oid": {"type": ["string", "null"]},
+    "commit_result_binding": {"type": ["string", "null"]},
+    "push_request_binding": {"type": ["string", "null"]},
+    "push_preview_binding": {"type": ["string", "null"]},
+    "remote_name": {"type": ["string", "null"]},
+    "remote_url_binding": {"type": ["string", "null"]},
+    "target_ref": {"type": ["string", "null"]},
+    "expected_remote_oid": {"type": ["string", "null"]},
+    "decision_value": {"type": ["string", "boolean", "object", "array"]},
+    "issued_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": ["string", "null"], "format": "date-time"},
+    "single_use": {"type": "boolean"},
+    "consumed_at": {"type": ["string", "null"], "format": "date-time"},
+    "grants": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "non_grants": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "agent_generated_record_is_human_approval": {
+      "type": "boolean",
+      "const": false
+    },
+    "evidence_can_replace_witness": {
+      "type": "boolean",
+      "const": false
+    },
+    "expired_decision_usable": {
+      "type": "boolean",
+      "const": false
+    },
+    "consumed_single_use_decision_usable": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "required": [
+    "decision_id",
+    "decision_type",
+    "actor_reference",
+    "actor_role",
+    "authentication_level",
+    "decision_channel",
+    "task_binding",
+    "command_contract_binding",
+    "repository_baseline_binding",
+    "proposal_binding",
+    "execution_request_binding",
+    "candidate_binding",
+    "operation_binding",
+    "decision_value",
+    "issued_at",
+    "expires_at",
+    "single_use",
+    "consumed_at",
+    "grants",
+    "non_grants",
+    "agent_generated_record_is_human_approval",
+    "evidence_can_replace_witness",
+    "expired_decision_usable",
+    "consumed_single_use_decision_usable"
+  ]
+}

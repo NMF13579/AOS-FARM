@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Candidate Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["manifest_version", "manifest_id", "repository_binding", "task_id", "candidate_binding", "files", "forbidden_paths", "unexpected_paths_policy", "deletions_allowed", "renames_allowed"],
+  "properties": {
+    "manifest_version": {"const": 1},
+    "manifest_id": {"type": "string"},
+    "candidate_binding": {"type": "string", "minLength": 64, "maxLength": 64},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["relative_path", "expected_state", "content_sha256", "size_bytes"],
+        "properties": {
+          "relative_path": {"type": "string"},
+          "expected_state": {"enum": ["UNTRACKED", "MODIFIED"]},
+          "content_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+          "size_bytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "unexpected_paths_policy": {"const": "BLOCK"},
+    "deletions_allowed": {"const": false},
+    "renames_allowed": {"const": false}
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Commit Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["result_version", "operation_id", "commit_state", "commit_oid", "parent_oid", "push_performed", "integration_performed", "approval_granted", "Evidence_status"],
+  "properties": {
+    "result_version": {"const": 1},
+    "commit_state": {"enum": ["COMMIT_COMPLETED", "COMMIT_FAILED", "COMMIT_RECONCILIATION_REQUIRED"]},
+    "push_performed": {"const": false},
+    "integration_performed": {"const": false},
+    "approval_granted": {"const": false},
+    "Evidence_status": {"const": "NOT_RUN"}
+  }
+}

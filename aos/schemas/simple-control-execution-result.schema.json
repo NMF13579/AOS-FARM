@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Execution Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "execution_request_valid",
+    "execution_authorization_valid",
+    "repository_observation_current",
+    "execution_preview_created",
+    "execution_package_created",
+    "production_operation_started",
+    "repository_files_modified",
+    "control_state",
+    "operation_state",
+    "production_execution_available",
+    "reason_code"
+  ],
+  "properties": {
+    "production_operation_started": {"type": "boolean"},
+    "repository_files_modified": {"type": "boolean"},
+    "production_execution_available": {"type": "boolean"},
+    "control_state": {"enum": ["CONTROL_READY_FOR_EXECUTION", "CONTROL_SCOPE_EXPANSION_REQUIRED", "CONTROL_CHANGES_PREPARED", "CONTROL_BLOCKED", "CONTROL_UNKNOWN_BLOCKED"]},
+    "operation_state": {"enum": ["OPERATION_PREVIEWED", "OPERATION_REQUESTED", "OPERATION_COMPLETED", "OPERATION_FAILED", "OPERATION_RECONCILIATION_REQUIRED"]},
+    "commit_performed": {"const": false},
+    "push_performed": {"const": false},
+    "integration_performed": {"const": false},
+    "approval_status": {"const": "NOT_PROVIDED"},
+    "Evidence_status": {"const": "NOT_RUN"}
+  }
+}

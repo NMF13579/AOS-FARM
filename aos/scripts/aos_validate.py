@@ -11,6 +11,8 @@ import sys
 import os
 import argparse
 import re
+import hashlib
+from pathlib import Path
 import aos_architecture_document_check
 import aos_task_document_check
 
@@ -35,6 +37,10 @@ BLOCKED = "BLOCKED"
 NOT_RUN = "NOT_RUN"
 FAIL = "FAIL"
 BLOCKED_REQUIRED_SOURCES_MISSING = "BLOCKED_REQUIRED_SOURCES_MISSING"
+CONDITIONAL_SCOPE_CONTRACT_PATH_INVALID = "CONDITIONAL_SCOPE_CONTRACT_PATH_INVALID"
+INTEGRATION_CONTRACT_CONTEXT_INCOMPLETE = "INTEGRATION_CONTRACT_CONTEXT_INCOMPLETE"
+INTEGRATION_CONTRACT_PATH_INVALID = "INTEGRATION_CONTRACT_PATH_INVALID"
+OBSERVED_OID_INVALID = "OBSERVED_OID_INVALID"
 
 REQUIRED_ROOT_SOURCES = [
     "00_AOS_Core_Control.md",
@@ -47,6 +53,140 @@ def check_required_root_sources():
     if missing:
         return {"status": "FAIL", "missing": missing}
     return {"status": "PASS", "missing": []}
+
+def default_conditional_scope_contract_context():
+    return {"source": "DEFAULT_TEMPLATE", "path": None, "sha256": None}
+
+def default_integration_contract_context():
+    return {
+        "source": "NOT_PROVIDED",
+        "path": None,
+        "observed_source_oid": None,
+        "observed_target_oid": None,
+        "contract_sha256": None,
+    }
+
+def _path_has_control_character(path_value):
+    return any(ord(character) < 32 for character in path_value)
+
+def _contains_symlink_component(repo_root, target):
+    relative = target.relative_to(repo_root)
+    current = repo_root
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
+
+def resolve_conditional_scope_contract_context(path_value, repo_root=None):
+    if path_value is None or not str(path_value).strip():
+        raise ValueError("conditional scope contract path is required")
+    path_text = str(path_value)
+    if "\x00" in path_text or _path_has_control_character(path_text):
+        raise ValueError("conditional scope contract path contains a control character")
+
+    raw_path = Path(path_text)
+    if raw_path.is_absolute():
+        raise ValueError("conditional scope contract path must be repository-relative")
+    if any(part == ".." for part in raw_path.parts):
+        raise ValueError("conditional scope contract path must not contain traversal")
+
+    root = Path.cwd() if repo_root is None else Path(repo_root)
+    root = root.resolve(strict=True)
+    target = root / raw_path
+    resolved_target = target.resolve(strict=False)
+    try:
+        resolved_target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("conditional scope contract path resolves outside repository") from exc
+
+    if not target.exists():
+        raise ValueError("conditional scope contract file does not exist")
+    if _contains_symlink_component(root, target):
+        raise ValueError("conditional scope contract path must not include symlinks")
+    if not target.is_file():
+        raise ValueError("conditional scope contract path must be a regular file")
+
+    contract_bytes = target.read_bytes()
+    return {
+        "source": "EXPLICIT_CLI",
+        "path": raw_path.as_posix(),
+        "sha256": hashlib.sha256(contract_bytes).hexdigest(),
+    }
+
+def _is_lower_hex(value, length):
+    return isinstance(value, str) and len(value) == length and all(c in "0123456789abcdef" for c in value)
+
+def resolve_integration_contract_context(path_value, observed_source_oid, observed_target_oid, repo_root=None):
+    if path_value is None or not str(path_value).strip():
+        raise ValueError("integration contract path is required")
+    if not _is_lower_hex(observed_source_oid, 40):
+        raise ValueError("integration source OID must be 40 lowercase hex")
+    if not _is_lower_hex(observed_target_oid, 40):
+        raise ValueError("integration target OID must be 40 lowercase hex")
+    path_text = str(path_value)
+    if "\x00" in path_text or _path_has_control_character(path_text):
+        raise ValueError("integration contract path contains a control character")
+
+    raw_path = Path(path_text)
+    if raw_path.is_absolute():
+        raise ValueError("integration contract path must be repository-relative")
+    if any(part == ".." for part in raw_path.parts):
+        raise ValueError("integration contract path must not contain traversal")
+
+    root = Path.cwd() if repo_root is None else Path(repo_root)
+    root = root.resolve(strict=True)
+    target = root / raw_path
+    resolved_target = target.resolve(strict=False)
+    try:
+        resolved_target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("integration contract path resolves outside repository") from exc
+
+    if not target.exists():
+        raise ValueError("integration contract file does not exist")
+    if _contains_symlink_component(root, target):
+        raise ValueError("integration contract path must not include symlinks")
+    if not target.is_file():
+        raise ValueError("integration contract path must be a regular file")
+
+    contract_bytes = target.read_bytes()
+    return {
+        "source": "EXPLICIT_CLI",
+        "path": raw_path.as_posix(),
+        "observed_source_oid": observed_source_oid,
+        "observed_target_oid": observed_target_oid,
+        "contract_sha256": hashlib.sha256(contract_bytes).hexdigest(),
+    }
+
+def build_validation_commands(conditional_scope_contract=None, integration_contract=None):
+    context = conditional_scope_contract or default_conditional_scope_contract_context()
+    integration_context = integration_contract or default_integration_contract_context()
+    commands = []
+    for command in VALIDATION_COMMANDS:
+        copied = list(command)
+        if (
+            context.get("source") == "EXPLICIT_CLI"
+            and len(copied) >= 2
+            and copied[1] == "aos/scripts/aos_conditional_scope_check.py"
+        ):
+            copied = [copied[0], copied[1], "--contract", context["path"], *copied[2:]]
+        commands.append(copied)
+    if integration_context.get("source") == "EXPLICIT_CLI":
+        commands.append([
+            sys.executable,
+            "aos/scripts/aos_integration_contract_check.py",
+            "--contract",
+            integration_context["path"],
+            "--repository-root",
+            ".",
+            "--observed-source-oid",
+            integration_context["observed_source_oid"],
+            "--observed-target-oid",
+            integration_context["observed_target_oid"],
+            "--json",
+        ])
+    return commands
 
 STATUS_ALIASES = {
     PASS: PASS,
@@ -404,6 +544,11 @@ def normalize_child_result(result):
         return PASS
     if valid_consumer_self_test_advisory(result):
         return PASS
+    if "aos_integration_contract_check.py" in result.get("command", ""):
+        payload = extract_json_stdout(result.get("stdout", ""))
+        if not isinstance(payload, dict) or payload.get("schema_error"):
+            return UNKNOWN_BLOCKED
+        return normalize_status(payload.get("final_status", payload.get("status")))
     statuses = [result.get("status")]
     statuses.extend(collect_text_statuses(result.get("stdout", ""), command=command))
     statuses.extend(collect_text_statuses(result.get("stderr", ""), command=command))
@@ -436,6 +581,87 @@ def determine_overall_status(results):
     return aggregate_statuses([normalize_child_result(result) for result in results])
 
 
+def invalid_conditional_scope_contract_result(path_value, reason):
+    return {
+        "command": "aos/scripts/aos_conditional_scope_check.py --contract <invalid> --json",
+        "raw_status": "FAILED",
+        "status": "FAILED",
+        "raw_exit_code": None,
+        "exit_code": None,
+        "process_exit_status": process_exit_status(process_error="not_run"),
+        "return_code": None,
+        "stdout": "final_status: UNKNOWN_BLOCKED\nreason_code: CONDITIONAL_SCOPE_CONTRACT_PATH_INVALID",
+        "stderr": "",
+        "final_status": UNKNOWN_BLOCKED,
+        "reason_code": CONDITIONAL_SCOPE_CONTRACT_PATH_INVALID,
+        "reason": reason,
+        "conditional_scope_contract_source": "INVALID",
+        "conditional_scope_contract_path": path_value,
+        "approval_claimed": False,
+        "execution_authorized": False,
+    }
+
+def invalid_integration_contract_result(path_value, reason, reason_code=INTEGRATION_CONTRACT_PATH_INVALID):
+    return {
+        "command": "aos/scripts/aos_integration_contract_check.py --contract <invalid> --json",
+        "raw_status": "FAILED",
+        "status": "FAILED",
+        "raw_exit_code": None,
+        "exit_code": None,
+        "process_exit_status": process_exit_status(process_error="not_run"),
+        "return_code": None,
+        "stdout": f"final_status: UNKNOWN_BLOCKED\nreason_code: {reason_code}",
+        "stderr": "",
+        "final_status": UNKNOWN_BLOCKED,
+        "reason_code": reason_code,
+        "reason": reason,
+        "integration_contract_source": "INVALID",
+        "integration_contract_path": path_value,
+        "approval_claimed": False,
+        "integration_authorized": False,
+        "merge_authorized": False,
+        "release_authorized": False,
+    }
+
+def annotate_conditional_scope_result(result, conditional_scope_contract):
+    command = result.get("command", "")
+    if "aos_conditional_scope_check.py" not in command:
+        return result
+    annotated = dict(result)
+    annotated["conditional_scope_contract_source"] = conditional_scope_contract.get("source")
+    annotated["conditional_scope_contract_path"] = conditional_scope_contract.get("path")
+    annotated["conditional_scope_contract_sha256"] = conditional_scope_contract.get("sha256")
+    payload = extract_json_stdout(result.get("stdout", ""))
+    if isinstance(payload, dict):
+        annotated["child_final_status"] = payload.get("final_status", payload.get("status"))
+        annotated["child_reason_code"] = payload.get("reason_code")
+        annotated["child_errors"] = payload.get("errors", [])
+        annotated["approval_claimed_by_child"] = bool(
+            payload.get("approval_claimed") or payload.get("approval_claimed_by_validator")
+        )
+    return annotated
+
+def annotate_integration_contract_result(result, integration_contract):
+    command = result.get("command", "")
+    if "aos_integration_contract_check.py" not in command:
+        return result
+    annotated = dict(result)
+    annotated["integration_contract_source"] = integration_contract.get("source")
+    annotated["integration_contract_path"] = integration_contract.get("path")
+    annotated["integration_contract_sha256"] = integration_contract.get("contract_sha256")
+    annotated["integration_observed_source_oid"] = integration_contract.get("observed_source_oid")
+    annotated["integration_observed_target_oid"] = integration_contract.get("observed_target_oid")
+    payload = extract_json_stdout(result.get("stdout", ""))
+    if isinstance(payload, dict):
+        annotated["child_final_status"] = payload.get("final_status", payload.get("status"))
+        annotated["child_reason_code"] = payload.get("reason_code")
+        annotated["child_errors"] = payload.get("errors", [])
+        annotated["approval_claimed_by_child"] = bool(payload.get("approval_granted"))
+        annotated["integration_authorized_by_child"] = bool(payload.get("integration_authorized"))
+        annotated["merge_authorized_by_child"] = bool(payload.get("merge_authorized"))
+        annotated["release_authorized_by_child"] = bool(payload.get("release_authorized"))
+    return annotated
+
 def build_readiness_audit():
     try:
         return aos_task_document_check.build_readiness_report("tasks")
@@ -467,20 +693,100 @@ def main():
     parser = argparse.ArgumentParser(description="Unified AOS Validate")
     parser.add_argument("target", nargs="?", default="all", help="Target to validate (e.g. 'all')")
     parser.add_argument("--json", action="store_true", help="Output JSON")
+    parser.add_argument(
+        "--conditional-scope-contract",
+        help="Repository-relative explicit conditional scope contract for the conditional scope child check",
+    )
+    parser.add_argument(
+        "--integration-contract",
+        help="Repository-relative explicit integration contract for the integration contract child check",
+    )
+    parser.add_argument(
+        "--integration-source-oid",
+        help="Observed source commit OID for the explicit integration contract child check",
+    )
+    parser.add_argument(
+        "--integration-target-oid",
+        help="Observed target commit OID for the explicit integration contract child check",
+    )
     args = parser.parse_args()
 
     results = []
+    invalid_context_reason = None
+    invalid_integration_context_reason = None
+    invalid_integration_context_code = INTEGRATION_CONTRACT_PATH_INVALID
+    if args.conditional_scope_contract:
+        try:
+            conditional_scope_contract = resolve_conditional_scope_contract_context(args.conditional_scope_contract)
+        except ValueError as exc:
+            conditional_scope_contract = {
+                "source": "INVALID",
+                "path": args.conditional_scope_contract,
+                "sha256": None,
+            }
+            invalid_context_reason = str(exc)
+    else:
+        conditional_scope_contract = default_conditional_scope_contract_context()
 
-    commands_to_run = VALIDATION_COMMANDS
+    integration_options = [
+        args.integration_contract,
+        args.integration_source_oid,
+        args.integration_target_oid,
+    ]
+    if any(integration_options):
+        if not all(integration_options):
+            integration_contract = {
+                "source": "INVALID",
+                "path": args.integration_contract,
+                "observed_source_oid": args.integration_source_oid,
+                "observed_target_oid": args.integration_target_oid,
+                "contract_sha256": None,
+            }
+            invalid_integration_context_reason = "integration contract, source OID, and target OID are required together"
+            invalid_integration_context_code = INTEGRATION_CONTRACT_CONTEXT_INCOMPLETE
+        else:
+            try:
+                integration_contract = resolve_integration_contract_context(
+                    args.integration_contract,
+                    args.integration_source_oid,
+                    args.integration_target_oid,
+                )
+            except ValueError as exc:
+                integration_contract = {
+                    "source": "INVALID",
+                    "path": args.integration_contract,
+                    "observed_source_oid": args.integration_source_oid,
+                    "observed_target_oid": args.integration_target_oid,
+                    "contract_sha256": None,
+                }
+                invalid_integration_context_reason = str(exc)
+                invalid_integration_context_code = INTEGRATION_CONTRACT_PATH_INVALID
+    else:
+        integration_contract = default_integration_contract_context()
+
+    commands_to_run = build_validation_commands(conditional_scope_contract, integration_contract)
     if args.target != "all":
         # Extend to support specific targets if needed later
         pass
 
-    for cmd in commands_to_run:
-        res = run_command(cmd)
-        results.append(res)
+    if invalid_context_reason:
+        results.append(invalid_conditional_scope_contract_result(args.conditional_scope_contract, invalid_context_reason))
+    elif invalid_integration_context_reason:
+        results.append(
+            invalid_integration_contract_result(
+                args.integration_contract,
+                invalid_integration_context_reason,
+                invalid_integration_context_code,
+            )
+        )
+    else:
+        for cmd in commands_to_run:
+            res = run_command(cmd)
+            res = annotate_conditional_scope_result(res, conditional_scope_contract)
+            res = annotate_integration_contract_result(res, integration_contract)
+            results.append(res)
 
-    if args.target == "all" or args.target == "architecture":
+    if not invalid_context_reason and (args.target == "all" or args.target == "architecture"):
         try:
             arch_report = aos_architecture_document_check.get_validate_all_report()
             results.append({
@@ -517,6 +823,10 @@ def main():
     required_sources_check = check_required_root_sources()
     if required_sources_check["status"] != "PASS":
         technical_status = BLOCKED_REQUIRED_SOURCES_MISSING
+    if invalid_context_reason:
+        technical_status = UNKNOWN_BLOCKED
+    if invalid_integration_context_reason:
+        technical_status = UNKNOWN_BLOCKED
 
     advisories = collect_advisories(results)
     control_status = determine_control_status(advisories)
@@ -548,6 +858,14 @@ def main():
                     technical_status = cond_status
             except:
                 technical_status = "UNKNOWN_BLOCKED"
+        if "aos_integration_contract_check.py" in r.get("command", ""):
+            try:
+                data = json.loads(r.get("stdout", "{}"))
+                integration_status = data.get("final_status", r.get("status", "UNKNOWN_BLOCKED"))
+                if integration_status != "PASS":
+                    technical_status = integration_status
+            except:
+                technical_status = "UNKNOWN_BLOCKED"
 
     output = {
         "duplicate_workspace_status": duplicate_workspace_status,
@@ -567,6 +885,10 @@ def main():
         "commit_authorized": False,
         "push_authorized": False,
         "release_authorized": False,
+        "validation_context": {
+            "conditional_scope_contract": conditional_scope_contract,
+            "integration_contract": integration_contract,
+        },
         "results": results
     }
 

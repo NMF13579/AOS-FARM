@@ -6,7 +6,9 @@ import contextlib
 import importlib.util
 import io
 import sys
+import tempfile
 from unittest import mock
+from pathlib import Path
 
 
 MODULE_PATH = os.path.join("aos", "scripts", "aos_validate.py")
@@ -653,6 +655,363 @@ class TestAosValidate(unittest.TestCase):
         self.assertEqual(data["overall_status"], "BLOCKED_REQUIRED_SOURCES_MISSING")
         self.assertEqual(data["required_sources"]["status"], "FAIL")
         self.assertIn("00_AOS_Core_Control.md", data["required_sources"]["missing"])
+
+    def test_help_shows_conditional_scope_contract_option_without_running_children(self):
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "run_command") as run_command, \
+             mock.patch("sys.argv", ["aos_validate.py", "--help"]), \
+             self.assertRaises(SystemExit) as raised, \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("--conditional-scope-contract", buf.getvalue())
+        run_command.assert_not_called()
+
+    def test_default_validation_context_preserves_existing_conditional_child_command(self):
+        commands = MODULE.build_validation_commands()
+        conditional = [
+            command for command in commands
+            if "aos/scripts/aos_conditional_scope_check.py" in command
+        ]
+        self.assertEqual(len(conditional), 1)
+        self.assertEqual(conditional[0], [sys.executable, "aos/scripts/aos_conditional_scope_check.py", "--json"])
+        self.assertEqual(
+            MODULE.default_conditional_scope_contract_context(),
+            {"source": "DEFAULT_TEMPLATE", "path": None, "sha256": None},
+        )
+
+    def test_explicit_conditional_scope_contract_forwarded_only_to_conditional_child(self):
+        context = {"source": "EXPLICIT_CLI", "path": ".aos-tmp/ctx file.json", "sha256": "a" * 64}
+        commands = MODULE.build_validation_commands(context)
+        conditional = [
+            command for command in commands
+            if "aos/scripts/aos_conditional_scope_check.py" in command
+        ][0]
+        self.assertEqual(
+            conditional,
+            [
+                sys.executable,
+                "aos/scripts/aos_conditional_scope_check.py",
+                "--contract",
+                ".aos-tmp/ctx file.json",
+                "--json",
+            ],
+        )
+        self.assertIn(".aos-tmp/ctx file.json", conditional)
+        self.assertEqual(conditional.count(".aos-tmp/ctx file.json"), 1)
+        for command in commands:
+            if command is conditional:
+                continue
+            self.assertNotIn("--contract", command)
+            self.assertNotIn(".aos-tmp/ctx file.json", command)
+
+    def test_explicit_conditional_scope_contract_path_safety_accepts_relative_regular_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            contract = repo / ".aos-tmp" / "ctx" / "conditional-scope-contract.json"
+            contract.parent.mkdir(parents=True)
+            contract.write_text('{"contract": true}\n', encoding="utf-8")
+
+            context = MODULE.resolve_conditional_scope_contract_context(
+                ".aos-tmp/ctx/conditional-scope-contract.json",
+                repo_root=repo,
+            )
+
+        self.assertEqual(context["source"], "EXPLICIT_CLI")
+        self.assertEqual(context["path"], ".aos-tmp/ctx/conditional-scope-contract.json")
+        self.assertEqual(
+            context["sha256"],
+            "11aee6a0615d8db4fd606e441057b965799d94b4dae4f8619fd58a895f3f5ee3",
+        )
+
+    def test_explicit_conditional_scope_contract_path_safety_blocks_unsafe_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            regular = repo / ".aos-tmp" / "ctx" / "contract.json"
+            regular.parent.mkdir(parents=True)
+            regular.write_text("{}", encoding="utf-8")
+            directory = repo / ".aos-tmp" / "directory"
+            directory.mkdir()
+            symlink = repo / ".aos-tmp" / "ctx" / "link.json"
+            symlink.symlink_to(regular)
+            parent_symlink = repo / ".aos-tmp" / "parent-link"
+            parent_symlink.symlink_to(regular.parent, target_is_directory=True)
+
+            unsafe_values = [
+                "",
+                str(regular),
+                "../contract.json",
+                ".aos-tmp/missing.json",
+                ".aos-tmp/directory",
+                ".aos-tmp/ctx/link.json",
+                ".aos-tmp/parent-link/contract.json",
+                ".aos-tmp/ctx/bad\x00.json",
+                ".aos-tmp/ctx/bad\n.json",
+            ]
+            for value in unsafe_values:
+                with self.subTest(value=value):
+                    with self.assertRaises(ValueError):
+                        MODULE.resolve_conditional_scope_contract_context(value, repo_root=repo)
+
+    def test_main_outputs_explicit_validation_context_and_preserves_child_status(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+        }
+        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmp:
+            contract = Path(tmp) / "contract with spaces.json"
+            contract.write_text('{"contract": true}\n', encoding="utf-8")
+            contract_arg = contract.relative_to(Path.cwd()).as_posix()
+            conditional_stdout = json.dumps({
+                "final_status": "PASS",
+                "reason_code": "CONDITIONAL_SCOPE_VALID",
+                "approval_claimed_by_validator": False,
+            })
+            conditional_command = [
+                sys.executable,
+                "aos/scripts/aos_conditional_scope_check.py",
+                "--contract",
+                contract_arg,
+                "--json",
+            ]
+            command_results = {
+                " ".join(conditional_command): {
+                    "command": " ".join(conditional_command),
+                    "status": "PASS",
+                    "return_code": 0,
+                    "process_exit_status": "EXIT_ZERO",
+                    "stdout": conditional_stdout,
+                    "stderr": "",
+                }
+            }
+
+            def fake_run_command(cmd):
+                return command_results[" ".join(cmd)]
+
+            buf = io.StringIO()
+            with mock.patch.object(MODULE, "VALIDATION_COMMANDS", [[sys.executable, "aos/scripts/aos_conditional_scope_check.py", "--json"]]), \
+                 mock.patch.object(MODULE, "run_command", side_effect=fake_run_command), \
+                 mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+                 mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+                 mock.patch("sys.argv", ["aos_validate.py", "all", "--conditional-scope-contract", contract_arg, "--json"]), \
+                 contextlib.redirect_stdout(buf):
+                MODULE.main()
+
+            data = json.loads(buf.getvalue())
+
+        context = data["validation_context"]["conditional_scope_contract"]
+        self.assertEqual(context["source"], "EXPLICIT_CLI")
+        self.assertEqual(context["path"], contract_arg)
+        self.assertEqual(context["sha256"], "11aee6a0615d8db4fd606e441057b965799d94b4dae4f8619fd58a895f3f5ee3")
+        conditional_result = data["results"][0]
+        self.assertEqual(conditional_result["conditional_scope_contract_source"], "EXPLICIT_CLI")
+        self.assertEqual(conditional_result["child_final_status"], "PASS")
+        self.assertEqual(conditional_result["child_reason_code"], "CONDITIONAL_SCOPE_VALID")
+        self.assertFalse(data["approval_granted"])
+        self.assertFalse(data["commit_authorized"])
+
+    def test_invalid_explicit_contract_path_fails_closed_without_running_children(self):
+        readiness_audit = {"status": "PASS", "counts": {}}
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "run_command") as run_command, \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "all", "--conditional-scope-contract", "/tmp/contract.json", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        run_command.assert_not_called()
+        self.assertEqual(data["overall_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(data["results"][0]["status"], "FAILED")
+        self.assertEqual(data["results"][0]["final_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(data["results"][0]["reason_code"], "CONDITIONAL_SCOPE_CONTRACT_PATH_INVALID")
+        self.assertEqual(data["validation_context"]["conditional_scope_contract"]["source"], "INVALID")
+
+    def test_help_shows_integration_contract_options_without_running_children(self):
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "run_command") as run_command, \
+             mock.patch("sys.argv", ["aos_validate.py", "--help"]), \
+             self.assertRaises(SystemExit) as raised, \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("--integration-contract", buf.getvalue())
+        self.assertIn("--integration-source-oid", buf.getvalue())
+        self.assertIn("--integration-target-oid", buf.getvalue())
+        run_command.assert_not_called()
+
+    def test_default_validation_context_does_not_run_integration_checker(self):
+        commands = MODULE.build_validation_commands()
+        self.assertFalse(any("aos_integration_contract_check.py" in command for command in commands))
+        self.assertEqual(
+            MODULE.default_integration_contract_context(),
+            {
+                "source": "NOT_PROVIDED",
+                "path": None,
+                "observed_source_oid": None,
+                "observed_target_oid": None,
+                "contract_sha256": None,
+            },
+        )
+
+    def test_explicit_integration_contract_forwarded_only_to_integration_child(self):
+        context = {
+            "source": "EXPLICIT_CLI",
+            "path": "aos/integration/contracts/contract with spaces.yaml",
+            "observed_source_oid": "1" * 40,
+            "observed_target_oid": "2" * 40,
+            "contract_sha256": "a" * 64,
+        }
+        commands = MODULE.build_validation_commands(integration_contract=context)
+        integration = [
+            command for command in commands
+            if "aos/scripts/aos_integration_contract_check.py" in command
+        ][0]
+        self.assertEqual(
+            integration,
+            [
+                sys.executable,
+                "aos/scripts/aos_integration_contract_check.py",
+                "--contract",
+                "aos/integration/contracts/contract with spaces.yaml",
+                "--repository-root",
+                ".",
+                "--observed-source-oid",
+                "1" * 40,
+                "--observed-target-oid",
+                "2" * 40,
+                "--json",
+            ],
+        )
+        self.assertEqual(integration.count("aos/integration/contracts/contract with spaces.yaml"), 1)
+        for command in commands:
+            if command is integration:
+                continue
+            self.assertNotIn("--integration-contract", command)
+            self.assertNotIn("--observed-source-oid", command)
+            self.assertNotIn("--observed-target-oid", command)
+            self.assertNotIn("aos/integration/contracts/contract with spaces.yaml", command)
+
+    def test_partial_integration_options_fail_closed_without_running_children(self):
+        readiness_audit = {"status": "PASS", "counts": {}}
+        buf = io.StringIO()
+        with mock.patch.object(MODULE, "run_command") as run_command, \
+             mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+             mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+             mock.patch("sys.argv", ["aos_validate.py", "all", "--integration-contract", "aos/integration/contracts/example.yaml", "--json"]), \
+             contextlib.redirect_stdout(buf):
+            MODULE.main()
+
+        data = json.loads(buf.getvalue())
+        run_command.assert_not_called()
+        self.assertEqual(data["overall_status"], "UNKNOWN_BLOCKED")
+        self.assertEqual(data["results"][0]["reason_code"], "INTEGRATION_CONTRACT_CONTEXT_INCOMPLETE")
+        self.assertEqual(data["validation_context"]["integration_contract"]["source"], "INVALID")
+
+    def test_main_preserves_integration_child_status_and_context_metadata(self):
+        readiness_audit = {
+            "status": "PASS",
+            "counts": {
+                "active_ready_count": 1,
+                "active_blocked_count": 0,
+                "active_human_review_required_count": 0,
+                "excluded_terminal_count": 0,
+                "excluded_legacy_count": 0,
+                "malformed_exclusion_count": 0,
+            },
+        }
+        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmp:
+            contract = Path(tmp) / "aos" / "integration" / "contracts" / "contract.json"
+            contract.parent.mkdir(parents=True)
+            contract.write_text('{"contract": true}\n', encoding="utf-8")
+            contract_arg = contract.relative_to(Path.cwd()).as_posix()
+            child_stdout = json.dumps({
+                "final_status": "PASS",
+                "reason_code": "INTEGRATION_CONTRACT_VALID",
+                "approval_granted": False,
+                "integration_authorized": False,
+            })
+            integration_command = [
+                sys.executable,
+                "aos/scripts/aos_integration_contract_check.py",
+                "--contract",
+                contract_arg,
+                "--repository-root",
+                ".",
+                "--observed-source-oid",
+                "1" * 40,
+                "--observed-target-oid",
+                "2" * 40,
+                "--json",
+            ]
+            command_results = {
+                " ".join(integration_command): {
+                    "command": " ".join(integration_command),
+                    "status": "PASS",
+                    "return_code": 0,
+                    "process_exit_status": "EXIT_ZERO",
+                    "stdout": child_stdout,
+                    "stderr": "",
+                }
+            }
+
+            def fake_run_command(cmd):
+                return command_results[" ".join(cmd)]
+
+            buf = io.StringIO()
+            with mock.patch.object(MODULE, "VALIDATION_COMMANDS", []), \
+                 mock.patch.object(MODULE, "run_command", side_effect=fake_run_command), \
+                 mock.patch.object(MODULE, "build_readiness_audit", return_value=readiness_audit), \
+                 mock.patch.object(MODULE.aos_architecture_document_check, "get_validate_all_report", return_value={"status": "PASS"}), \
+                 mock.patch("sys.argv", [
+                     "aos_validate.py",
+                     "all",
+                     "--integration-contract",
+                     contract_arg,
+                     "--integration-source-oid",
+                     "1" * 40,
+                     "--integration-target-oid",
+                     "2" * 40,
+                     "--json",
+                 ]), \
+                 contextlib.redirect_stdout(buf):
+                MODULE.main()
+
+            data = json.loads(buf.getvalue())
+
+        context = data["validation_context"]["integration_contract"]
+        self.assertEqual(context["source"], "EXPLICIT_CLI")
+        self.assertEqual(context["path"], contract_arg)
+        self.assertEqual(context["observed_source_oid"], "1" * 40)
+        self.assertEqual(context["observed_target_oid"], "2" * 40)
+        self.assertEqual(context["contract_sha256"], "11aee6a0615d8db4fd606e441057b965799d94b4dae4f8619fd58a895f3f5ee3")
+        result = data["results"][0]
+        self.assertEqual(result["integration_contract_source"], "EXPLICIT_CLI")
+        self.assertEqual(result["child_final_status"], "PASS")
+        self.assertEqual(result["child_reason_code"], "INTEGRATION_CONTRACT_VALID")
+        self.assertFalse(data["approval_granted"])
+        self.assertFalse(data["commit_authorized"])
+
+    def test_integration_child_blocked_remains_blocking(self):
+        result = {
+            "command": "python3 aos/scripts/aos_integration_contract_check.py --json",
+            "status": "PASS",
+            "return_code": 0,
+            "process_exit_status": "EXIT_ZERO",
+            "stdout": json.dumps({"final_status": "BLOCKED", "reason_code": "CONTRACT_BINDING_MISMATCH"}),
+            "stderr": "",
+        }
+        self.assertEqual(MODULE.normalize_child_result(result), "BLOCKED")
 
 if __name__ == '__main__':
     unittest.main()

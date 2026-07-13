@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Integration Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract_type",
+    "contract_id",
+    "task_id",
+    "repository",
+    "source",
+    "target",
+    "candidate",
+    "integration",
+    "check_policy",
+    "invalidation",
+    "authorization_boundary",
+    "contract_binding"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "contract_type": { "type": "string", "const": "AOS_INTEGRATION_CONTRACT" },
+    "contract_id": { "type": "string", "pattern": "^integration-[0-9a-f]{16}$" },
+    "task_id": { "type": "string", "pattern": "^AOS-FARM\\.[0-9]+(?:\\.[0-9]+)*$" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "remote_url"],
+      "properties": {
+        "identity": { "type": "string" },
+        "remote_url": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "commit_oid", "parent_oid", "tree_oid"],
+      "properties": {
+        "branch": { "type": "string", "pattern": "^build/.+" },
+        "commit_oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "parent_oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "tree_oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "expected_head_oid"],
+      "properties": {
+        "branch": { "type": "string", "const": "dev" },
+        "expected_head_oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_binding", "files"],
+      "properties": {
+        "manifest_binding": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "state", "mode", "sha256"],
+            "properties": {
+              "path": { "type": "string" },
+              "state": { "type": "string", "enum": ["ADDED", "MODIFIED", "DELETED", "RENAMED"] },
+              "mode": { "type": "string", "enum": ["100644", "100755"] },
+              "sha256": {
+                "anyOf": [
+                  { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                  { "type": "null" }
+                ]
+              },
+              "previous_path": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "exact_commit_preservation", "target_must_be_current"],
+      "properties": {
+        "method": { "type": "string", "const": "GITHUB_PR_MERGE_COMMIT" },
+        "exact_commit_preservation": { "type": "string", "const": "REQUIRED_AS_MERGE_PARENT_OR_ANCESTOR" },
+        "target_must_be_current": { "type": "boolean", "const": true }
+      }
+    },
+    "check_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_version", "required_checks", "advisory_checks"],
+      "properties": {
+        "policy_version": { "type": "integer", "const": 1 },
+        "required_checks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "advisory_checks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_commit_change",
+        "target_head_change",
+        "candidate_manifest_change",
+        "check_policy_change",
+        "integration_method_change"
+      ],
+      "properties": {
+        "source_commit_change": { "type": "boolean", "const": true },
+        "target_head_change": { "type": "boolean", "const": true },
+        "candidate_manifest_change": { "type": "boolean", "const": true },
+        "check_policy_change": { "type": "boolean", "const": true },
+        "integration_method_change": { "type": "boolean", "const": true }
+      }
+    },
+    "authorization_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_is_approval",
+        "integration_authorized",
+        "merge_authorized",
+        "release_authorized",
+        "human_decision_required"
+      ],
+      "properties": {
+        "contract_is_approval": { "type": "boolean", "const": false },
+        "integration_authorized": { "type": "boolean", "const": false },
+        "merge_authorized": { "type": "boolean", "const": false },
+        "release_authorized": { "type": "boolean", "const": false },
+        "human_decision_required": { "type": "boolean", "const": true }
+      }
+    },
+    "contract_binding": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

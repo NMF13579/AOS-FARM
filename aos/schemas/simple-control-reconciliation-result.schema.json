@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Reconciliation Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "reconciliation_version",
+    "operation_id",
+    "execution_package_binding",
+    "reconciliation_result",
+    "operation_state",
+    "control_state",
+    "automatic_retry",
+    "human_review_required",
+    "side_effect_repeated",
+    "rollback_available"
+  ],
+  "properties": {
+    "reconciliation_version": {"const": 1},
+    "operation_id": {"type": "string", "pattern": "^op-[a-f0-9]{24,64}$"},
+    "execution_package_binding": {"type": "string", "minLength": 64, "maxLength": 64},
+    "reconciliation_result": {
+      "enum": [
+        "ALREADY_COMPLETED_VERIFIED",
+        "SAFE_TO_RETRY",
+        "PARTIALLY_COMPLETED",
+        "BLOCKED",
+        "UNKNOWN_BLOCKED"
+      ]
+    },
+    "operation_state": {
+      "enum": [
+        "OPERATION_COMPLETED",
+        "OPERATION_PRECONDITIONS_VERIFIED",
+        "OPERATION_RECONCILIATION_REQUIRED"
+      ]
+    },
+    "control_state": {
+      "enum": [
+        "CONTROL_CHANGES_PREPARED",
+        "CONTROL_BLOCKED",
+        "CONTROL_UNKNOWN_BLOCKED"
+      ]
+    },
+    "automatic_retry": {"type": "boolean"},
+    "human_review_required": {"type": "boolean"},
+    "side_effect_repeated": {"const": false},
+    "rollback_available": {"const": false}
+  }
+}

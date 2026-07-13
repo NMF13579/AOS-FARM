@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Validation Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_version",
+    "task_id",
+    "user_intent",
+    "analysis_package",
+    "scope_proposal",
+    "scope_confirmation",
+    "risk_profile_assignment",
+    "execution_authorization",
+    "repository_observation"
+  ],
+  "properties": {
+    "bundle_version": {"const": 1},
+    "task_id": {"type": "string", "minLength": 1},
+    "user_intent": {"type": "object"},
+    "analysis_package": {"type": ["object", "null"]},
+    "scope_proposal": {"type": ["object", "null"]},
+    "scope_confirmation": {"type": ["object", "null"]},
+    "risk_profile_assignment": {"type": ["object", "null"]},
+    "execution_authorization": {"type": "null"},
+    "repository_observation": {"type": ["object", "null"]},
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {"type": "string"},
+        "mutated": {"const": false}
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Push Request",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["request_version", "request_id", "operation_id", "task_id", "repository_binding", "remote", "source_commit_oid", "force", "delete", "request_binding", "non_grants"],
+  "properties": {
+    "request_version": {"const": 1},
+    "remote": {
+      "type": "object",
+      "required": ["name", "url_binding", "target_ref", "expected_remote_oid"],
+      "properties": {
+        "name": {"const": "origin"},
+        "target_ref": {"type": "string", "pattern": "^refs/heads/build/"}
+      }
+    },
+    "force": {"const": false},
+    "delete": {"const": false},
+    "non_grants": {"type": "array", "contains": {"const": "integration"}}
+  }
+}

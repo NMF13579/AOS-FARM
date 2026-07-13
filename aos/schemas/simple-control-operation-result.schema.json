@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Operation Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "result_version",
+    "operation_id",
+    "operation_state",
+    "control_state",
+    "side_effect_started",
+    "side_effect_verified",
+    "commit_performed",
+    "push_performed",
+    "integration_performed",
+    "approval_status",
+    "Evidence_status",
+    "rollback_available",
+    "platform_enforced"
+  ],
+  "properties": {
+    "result_version": {"const": 1},
+    "operation_id": {"type": "string", "pattern": "^op-[a-f0-9]{24,64}$"},
+    "operation_state": {
+      "enum": [
+        "OPERATION_COMPLETED",
+        "OPERATION_FAILED",
+        "OPERATION_RECONCILIATION_REQUIRED"
+      ]
+    },
+    "control_state": {
+      "enum": [
+        "CONTROL_CHANGES_PREPARED",
+        "CONTROL_BLOCKED",
+        "CONTROL_UNKNOWN_BLOCKED"
+      ]
+    },
+    "side_effect_started": {"type": "boolean"},
+    "side_effect_verified": {"type": "boolean"},
+    "commit_performed": {"const": false},
+    "push_performed": {"const": false},
+    "integration_performed": {"const": false},
+    "approval_status": {"const": "NOT_PROVIDED"},
+    "Evidence_status": {"const": "NOT_RUN"},
+    "rollback_available": {"const": false},
+    "platform_enforced": {"const": false}
+  }
+}

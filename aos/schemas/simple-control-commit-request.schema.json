@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AOS Simple Control Commit Request",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["request_version", "request_id", "operation_id", "task_id", "candidate_manifest_binding", "repository_baseline", "commit_message", "expected_paths", "expected_staged_tree_binding", "commit_message_binding", "request_binding", "non_grants"],
+  "properties": {
+    "request_version": {"const": 1},
+    "operation_id": {"type": "string"},
+    "candidate_manifest_binding": {"type": "string", "minLength": 64, "maxLength": 64},
+    "commit_message": {
+      "type": "object",
+      "required": ["subject", "body"],
+      "properties": {
+        "subject": {"type": "string", "minLength": 1, "maxLength": 120, "not": {"pattern": "\\n"}},
+        "body": {"type": "string", "maxLength": 4000}
+      }
+    },
+    "non_grants": {"type": "array", "contains": {"const": "push"}}
+  }
+}
