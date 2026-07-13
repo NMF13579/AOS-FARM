@@ -1,0 +1,56 @@
+{
+  "authorization_boundary": {
+    "contract_is_approval": false,
+    "human_decision_required": true,
+    "integration_authorized": false,
+    "merge_authorized": false,
+    "release_authorized": false
+  },
+  "candidate": {
+    "files": [],
+    "manifest_binding": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "check_policy": {
+    "advisory_checks": [],
+    "policy_version": 1,
+    "required_checks": [
+      "aos-integration / candidate-binding",
+      "aos-integration / contract",
+      "aos-integration / focused-tests",
+      "aos-integration / full-pytest",
+      "aos-integration / protected-paths",
+      "aos-integration / semantic-guard"
+    ]
+  },
+  "contract_binding": "0000000000000000000000000000000000000000000000000000000000000000",
+  "contract_id": "integration-0000000000000000",
+  "contract_type": "AOS_INTEGRATION_CONTRACT",
+  "integration": {
+    "exact_commit_preservation": "REQUIRED_AS_MERGE_PARENT_OR_ANCESTOR",
+    "method": "GITHUB_PR_MERGE_COMMIT",
+    "target_must_be_current": true
+  },
+  "invalidation": {
+    "candidate_manifest_change": true,
+    "check_policy_change": true,
+    "integration_method_change": true,
+    "source_commit_change": true,
+    "target_head_change": true
+  },
+  "repository": {
+    "identity": "NMF13579/AOS-FARM",
+    "remote_url": "git@github.com:NMF13579/AOS-FARM.git"
+  },
+  "schema_version": 1,
+  "source": {
+    "branch": "build/example",
+    "commit_oid": "0000000000000000000000000000000000000000",
+    "parent_oid": "0000000000000000000000000000000000000000",
+    "tree_oid": "0000000000000000000000000000000000000000"
+  },
+  "target": {
+    "branch": "dev",
+    "expected_head_oid": "0000000000000000000000000000000000000000"
+  },
+  "task_id": "AOS-FARM.0"
+}
