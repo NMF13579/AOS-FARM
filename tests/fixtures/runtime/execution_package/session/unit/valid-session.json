@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "session_id": "sess_01j2tbg9a4wcd2gkz7x5",
+  "session_revision": 1,
+  "package_id": "pkg_7f8a9b",
+  "package_digest": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+  "authorization_id": "auth_99xyz",
+  "repository_id": "urn:uuid:12345678-1234-5678-1234-567812345678",
+  "remote_identity": "git@github.com:example/repo.git",
+  "branch": "main",
+  "baseline_head": "0123456789abcdef0123456789abcdef01234567",
+  "platform_profile": "local-macos",
+  "execution_environment_id": "env_local",
+  "execution_mode": "ENFORCED",
+  "created_at": "2026-07-10T12:00:00Z",
+  "session_state": "CREATED",
+  "resume_allowed": false,
+  "session_nonce": "n_123456789",
+  "session_identity_source": "EXPLICIT_VALIDATION_INPUT",
+  "workspace_instance_id": "ws_123"
+}

@@ -75,7 +75,8 @@ def render_human_preview(
     # Extract required fields for markdown
     try:
         operation = package_core.get("operation", "UNKNOWN")
-        repo = ds.get("repository_identity", {}).get("name", "UNKNOWN")
+        repo_obj = ds.get("repository_identity", {})
+        repo = repo_obj.get("name", "UNKNOWN") if isinstance(repo_obj, dict) else repo_obj
         pr = ds.get("pull_request", {})
         pr_number = pr.get("number", "UNKNOWN")
         base_oid = pr.get("base_oid", "UNKNOWN")
