@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "protected_paths": [
+    "path/to/protected/file.md",
+    "path/to/protected/directory/"
+  ]
+}
