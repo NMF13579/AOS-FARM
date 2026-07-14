@@ -80,41 +80,41 @@ def render_human_preview(
         pr_number = pr.get("number", "UNKNOWN")
         base_oid = pr.get("base_oid", "UNKNOWN")
         head_oid = pr.get("head_oid", "UNKNOWN")
-        
+
         commits = ds.get("commits", {}).get("items", [])
         commit_count = len(commits)
-        
+
         changed_paths = ds.get("changed_paths", {}).get("items", [])
         changed_file_count = len(changed_paths)
-        
+
         protected_paths = ds.get("protected_path_result", {}).get("items", [])
-        
+
         req_checks = ds.get("required_checks", {}).get("items", [])
         passed_c = sum(1 for c in req_checks if c.get("state") == "PASS")
         pending_c = sum(1 for c in req_checks if c.get("state") == "PENDING")
         failing_c = sum(1 for c in req_checks if c.get("state") in ("FAILURE", "FAIL", "ERROR"))
         missing_c = sum(1 for c in req_checks if c.get("state") == "MISSING")
-        
+
         req_approvals = ds.get("required_review_policy", {}).get("required_approvals", "UNKNOWN")
         obs_approvals = ds.get("reviews", {}).get("approval_count", "UNKNOWN")
         blocking_reviews = ds.get("reviews", {}).get("blocking_count", "UNKNOWN")
         unres_threads = ds.get("review_threads", {}).get("unresolved_count", "UNKNOWN")
-        
+
         co_state = ds.get("codeowner_state", {})
         co_status = "SATISFIED" if co_state.get("satisfied") else ("UNSATISFIED" if co_state.get("unsatisfied") else "UNKNOWN")
-        
+
         merge_method = package_core.get("exact_merge_parameters", {}).get("merge_method", "UNKNOWN")
-        
+
         rulesets = ds.get("rulesets", {})
         rs_status = "UNKNOWN" if rulesets.get("unknown_policy") else ("FAIL" if rulesets.get("policy_violation") else "PASS")
-        
+
         forbidden = sorted(package_core.get("forbidden_actions", []))
-        
+
         int_status = verification_result.get("integrity_status", "UNKNOWN")
         fre_status = verification_result.get("freshness_status", "UNKNOWN")
         tech_status = verification_result.get("technical_status", "UNKNOWN")
         ctrl_status = verification_result.get("control_status", "UNKNOWN")
-        
+
         unknowns = sorted(verification_result.get("unknown_fields", []))
         not_run_items = "REQUIRED_VERIFICATION_NOT_RUN" in verification_result.get("reason_codes", [])
     except Exception:
@@ -130,7 +130,7 @@ def render_human_preview(
     lines.append(f"**Base OID:** `{base_oid}`")
     lines.append(f"**Head OID:** `{head_oid}`")
     lines.append("")
-    
+
     lines.append(f"## Status")
     lines.append(f"- Technical status: **{tech_status}**")
     lines.append(f"- Integrity status: **{int_status}**")
@@ -139,11 +139,11 @@ def render_human_preview(
     lines.append(f"- Approval granted: **false**")
     lines.append(f"- Execution authorized: **false**")
     lines.append("")
-    
+
     lines.append(f"## Content Summary")
     lines.append(f"- Commits: {commit_count}")
     lines.append(f"- Changed files: {changed_file_count}")
-    
+
     lines.append("")
     lines.append(f"### Protected Paths")
     if not protected_paths:
@@ -155,7 +155,7 @@ def render_human_preview(
             lines.append(f"- `{p}`")
         if len(protected_paths) > display_limit:
             lines.append(f"- ... and {len(protected_paths) - display_limit} more")
-            
+
     lines.append("")
     lines.append(f"## Checks & Reviews")
     lines.append(f"- Required checks: {len(req_checks)} (Passed: {passed_c}, Pending: {pending_c}, Failing: {failing_c}, Missing: {missing_c})")
@@ -166,22 +166,22 @@ def render_human_preview(
     lines.append(f"- Codeowner status: {co_status}")
     lines.append(f"- Ruleset status: {rs_status}")
     lines.append("")
-    
+
     lines.append(f"## Merge Parameters")
     lines.append(f"- Merge method: {merge_method}")
     lines.append("")
-    
+
     lines.append(f"## Security Constraints")
     lines.append(f"Forbidden actions:")
     for f in forbidden:
         lines.append(f"- {f}")
-        
+
     if unknowns:
         lines.append("")
         lines.append(f"## Unknowns")
         for u in unknowns:
             lines.append(f"- {u}")
-            
+
     if not_run_items:
         lines.append("")
         lines.append(f"## Not Run Items")
