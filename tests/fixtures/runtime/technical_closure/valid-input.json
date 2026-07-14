@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "subject": {
+    "schema_version": 1,
+    "task_id": "AOS-FARM.684.1.5",
+    "scope_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "candidate_oid": "9efd4d47f30a3cc00ac5a9314375dcc027e1cc58",
+    "required_artifacts": [
+      {
+        "artifact_type": "evidence",
+        "artifact_id": "execution-report",
+        "artifact_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "integration_target": {
+      "repository": "NMF13579/AOS-FARM",
+      "base_ref": "dev",
+      "candidate_ref": "build/aos-farm-684-technical-closure"
+    }
+  },
+  "requirements": {
+    "validation_required": true,
+    "evidence_required": true,
+    "merge_authorization_required": false,
+    "integration_result_required": true
+  },
+  "required_results": {
+    "validation": {
+      "technical_status": "PASS",
+      "subject_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "result_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "reason_codes": []
+    },
+    "evidence": {
+      "technical_status": "PASS",
+      "subject_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "reason_codes": []
+    },
+    "merge_authorization": {
+      "package_id": null,
+      "subject_digest": null,
+      "verification_status": "NOT_RUN",
+      "result_digest": null,
+      "reason_codes": []
+    },
+    "integration": {
+      "subject_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_status": "PASS",
+      "result_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "reason_codes": []
+    }
+  },
+  "authorization_frontier": {
+    "required_human_decision": "NONE"
+  },
+  "review_triggers": {
+    "reaudit_request_reference": {
+      "present": false,
+      "witness_id": null,
+      "witness_digest": null
+    },
+    "safety_triggers": []
+  },
+  "previous_result_binding": {
+    "present": false,
+    "subject_digest": null,
+    "evaluation_input_digest": null,
+    "result_digest": null,
+    "closure_status": null
+  }
+}

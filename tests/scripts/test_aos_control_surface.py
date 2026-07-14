@@ -15,6 +15,8 @@ SCOPED_PATHS = [
     "aos/scripts/aos_control_surface.py",
     "tests/scripts/test_aos_control_surface.py",
     "tests/fixtures/simple_control",
+    "aos/runtime/technical_closure_contracts.py",
+    "aos/runtime/technical_closure_evaluator.py",
 ]
 
 
@@ -111,6 +113,86 @@ class TestAOSControlSurface(unittest.TestCase):
             self.assertFalse(data["available"])
             self.assertEqual(data["reason_code"], reason)
             self.assertFalse(data["operation_started"])
+
+    def closure_input(self, required_decision="NONE"):
+        from tests.runtime.test_technical_closure_evaluator import prepared_input
+
+        payload = prepared_input()
+        payload["authorization_frontier"]["required_human_decision"] = required_decision
+        return payload
+
+    def run_closure_json(self, command, payload):
+        return subprocess.run(
+            ["python3", "-B", SCRIPT, "--json", command, "--closure-input", "-"],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+        )
+
+    def test_closure_status_next_and_details_are_terminal_read_only(self):
+        payload = self.closure_input("HUMAN_PUSH_DECISION")
+        for command, expected_kind in [
+            ("/status", "closure_status"),
+            ("/next", "closure_next"),
+            ("/details", "closure_details"),
+        ]:
+            result = self.run_closure_json(command, payload)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            data = json.loads(result.stdout)
+            self.assertEqual(data["resolved_command_id"], {
+                "/status": "STATUS",
+                "/next": "NEXT",
+                "/details": "SHOW_DETAILS",
+            }[command])
+            self.assertEqual(data["result"]["kind"], expected_kind)
+            self.assertFalse(data["operation_started"])
+            self.assertFalse(data["result"]["continue_allowed"])
+            self.assertFalse(data["result"].get("next_stage_started", False))
+        next_data = json.loads(self.run_closure_json("/next", payload).stdout)
+        self.assertEqual(next_data["result"]["next_required_action"], "HUMAN_PUSH_DECISION")
+
+    def test_prepare_closure_outputs_full_result_without_filesystem_write(self):
+        payload = self.closure_input()
+        before = subprocess.run(
+            ["git", "status", "--short", "--untracked-files=all"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        result = self.run_closure_json("/prepare-closure", payload)
+        after = subprocess.run(
+            ["git", "status", "--short", "--untracked-files=all"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(before, after)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["resolved_command_id"], "PREPARE_CLOSURE")
+        self.assertEqual(data["result"]["response_kind"], "TECHNICAL_CLOSURE_RESULT")
+        self.assertEqual(data["result"]["closure_status"], "CLOSURE_TECHNICALLY_CLOSED")
+        self.assertFalse(data["result"]["approval_granted"])
+        self.assertFalse(data["result"]["next_stage_started"])
+
+    def test_prepare_closure_contract_error_uses_exit_2(self):
+        payload = self.closure_input()
+        payload["subject"]["scope_digest"] = "bad"
+        result = self.run_closure_json("/prepare-closure", payload)
+        self.assertEqual(result.returncode, 2)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["result"]["response_kind"], "CONTRACT_ERROR")
+        self.assertIsNone(data["result"]["subject_digest"])
+
+    def test_stop_returns_terminal_result_without_evaluator_or_input(self):
+        result = run_json("/stop")
+        self.assertEqual(result[0].returncode, 0, result[0].stdout + result[0].stderr)
+        data = result[1]
+        self.assertEqual(data["resolved_command_id"], "STOP")
+        self.assertEqual(data["result"]["response_kind"], "TERMINAL_COMMAND_RESULT")
+        self.assertEqual(data["result"]["next_required_action"], "NO_FURTHER_AUTOMATIC_ACTION")
+        self.assertFalse(data["result"]["closure_result_mutated"])
+        self.assertNotIn("technical_status", data["result"])
 
     def test_execute_requires_structured_preview_inputs(self):
         result, data = run_json("/execute")

@@ -10,12 +10,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 SURFACE = "AOS_SIMPLE_CONTROL"
 COMMAND_REGISTRY = Path("aos/config/simple-control-command-registry.yaml")
 LOCALE_REGISTRY = Path("aos/config/simple-control-locale-registry.yaml")
-READ_ONLY_IMPLEMENTED = {"HELP", "LANGUAGE"}
+READ_ONLY_IMPLEMENTED = {"HELP", "LANGUAGE", "STOP"}
 PLANNING_IMPLEMENTED = {"ANALYZE", "PLAN", "ACCEPT_SCOPE", "REVISE_SCOPE", "SELECT_RISK"}
 VALIDATION_IMPLEMENTED = {"VALIDATE", "STATUS", "NEXT", "SHOW_DETAILS"}
+CLOSURE_IMPLEMENTED = {"PREPARE_CLOSURE"}
 EXECUTION_IMPLEMENTED = {"EXECUTE"}
 GIT_IMPLEMENTED = {"COMMIT", "PUSH"}
-IMPLEMENTED_COMMANDS = READ_ONLY_IMPLEMENTED | PLANNING_IMPLEMENTED | VALIDATION_IMPLEMENTED | EXECUTION_IMPLEMENTED | GIT_IMPLEMENTED
+IMPLEMENTED_COMMANDS = READ_ONLY_IMPLEMENTED | PLANNING_IMPLEMENTED | VALIDATION_IMPLEMENTED | CLOSURE_IMPLEMENTED | EXECUTION_IMPLEMENTED | GIT_IMPLEMENTED
 READ_ONLY_CLASSES = {"PURE_READ"}
 PLANNING_CLASSES = {"TEMPORARY_LOCAL_ANALYSIS", "DECISION_RECORD_PREPARATION"}
 VALIDATION_CLASSES = {"TEMPORARY_LOCAL_ANALYSIS", "PURE_READ"}
@@ -157,6 +158,13 @@ def build_alias_index(command_registry, locale_registry):
                 raise RegistryError("validation command must use read-only validation operation class")
             if any(effects.values()):
                 raise RegistryError("validation command effects must be read-only")
+        if status == "IMPLEMENTED_READ_ONLY_CLOSURE":
+            if command_id not in CLOSURE_IMPLEMENTED:
+                raise RegistryError("implemented closure command outside 684.1 scope")
+            if command.get("operation_class") != "CLOSURE_PREPARATION":
+                raise RegistryError("closure command must use CLOSURE_PREPARATION")
+            if any(effects.values()):
+                raise RegistryError("closure command effects must be read-only")
         if status == "IMPLEMENTED_ORCHESTRATION_PREVIEW_ONLY":
             if command_id not in EXECUTION_IMPLEMENTED:
                 raise RegistryError("implemented execution preview command outside 681.6 scope")
@@ -425,6 +433,102 @@ def parse_push_request_arg(args):
     return parse_json_arg(args.push_request_json, "push-request-json")
 
 
+def parse_closure_input_arg(args):
+    if args.closure_input != "-":
+        raise RegistryError("closure-input supports only '-' for stdin")
+    text = sys.stdin.read(MAX_INLINE_JSON_BYTES + 1)
+    if len(text.encode("utf-8")) > MAX_INLINE_JSON_BYTES:
+        raise RegistryError("closure-input exceeds input size limit")
+    return parse_json_arg(text, "closure-input")
+
+
+def closure_non_grants(result):
+    return {
+        "approval_granted": result.get("approval_granted") is True,
+        "execution_authorized": result.get("execution_authorized") is True,
+        "commit_authorized": result.get("commit_authorized") is True,
+        "push_authorized": result.get("push_authorized") is True,
+        "integration_authorized": result.get("integration_authorized") is True,
+        "release_authorized": result.get("release_authorized") is True,
+        "operation_started": result.get("operation_started") is True,
+        "background_action_started": result.get("background_action_started") is True,
+        "broad_reaudit_started": result.get("broad_reaudit_started") is True,
+        "schedule_created": result.get("schedule_created") is True,
+        "lifecycle_mutated": result.get("lifecycle_mutated") is True,
+        "next_stage_started": result.get("next_stage_started") is True,
+    }
+
+
+def evaluate_closure_input(args):
+    from aos.runtime.technical_closure_evaluator import evaluate_technical_closure
+
+    return evaluate_technical_closure(parse_closure_input_arg(args))
+
+
+def render_closure_command(command_id, args):
+    result = evaluate_closure_input(args)
+    if command_id == "PREPARE_CLOSURE":
+        return result
+    if result.get("response_kind") == "CONTRACT_ERROR":
+        return result
+    if command_id == "STATUS":
+        return {
+            "kind": "closure_status",
+            "task_id": result["task_id"],
+            "technical_status": result["technical_status"],
+            "control_status": result["control_status"],
+            "closure_status": result["closure_status"],
+            "subject_digest": result["subject_digest"],
+            "evaluation_input_digest": result["evaluation_input_digest"],
+            "result_digest": result["result_digest"],
+            "binding_changed": result["binding_changed"],
+            "evaluation_input_changed": result["evaluation_input_changed"],
+            "reopened": result["reopened"],
+            "next_required_action": result["next_required_action"],
+            "continue_allowed": False,
+        }
+    if command_id == "NEXT":
+        return {
+            "kind": "closure_next",
+            "next_required_action": result["next_required_action"],
+            "continue_allowed": False,
+            "operation_started": False,
+            "next_stage_started": False,
+        }
+    if command_id == "SHOW_DETAILS":
+        return {
+            "kind": "closure_details",
+            "reason_codes": result["reason_codes"],
+            "stale_inputs": result["stale_inputs"],
+            "binding": {
+                "subject_digest": result["subject_digest"],
+                "evaluation_input_digest": result["evaluation_input_digest"],
+                "binding_changed": result["binding_changed"],
+                "evaluation_input_changed": result["evaluation_input_changed"],
+                "reopened": result["reopened"],
+            },
+            "previous_result_summary": {
+                "binding_changed": result["binding_changed"],
+                "evaluation_input_changed": result["evaluation_input_changed"],
+                "reopened": result["reopened"],
+            },
+            "required_human_decision": result["required_human_decision"],
+            "review_trigger_references": {
+                "broad_reaudit_may_be_proposed": result["broad_reaudit_may_be_proposed"],
+                "broad_reaudit_started": False,
+            },
+            "non_grants": closure_non_grants(result),
+            "continue_allowed": False,
+        }
+    raise RegistryError(f"closure command not implemented: {command_id}")
+
+
+def render_stop_command():
+    from aos.runtime.technical_closure_contracts import terminal_stop_result
+
+    return terminal_stop_result()
+
+
 def render_planning_command(command_id, args):
     from aos.runtime.simple_control_planning import (
         assign_risk_profile,
@@ -646,10 +750,16 @@ def handle_command(raw_input, explicit_locale=None, details=False, args=None):
         response["result"] = render_help(locale)
     elif command_id == "LANGUAGE":
         response["result"] = render_language(locale, locale_registry)
+    elif command_id == "STOP":
+        response["result"] = render_stop_command()
+    elif args and args.closure_input and command_id in {"STATUS", "NEXT", "SHOW_DETAILS", "PREPARE_CLOSURE"}:
+        response["result"] = render_closure_command(command_id, args)
     elif command_id in PLANNING_IMPLEMENTED:
         response["result"] = render_planning_command(command_id, args)
     elif command_id in VALIDATION_IMPLEMENTED:
         response["result"] = render_validation_command(command_id, args)
+    elif command_id in CLOSURE_IMPLEMENTED:
+        raise RegistryError("PREPARE_CLOSURE requires --closure-input -")
     elif command_id in EXECUTION_IMPLEMENTED:
         response["result"] = render_execution_command(args)
     elif command_id in GIT_IMPLEMENTED:
@@ -663,6 +773,8 @@ def handle_command(raw_input, explicit_locale=None, details=False, args=None):
 
     if not response["available"]:
         return response, EXIT_UNAVAILABLE
+    if response["result"].get("response_kind") == "CONTRACT_ERROR":
+        return response, EXIT_USAGE
     if command_id == "VALIDATE":
         validation_status = response["result"].get("validation_status")
         if validation_status == "UNKNOWN":
@@ -692,6 +804,18 @@ def render_text(response):
         return f"Status: {response['result']['control_state_label']}. Validation={response['result']['validation_status']}. Execution authorization: not provided."
     if response["result"].get("kind") == "next":
         return f"Next: {response['result']['recommended_command']} available={response['result']['available']}. Operation not started."
+    if response["result"].get("kind") == "closure_status":
+        return f"Closure status: {response['result']['closure_status']}. Next action: {response['result']['next_required_action']}. Continue allowed: false."
+    if response["result"].get("kind") == "closure_next":
+        return f"Closure next: {response['result']['next_required_action']}. Operation not started."
+    if response["result"].get("kind") == "closure_details":
+        return json.dumps(response["result"], indent=2, ensure_ascii=False)
+    if response["result"].get("response_kind") == "TECHNICAL_CLOSURE_RESULT":
+        return f"Technical closure: {response['result']['closure_status']}. Approval: not provided. Continue allowed: false."
+    if response["result"].get("response_kind") == "CONTRACT_ERROR":
+        return "Technical closure contract error. Operation not started."
+    if response["result"].get("response_kind") == "TERMINAL_COMMAND_RESULT":
+        return "Stop: terminal read-only response. No operation started."
     if response["result"].get("kind") == "execute_preview":
         return "Execution package prepared. Files were not modified. Operation Control Foundation is required for actual execution."
     if response["result"].get("operation_state") == "OPERATION_COMPLETED":
@@ -720,6 +844,7 @@ def build_parser():
     parser.add_argument("--scope-confirmation-json", help="Inline Scope Confirmation Record JSON.")
     parser.add_argument("--bundle-json", help="Inline Validation Bundle JSON.")
     parser.add_argument("--bundle-stdin", action="store_true", help="Read bounded Validation Bundle JSON from stdin.")
+    parser.add_argument("--closure-input", help="Use '-' to read deterministic technical closure JSON from stdin.")
     parser.add_argument("--execution-request-json", help="Inline Execution Request JSON.")
     parser.add_argument("--execution-request-stdin", action="store_true", help="Read bounded Execution Request JSON from stdin.")
     parser.add_argument("--execution-witness-json", help="Inline Execution Authorization Witness JSON.")
