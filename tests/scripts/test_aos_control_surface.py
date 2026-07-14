@@ -129,6 +129,14 @@ class TestAOSControlSurface(unittest.TestCase):
             text=True,
         )
 
+    def run_closure_raw(self, command, raw_input):
+        return subprocess.run(
+            ["python3", "-B", SCRIPT, "--json", command, "--closure-input", "-"],
+            input=raw_input,
+            capture_output=True,
+            text=True,
+        )
+
     def test_closure_status_next_and_details_are_terminal_read_only(self):
         payload = self.closure_input("HUMAN_PUSH_DECISION")
         for command, expected_kind in [
@@ -183,6 +191,41 @@ class TestAOSControlSurface(unittest.TestCase):
         data = json.loads(result.stdout)
         self.assertEqual(data["result"]["response_kind"], "CONTRACT_ERROR")
         self.assertIsNone(data["result"]["subject_digest"])
+
+    def test_malformed_closure_json_is_contract_error_exit_2(self):
+        for command in ["/prepare-closure", "/status", "/next", "/details"]:
+            with self.subTest(command=command):
+                result = self.run_closure_raw(command, '{"schema_version":')
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                data = json.loads(result.stdout)
+                self.assertNotEqual(data["reason_code"], "COMMAND_REGISTRY_INVALID")
+                self.assertEqual(data["result"]["response_kind"], "CONTRACT_ERROR")
+                self.assertEqual(data["result"]["technical_status"], "FAIL")
+                self.assertEqual(data["result"]["control_status"], "BLOCKED")
+                self.assertEqual(data["result"]["closure_status"], "CLOSURE_CORRECTION_REQUIRED")
+                self.assertEqual(data["result"]["next_required_action"], "HUMAN_CORRECTION_DECISION")
+                self.assertFalse(data["operation_started"])
+                self.assertFalse(data["result"]["operation_started"])
+                self.assertFalse(data["result"]["next_stage_started"])
+
+    def test_registry_error_still_uses_exit_5(self):
+        import contextlib
+        import io
+
+        from aos.scripts import aos_control_surface
+
+        original = aos_control_surface.COMMAND_REGISTRY
+        stdout = io.StringIO()
+        try:
+            aos_control_surface.COMMAND_REGISTRY = Path("missing-command-registry.json")
+            with contextlib.redirect_stdout(stdout):
+                exit_code = aos_control_surface.main(["--json", "/prepare-closure", "--closure-input", "-"])
+        finally:
+            aos_control_surface.COMMAND_REGISTRY = original
+        self.assertEqual(exit_code, 5)
+        data = json.loads(stdout.getvalue())
+        self.assertEqual(data["reason_code"], "COMMAND_REGISTRY_INVALID")
+        self.assertFalse(data["operation_started"])
 
     def test_stop_returns_terminal_result_without_evaluator_or_input(self):
         result = run_json("/stop")

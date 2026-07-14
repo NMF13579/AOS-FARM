@@ -47,6 +47,12 @@ FORBIDDEN_AUTHORITY_FIELDS = {
     "lifecycle_mutated",
     "next_stage_started",
 }
+PREVIOUS_BINDING_DIGEST_KEYS = (
+    "subject_digest",
+    "evaluation_input_digest",
+    "result_digest",
+    "closure_status",
+)
 
 
 class ContractError(ValueError):
@@ -168,7 +174,11 @@ def _digest_payload(payload: Any) -> str:
 
 
 def compute_subject_digest(subject: dict) -> str:
-    normalized_subject = _normalize_subject(subject, task_id=subject.get("task_id") if isinstance(subject, dict) else None, input_payload=subject)
+    normalized_subject = _normalize_subject(
+        subject,
+        task_id=subject.get("task_id") if isinstance(subject, dict) else None,
+        input_payload=subject,
+    )
     projection = {
         "schema_version": normalized_subject["schema_version"],
         "task_id": normalized_subject["task_id"],
@@ -351,7 +361,7 @@ def _normalize_authorization_frontier(frontier, task_id=None, input_payload=None
     }
 
 
-def _normalize_review_triggers(triggers, current_subject_digest=None, task_id=None, input_payload=None):
+def _normalize_review_triggers(triggers, task_id=None, input_payload=None):
     _require_fields(triggers, {"reaudit_request_reference", "safety_triggers"}, task_id, input_payload)
     reference = triggers["reaudit_request_reference"]
     _require_fields(reference, {"present", "witness_id", "witness_digest"}, task_id, input_payload)
@@ -378,11 +388,15 @@ def _normalize_review_triggers(triggers, current_subject_digest=None, task_id=No
         identity = (item["trigger_code"], item["subject_digest"], item["evidence_digest"])
         if identity in seen:
             _fail("DUPLICATE_SAFETY_TRIGGER", task_id, input_payload)
-        if current_subject_digest is not None and item["subject_digest"] != current_subject_digest:
-            _fail("SAFETY_TRIGGER_SUBJECT_DIGEST_MISMATCH", task_id, input_payload)
         seen.add(identity)
         normalized_safety.append(item)
-    normalized_safety.sort(key=lambda item: (item["trigger_code"], item["subject_digest"], item["evidence_digest"]))
+    normalized_safety.sort(
+        key=lambda item: (
+            item["trigger_code"],
+            item["subject_digest"],
+            item["evidence_digest"],
+        )
+    )
     return {
         "reaudit_request_reference": {
             "present": present,
@@ -396,30 +410,49 @@ def _normalize_review_triggers(triggers, current_subject_digest=None, task_id=No
 def _normalize_previous_binding(binding, task_id=None, input_payload=None):
     _require_fields(
         binding,
-        {"present", "subject_digest", "evaluation_input_digest", "result_digest", "closure_status"},
+        {"present", *PREVIOUS_BINDING_DIGEST_KEYS},
         task_id,
         input_payload,
     )
     present = _expect_bool(binding["present"], task_id, input_payload)
     normalized = {
         "present": present,
-        "subject_digest": _expect_sha(binding["subject_digest"], task_id=task_id, input_payload=input_payload, nullable=True),
-        "evaluation_input_digest": _expect_sha(binding["evaluation_input_digest"], task_id=task_id, input_payload=input_payload, nullable=True),
-        "result_digest": _expect_sha(binding["result_digest"], task_id=task_id, input_payload=input_payload, nullable=True),
+        "subject_digest": _expect_sha(
+            binding["subject_digest"],
+            task_id=task_id,
+            input_payload=input_payload,
+            nullable=True,
+        ),
+        "evaluation_input_digest": _expect_sha(
+            binding["evaluation_input_digest"],
+            task_id=task_id,
+            input_payload=input_payload,
+            nullable=True,
+        ),
+        "result_digest": _expect_sha(
+            binding["result_digest"],
+            task_id=task_id,
+            input_payload=input_payload,
+            nullable=True,
+        ),
         "closure_status": None,
     }
     closure_status = binding["closure_status"]
     if closure_status is not None:
         normalized["closure_status"] = _expect_enum(closure_status, CLOSURE_STATUSES, "INVALID_CLOSURE_STATUS", task_id, input_payload)
-    if not present and any(normalized[key] is not None for key in ["subject_digest", "evaluation_input_digest", "result_digest", "closure_status"]):
+    if not present and any(normalized[key] is not None for key in PREVIOUS_BINDING_DIGEST_KEYS):
         _fail("PREVIOUS_BINDING_PRESENT_FALSE_INCONSISTENT", task_id, input_payload)
-    if present and any(normalized[key] is None for key in ["subject_digest", "evaluation_input_digest", "result_digest", "closure_status"]):
+    if present and any(normalized[key] is None for key in PREVIOUS_BINDING_DIGEST_KEYS):
         _fail("PREVIOUS_BINDING_INCOMPLETE", task_id, input_payload)
     return normalized
 
 
 def normalize_closure_input(payload: dict) -> dict:
-    task_id = payload.get("subject", {}).get("task_id") if isinstance(payload, dict) and isinstance(payload.get("subject"), dict) else None
+    task_id = None
+    if isinstance(payload, dict):
+        subject_payload = payload.get("subject")
+        if isinstance(subject_payload, dict):
+            task_id = subject_payload.get("task_id")
     _check_json_domain(payload, task_id=task_id, input_payload=payload)
     _check_forbidden_fields(payload, task_id=task_id, input_payload=payload)
     _require_fields(
@@ -440,7 +473,6 @@ def normalize_closure_input(payload: dict) -> dict:
         "schema_version": _expect_int(payload["schema_version"], 1, task_id, payload),
         "subject": _normalize_subject(payload["subject"], task_id, payload),
     }
-    subject_digest = compute_subject_digest(normalized["subject"])
     normalized["requirements"] = _normalize_requirements(payload["requirements"], task_id, payload)
     normalized["required_results"] = _normalize_required_results(
         payload["required_results"],
@@ -451,7 +483,6 @@ def normalize_closure_input(payload: dict) -> dict:
     normalized["authorization_frontier"] = _normalize_authorization_frontier(payload["authorization_frontier"], task_id, payload)
     normalized["review_triggers"] = _normalize_review_triggers(
         payload["review_triggers"],
-        current_subject_digest=subject_digest,
         task_id=task_id,
         input_payload=payload,
     )

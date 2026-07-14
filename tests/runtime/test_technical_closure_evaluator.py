@@ -116,6 +116,41 @@ def test_safety_trigger_and_reaudit_reference_do_not_start_broad_audit():
     assert result["broad_reaudit_started"] is False
 
 
+def test_stale_safety_trigger_subject_digest_reaches_evaluator_binding_analysis():
+    payload = prepared_input()
+    payload["review_triggers"]["safety_triggers"] = [
+        {"trigger_code": "OUT_OF_SCOPE_DELETION", "subject_digest": "b" * 64, "evidence_digest": "c" * 64}
+    ]
+    normalized = normalize_closure_input(payload)
+    result = evaluate(normalized)
+    assert result["response_kind"] == "TECHNICAL_CLOSURE_RESULT"
+    assert result["technical_status"] == "FAIL"
+    assert result["control_status"] == "BLOCKED"
+    assert result["closure_status"] == "CLOSURE_CORRECTION_REQUIRED"
+    assert result["reason_codes"] == ["SAFETY_TRIGGER_SUBJECT_DIGEST_MISMATCH"]
+    assert result["next_required_action"] == "HUMAN_CORRECTION_DECISION"
+    assert result["broad_reaudit_may_be_proposed"] is True
+    assert result["broad_reaudit_started"] is False
+    assert result["operation_started"] is False
+    assert result["continue_allowed"] is False
+
+
+def test_matching_safety_trigger_subject_digest_regression():
+    payload = prepared_input()
+    subject_digest = compute_subject_digest(payload["subject"])
+    payload["review_triggers"]["safety_triggers"] = [
+        {"trigger_code": "OUT_OF_SCOPE_DELETION", "subject_digest": subject_digest, "evidence_digest": "c" * 64}
+    ]
+    result = evaluate(payload)
+    assert result["response_kind"] == "TECHNICAL_CLOSURE_RESULT"
+    assert result["technical_status"] == "PASS"
+    assert result["control_status"] == "HUMAN_REVIEW_REQUIRED"
+    assert result["closure_status"] == "CLOSURE_HUMAN_DECISION_REQUIRED"
+    assert result["next_required_action"] == "HUMAN_VALIDATION_DECISION"
+    assert result["broad_reaudit_may_be_proposed"] is True
+    assert result["broad_reaudit_started"] is False
+
+
 def test_previous_result_binding_detects_changed_input_and_reopen():
     payload = prepared_input()
     closed = evaluate(payload)

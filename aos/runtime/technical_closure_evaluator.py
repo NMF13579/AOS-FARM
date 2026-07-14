@@ -85,8 +85,16 @@ def _collect_binding_mismatches(payload, subject_digest):
 
 def _required_statuses(payload):
     statuses = [
-        ("VALIDATION", payload["required_results"]["validation"]["technical_status"], payload["required_results"]["validation"]["reason_codes"]),
-        ("EVIDENCE", payload["required_results"]["evidence"]["technical_status"], payload["required_results"]["evidence"]["reason_codes"]),
+        (
+            "VALIDATION",
+            payload["required_results"]["validation"]["technical_status"],
+            payload["required_results"]["validation"]["reason_codes"],
+        ),
+        (
+            "EVIDENCE",
+            payload["required_results"]["evidence"]["technical_status"],
+            payload["required_results"]["evidence"]["reason_codes"],
+        ),
     ]
     if payload["requirements"]["merge_authorization_required"]:
         statuses.append(

@@ -461,6 +461,25 @@ def test_reaudit_and_safety_trigger_contracts_require_binding():
     assert "DUPLICATE_SAFETY_TRIGGER" in exc.value.reason_codes
 
 
+def test_stale_safety_trigger_subject_digest_is_not_contract_error():
+    payload = bound_input()
+    payload["review_triggers"]["safety_triggers"] = [
+        {"trigger_code": "A", "subject_digest": "b" * 64, "evidence_digest": "c" * 64}
+    ]
+    normalized = normalize_closure_input(payload)
+    assert normalized["review_triggers"]["safety_triggers"][0]["subject_digest"] == "b" * 64
+
+
+def test_invalid_safety_trigger_digest_remains_contract_error():
+    payload = bound_input()
+    payload["review_triggers"]["safety_triggers"] = [
+        {"trigger_code": "A", "subject_digest": "bad", "evidence_digest": "c" * 64}
+    ]
+    with pytest.raises(ContractError) as exc:
+        normalize_closure_input(payload)
+    assert "INVALID_SHA256" in exc.value.reason_codes
+
+
 def test_stop_terminal_result_is_separate_and_digest_bound():
     result = terminal_stop_result()
     assert result["response_kind"] == "TERMINAL_COMMAND_RESULT"

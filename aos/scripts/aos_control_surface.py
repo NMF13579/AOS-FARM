@@ -35,6 +35,13 @@ class RegistryError(Exception):
     pass
 
 
+class ClosureInputError(Exception):
+    def __init__(self, reason_code, message):
+        self.reason_code = reason_code
+        self.message = message
+        super().__init__(message)
+
+
 class InputBlocked(Exception):
     pass
 
@@ -438,8 +445,45 @@ def parse_closure_input_arg(args):
         raise RegistryError("closure-input supports only '-' for stdin")
     text = sys.stdin.read(MAX_INLINE_JSON_BYTES + 1)
     if len(text.encode("utf-8")) > MAX_INLINE_JSON_BYTES:
-        raise RegistryError("closure-input exceeds input size limit")
-    return parse_json_arg(text, "closure-input")
+        raise ClosureInputError("CLOSURE_INPUT_TOO_LARGE", "closure-input exceeds input size limit")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ClosureInputError("MALFORMED_CLOSURE_JSON", f"closure-input is malformed JSON: {exc}") from exc
+
+
+def closure_input_error_result(error):
+    from aos.runtime.technical_closure_contracts import attach_result_digest
+
+    result = {
+        "response_kind": "CONTRACT_ERROR",
+        "schema_version": 1,
+        "task_id": None,
+        "subject_digest": None,
+        "evaluation_input_digest": None,
+        "input_payload_digest": None,
+        "result_digest": "",
+        "technical_status": "FAIL",
+        "control_status": "BLOCKED",
+        "closure_status": "CLOSURE_CORRECTION_REQUIRED",
+        "reason_codes": [error.reason_code],
+        "next_required_action": "HUMAN_CORRECTION_DECISION",
+        "continue_allowed": False,
+        "broad_reaudit_may_be_proposed": False,
+        "broad_reaudit_started": False,
+        "approval_granted": False,
+        "execution_authorized": False,
+        "commit_authorized": False,
+        "push_authorized": False,
+        "integration_authorized": False,
+        "release_authorized": False,
+        "operation_started": False,
+        "background_action_started": False,
+        "schedule_created": False,
+        "lifecycle_mutated": False,
+        "next_stage_started": False,
+    }
+    return attach_result_digest(result)
 
 
 def closure_non_grants(result):
@@ -462,7 +506,11 @@ def closure_non_grants(result):
 def evaluate_closure_input(args):
     from aos.runtime.technical_closure_evaluator import evaluate_technical_closure
 
-    return evaluate_technical_closure(parse_closure_input_arg(args))
+    try:
+        payload = parse_closure_input_arg(args)
+    except ClosureInputError as exc:
+        return closure_input_error_result(exc)
+    return evaluate_technical_closure(payload)
 
 
 def render_closure_command(command_id, args):
