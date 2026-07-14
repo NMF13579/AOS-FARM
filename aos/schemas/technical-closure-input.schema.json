@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aos-farm.local/schemas/technical-closure-input.schema.json",
+  "title": "AOS Technical Closure Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "subject",
+    "requirements",
+    "required_results",
+    "authorization_frontier",
+    "review_triggers",
+    "previous_result_binding"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "subject": {"$ref": "#/$defs/subject"},
+    "requirements": {"$ref": "#/$defs/requirements"},
+    "required_results": {"$ref": "#/$defs/required_results"},
+    "authorization_frontier": {"$ref": "#/$defs/authorization_frontier"},
+    "review_triggers": {"$ref": "#/$defs/review_triggers"},
+    "previous_result_binding": {"$ref": "#/$defs/previous_result_binding"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["requirements"],
+        "properties": {
+          "requirements": {
+            "required": ["merge_authorization_required"],
+            "properties": {
+              "merge_authorization_required": {"const": false}
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["required_results"],
+        "properties": {
+          "required_results": {
+            "required": ["merge_authorization"],
+            "properties": {
+              "merge_authorization": {"$ref": "#/$defs/merge_authorization_not_required"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["requirements"],
+        "properties": {
+          "requirements": {
+            "required": ["integration_result_required"],
+            "properties": {
+              "integration_result_required": {"const": false}
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["required_results"],
+        "properties": {
+          "required_results": {
+            "required": ["integration"],
+            "properties": {
+              "integration": {"$ref": "#/$defs/integration_not_required"}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "git_oid": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "technical_status": {"enum": ["PASS", "FAIL", "UNKNOWN", "NOT_RUN"]},
+    "reason_codes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "task_id", "scope_digest", "candidate_oid", "required_artifacts", "integration_target"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "task_id": {"type": "string", "minLength": 1},
+        "scope_digest": {"$ref": "#/$defs/sha256"},
+        "candidate_oid": {"$ref": "#/$defs/git_oid"},
+        "required_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifact"},
+          "uniqueItems": true,
+          "$comment": "JSON Schema can reject exact duplicate artifact objects. runtime-only semantic validation rejects duplicate artifact identity by artifact_type and artifact_id even when artifact_digest differs."
+        },
+        "integration_target": {"$ref": "#/$defs/integration_target"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_type", "artifact_id", "artifact_digest"],
+      "properties": {
+        "artifact_type": {"type": "string", "minLength": 1},
+        "artifact_id": {"type": "string", "minLength": 1},
+        "artifact_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "integration_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "base_ref", "candidate_ref"],
+      "properties": {
+        "repository": {"type": ["string", "null"], "minLength": 1},
+        "base_ref": {"type": ["string", "null"], "minLength": 1},
+        "candidate_ref": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validation_required", "evidence_required", "merge_authorization_required", "integration_result_required"],
+      "properties": {
+        "validation_required": {"type": "boolean"},
+        "evidence_required": {"type": "boolean"},
+        "merge_authorization_required": {"type": "boolean"},
+        "integration_result_required": {"type": "boolean"}
+      }
+    },
+    "required_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validation", "evidence", "merge_authorization", "integration"],
+      "properties": {
+        "validation": {"$ref": "#/$defs/validation_result"},
+        "evidence": {"$ref": "#/$defs/evidence_result"},
+        "merge_authorization": {"$ref": "#/$defs/merge_authorization_result"},
+        "integration": {"$ref": "#/$defs/integration_result"}
+      }
+    },
+    "validation_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technical_status", "subject_digest", "result_digest", "reason_codes"],
+      "properties": {
+        "technical_status": {"$ref": "#/$defs/technical_status"},
+        "subject_digest": {"$ref": "#/$defs/sha256"},
+        "result_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "reason_codes": {"$ref": "#/$defs/reason_codes"}
+      }
+    },
+    "evidence_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technical_status", "subject_digest", "evidence_digest", "reason_codes"],
+      "properties": {
+        "technical_status": {"$ref": "#/$defs/technical_status"},
+        "subject_digest": {"$ref": "#/$defs/sha256"},
+        "evidence_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "reason_codes": {"$ref": "#/$defs/reason_codes"}
+      }
+    },
+    "merge_authorization_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_id", "subject_digest", "verification_status", "result_digest", "reason_codes"],
+      "properties": {
+        "package_id": {"type": ["string", "null"], "minLength": 1},
+        "subject_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "verification_status": {"$ref": "#/$defs/technical_status"},
+        "result_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "reason_codes": {"$ref": "#/$defs/reason_codes"}
+      }
+    },
+    "merge_authorization_not_required": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_id", "subject_digest", "verification_status", "result_digest", "reason_codes"],
+      "properties": {
+        "package_id": {"const": null},
+        "subject_digest": {"const": null},
+        "verification_status": {"const": "NOT_RUN"},
+        "result_digest": {"const": null},
+        "reason_codes": {"type": "array", "maxItems": 0}
+      }
+    },
+    "integration_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_digest", "observed_status", "result_digest", "reason_codes"],
+      "properties": {
+        "subject_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "observed_status": {"$ref": "#/$defs/technical_status"},
+        "result_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "reason_codes": {"$ref": "#/$defs/reason_codes"}
+      }
+    },
+    "integration_not_required": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_digest", "observed_status", "result_digest", "reason_codes"],
+      "properties": {
+        "subject_digest": {"const": null},
+        "observed_status": {"const": "NOT_RUN"},
+        "result_digest": {"const": null},
+        "reason_codes": {"type": "array", "maxItems": 0}
+      }
+    },
+    "authorization_frontier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_human_decision"],
+      "properties": {
+        "required_human_decision": {
+          "enum": [
+            "NONE",
+            "HUMAN_EXECUTION_DECISION",
+            "HUMAN_COMMIT_DECISION",
+            "HUMAN_PUSH_DECISION",
+            "HUMAN_INTEGRATION_DECISION",
+            "HUMAN_RESULT_REVIEW"
+          ]
+        }
+      }
+    },
+    "review_triggers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reaudit_request_reference", "safety_triggers"],
+      "properties": {
+        "reaudit_request_reference": {"$ref": "#/$defs/reaudit_request_reference"},
+        "safety_triggers": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/safety_trigger"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "reaudit_request_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "witness_id", "witness_digest"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "witness_id": {"type": ["string", "null"], "minLength": 1},
+        "witness_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["present"],
+            "properties": {"present": {"const": false}}
+          },
+          "then": {
+            "properties": {
+              "witness_id": {"const": null},
+              "witness_digest": {"const": null}
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["present"],
+            "properties": {"present": {"const": true}}
+          },
+          "then": {
+            "properties": {
+              "witness_id": {"type": "string", "minLength": 1},
+              "witness_digest": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      ]
+    },
+    "safety_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger_code", "subject_digest", "evidence_digest"],
+      "properties": {
+        "trigger_code": {"type": "string", "minLength": 1},
+        "subject_digest": {"$ref": "#/$defs/sha256"},
+        "evidence_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "previous_result_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "subject_digest", "evaluation_input_digest", "result_digest", "closure_status"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "subject_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "evaluation_input_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "result_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "closure_status": {
+          "enum": [
+            null,
+            "CLOSURE_OPEN",
+            "CLOSURE_CORRECTION_REQUIRED",
+            "CLOSURE_HUMAN_DECISION_REQUIRED",
+            "CLOSURE_TECHNICALLY_CLOSED"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["present"],
+            "properties": {"present": {"const": false}}
+          },
+          "then": {
+            "properties": {
+              "subject_digest": {"const": null},
+              "evaluation_input_digest": {"const": null},
+              "result_digest": {"const": null},
+              "closure_status": {"const": null}
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["present"],
+            "properties": {"present": {"const": true}}
+          },
+          "then": {
+            "properties": {
+              "subject_digest": {"$ref": "#/$defs/sha256"},
+              "evaluation_input_digest": {"$ref": "#/$defs/sha256"},
+              "result_digest": {"$ref": "#/$defs/sha256"},
+              "closure_status": {
+                "enum": [
+                  "CLOSURE_OPEN",
+                  "CLOSURE_CORRECTION_REQUIRED",
+                  "CLOSURE_HUMAN_DECISION_REQUIRED",
+                  "CLOSURE_TECHNICALLY_CLOSED"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

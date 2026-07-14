@@ -12,6 +12,7 @@ COMMANDS = "aos/config/simple-control-command-registry.yaml"
 LOCALES = "aos/config/simple-control-locale-registry.yaml"
 STATE_SCHEMA = "aos/schemas/simple-control-state.schema.json"
 WITNESS_SCHEMA = "aos/schemas/human-decision-witness.schema.json"
+TECHNICAL_CLOSURE_RESULT_SCHEMA = "aos/schemas/technical-closure-result.schema.json"
 
 
 class TestSimpleControlContractCheck(unittest.TestCase):
@@ -35,12 +36,14 @@ class TestSimpleControlContractCheck(unittest.TestCase):
         locales = tmp_path / "simple-control-locale-registry.yaml"
         state = tmp_path / "simple-control-state.schema.json"
         witness = tmp_path / "human-decision-witness.schema.json"
+        closure_result = tmp_path / "technical-closure-result.schema.json"
 
         arch.write_text(Path(ARCHITECTURE).read_text(encoding="utf-8"), encoding="utf-8")
         self.write_json(commands, self.load_json(COMMANDS))
         self.write_json(locales, self.load_json(LOCALES))
         self.write_json(state, self.load_json(STATE_SCHEMA))
         self.write_json(witness, self.load_json(WITNESS_SCHEMA))
+        self.write_json(closure_result, self.load_json(TECHNICAL_CLOSURE_RESULT_SCHEMA))
 
         args = [
             "--architecture-contract", str(arch),
@@ -48,8 +51,9 @@ class TestSimpleControlContractCheck(unittest.TestCase):
             "--locale-registry", str(locales),
             "--state-schema", str(state),
             "--human-witness-schema", str(witness),
+            "--technical-closure-result-schema", str(closure_result),
         ]
-        return args, arch, commands, locales, state, witness
+        return args, arch, commands, locales, state, witness, closure_result
 
     def assert_invalid(self, result, expected_fragment):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -64,8 +68,11 @@ class TestSimpleControlContractCheck(unittest.TestCase):
 
     def mutate(self, callback):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            args, arch, commands, locales, state, witness = self.with_temp_contracts(tmp_dir)
-            callback(arch, commands, locales, state, witness)
+            args, arch, commands, locales, state, witness, closure_result = self.with_temp_contracts(tmp_dir)
+            if callback.__code__.co_argcount >= 6:
+                callback(arch, commands, locales, state, witness, closure_result)
+            else:
+                callback(arch, commands, locales, state, witness)
             return self.run_check(*args)
 
     def test_help_exits_zero(self):
@@ -139,6 +146,37 @@ class TestSimpleControlContractCheck(unittest.TestCase):
             integrate["availability"]["available"] = True
             self.write_json(commands, data)
         self.assert_invalid(self.mutate(change), "INTEGRATE must stay unavailable")
+
+    def test_prepare_closure_write_effect_is_invalid(self):
+        def change(_arch, commands, _locales, _state, _witness):
+            data = self.load_json(commands)
+            closure = next(cmd for cmd in data["commands"] if cmd["command_id"] == "PREPARE_CLOSURE")
+            closure["effects"]["temp_write"] = True
+            self.write_json(commands, data)
+        self.assert_invalid(self.mutate(change), "PREPARE_CLOSURE must not declare write effects")
+
+    def test_stop_write_effect_is_invalid(self):
+        def change(_arch, commands, _locales, _state, _witness):
+            data = self.load_json(commands)
+            stop = next(cmd for cmd in data["commands"] if cmd["command_id"] == "STOP")
+            stop["effects"]["tracked_worktree_write"] = True
+            self.write_json(commands, data)
+        self.assert_invalid(self.mutate(change), "STOP must not declare write effects")
+
+    def test_next_grant_is_invalid(self):
+        def change(_arch, commands, _locales, _state, _witness):
+            data = self.load_json(commands)
+            next_cmd = next(cmd for cmd in data["commands"] if cmd["command_id"] == "NEXT")
+            next_cmd["grants"] = ["execution"]
+            self.write_json(commands, data)
+        self.assert_invalid(self.mutate(change), "NEXT must not grant actions")
+
+    def test_response_schema_oneof_required(self):
+        def change(_arch, _commands, _locales, _state, _witness, closure_result):
+            data = self.load_json(closure_result)
+            data.pop("oneOf", None)
+            self.write_json(closure_result, data)
+        self.assert_invalid(self.mutate(change), "technical closure response schema reference is required")
 
     def test_skeleton_claimed_as_implementation_is_invalid(self):
         def change(_arch, commands, _locales, _state, _witness):

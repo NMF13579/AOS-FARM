@@ -344,29 +344,29 @@
       "idempotency_required": true,
       "reconciliation_required": true,
       "available_in_contract_only_release": false,
-      "availability": {"available": false, "reason_code": "RUNTIME_NOT_IMPLEMENTED"},
-      "implementation_status": "NOT_IMPLEMENTED"
+      "availability": {"available": true, "reason_code": null},
+      "implementation_status": "IMPLEMENTED_READ_ONLY"
     },
     {
       "command_id": "PREPARE_CLOSURE",
       "contract_version": 1,
       "operation_class": "CLOSURE_PREPARATION",
       "allowed_control_states": ["CONTROL_PUSHED", "CONTROL_HUMAN_REVIEW_REQUIRED"],
-      "required_roles": ["human"],
-      "required_Risk_Profile_status": "HUMAN_ASSIGNED",
-      "required_human_decisions": ["closure_review"],
-      "preconditions": ["evidence_gate_complete", "human_review_required"],
-      "grants": ["closure_preparation"],
-      "non_grants": ["approval", "commit", "push", "integration", "merge", "release", "lifecycle_mutation"],
-      "effects": {"tracked_worktree_write": false, "untracked_worktree_write": false, "canonical_artifact_write": false, "git_index_write": false, "git_object_write": false, "local_git_ref_write": false, "remote_ref_write": false, "external_system_write": false, "temp_write": true},
+      "required_roles": [],
+      "required_Risk_Profile_status": "NOT_REQUIRED",
+      "required_human_decisions": [],
+      "preconditions": ["closure_input_contract_valid_or_contract_error_returned"],
+      "grants": [],
+      "non_grants": ["approval", "execution", "commit", "push", "integration", "merge", "release", "lifecycle_mutation"],
+      "effects": {"tracked_worktree_write": false, "untracked_worktree_write": false, "canonical_artifact_write": false, "git_index_write": false, "git_object_write": false, "local_git_ref_write": false, "remote_ref_write": false, "external_system_write": false, "temp_write": false, "approval_write": false, "lifecycle_write": false},
       "success_control_state": "CONTROL_CLOSURE_REVIEW_REQUIRED",
       "failure_control_state": "CONTROL_BLOCKED",
       "partial_failure_operation_state": "OPERATION_RECONCILIATION_REQUIRED",
       "idempotency_required": true,
       "reconciliation_required": true,
       "available_in_contract_only_release": false,
-      "availability": {"available": false, "reason_code": "RUNTIME_NOT_IMPLEMENTED"},
-      "implementation_status": "NOT_IMPLEMENTED"
+      "availability": {"available": true, "reason_code": null},
+      "implementation_status": "IMPLEMENTED_READ_ONLY_CLOSURE"
     }
   ]
 }

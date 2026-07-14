@@ -288,3 +288,96 @@ The push witness grants only `push_exact_commit_to_exact_build_ref`. It does not
 Build-branch push policy requires an exact `refs/heads/build/...` target ref and an exact source commit OID. Push to `dev`, push to `main`, wildcard refspecs, tag push, branch deletion, force push, fetch, merge, rebase, reset, clean, checkout, and switch are outside this contract.
 
 Git operation records remain local disposable operation data under `.aos-tmp/simple-control/` inside the isolated test repository. They are not Source of Truth, Evidence, approval, or lifecycle authority.
+
+## AOS-FARM.684.1 Deterministic Technical Closure Contract
+
+`aos/runtime/technical_closure_contracts.py` and `aos/runtime/technical_closure_evaluator.py` implement deterministic technical closure evaluation only. They are stateless runtime helpers. They do not read Git, read GitHub, open network connections, launch subprocesses, write files, create temporary directories, persist state, create schedules, mutate lifecycle, approve results, or authorize any next stage.
+
+Closure mode is activated only by explicit CLI input:
+
+```text
+--closure-input -
+```
+
+The dash means exact JSON is read from standard input. The Simple Control Surface must not auto-discover closure input, read repository state, read GitHub state, or save closure input or results.
+
+The closure evaluator uses the existing AOS-FARM.683 canonical serialization API only:
+
+```python
+from aos.runtime.canonical_serialization import canonicalize_validated_json
+```
+
+It computes three separated SHA-256 digests:
+
+| Digest | Includes | Excludes |
+|---|---|---|
+| `subject_digest` | subject schema version, task ID, scope digest, candidate OID, normalized required artifacts, integration target identity | validation results, Evidence, authorization, previous result |
+| `evaluation_input_digest` | subject, requirements, required results, authorization frontier, review triggers | previous result binding, result digest |
+| `result_digest` | normalized response | `result_digest` field itself |
+
+Required artifacts are sorted by `artifact_type`, then `artifact_id`, then `artifact_digest`. Duplicate artifact identities are rejected. Unknown fields are rejected at all contract levels. Forbidden authority fields such as `approval_granted`, `execution_authorized`, `commit_authorized`, `push_authorized`, `integration_authorized`, `release_authorized`, `operation_started`, `background_action_started`, `lifecycle_mutated`, and `next_stage_started` are rejected in input.
+
+Closure responses are separated by schema:
+
+| Response kind | Use |
+|---|---|
+| `TECHNICAL_CLOSURE_RESULT` | valid input evaluated to `PASS`, `FAIL`, `UNKNOWN`, or `NOT_RUN` technical status |
+| `CONTRACT_ERROR` | malformed or contract-invalid input; no fake subject digest is returned |
+| `TERMINAL_COMMAND_RESULT` | read-only STOP terminal response |
+
+Evaluation priority is deterministic:
+
+```text
+CONTRACT_VIOLATION
+-> REQUIRED_BINDING_MISMATCH
+-> TECHNICAL_FAIL
+-> TECHNICAL_UNKNOWN
+-> REQUIRED_NOT_RUN
+-> BOUND_SAFETY_TRIGGER
+-> VALID_REAUDIT_REQUEST_REFERENCE
+-> REQUIRED_HUMAN_AUTHORIZATION_DECISION
+-> TECHNICALLY_CLOSED
+```
+
+`NEXT` in closure mode returns exactly one `next_required_action`, sets `continue_allowed: false`, and starts no operation. `STATUS` returns only the closure projection. `SHOW_DETAILS` returns reason codes, stale input markers, binding summary, previous result summary, required human decision, review trigger references, and non-grant flags. It must not print credentials, tokens, full raw input, local absolute paths, or approval claims.
+
+`STOP` is a separate read-only terminal command. It does not require closure input, does not call the evaluator, does not kill processes, does not write files, does not create schedules, and does not mutate lifecycle. It does not return `technical_status` and must not mask blockers.
+
+`PREPARE_CLOSURE` is read-only. It reads exact JSON from stdin, validates the input contract, computes the full result, prints it, and exits. It does not write tracked files, untracked files, canonical artifacts, Git index, Git objects, local refs, remote refs, external systems, temporary files, approval records, or lifecycle records.
+
+`INTEGRATE` remains not implemented and unavailable:
+
+```yaml
+implementation_status: NOT_IMPLEMENTED
+availability:
+  available: false
+  reason_code: INTEGRATION_MECHANISM_NOT_APPROVED
+```
+
+Closure exit codes:
+
+| Code | Meaning |
+|---:|---|
+| 0 | valid command execution, including valid technical `FAIL`, `UNKNOWN`, or `NOT_RUN` result |
+| 2 | JSON parse or input contract error |
+| 3 | deterministic dependency unavailable |
+
+Every closure result preserves these non-grants:
+
+```yaml
+continue_allowed: false
+approval_granted: false
+execution_authorized: false
+commit_authorized: false
+push_authorized: false
+integration_authorized: false
+release_authorized: false
+operation_started: false
+background_action_started: false
+broad_reaudit_started: false
+schedule_created: false
+lifecycle_mutated: false
+next_stage_started: false
+```
+
+A technical `PASS`, fixture replay `PASS`, test `PASS`, or closure `CLOSURE_TECHNICALLY_CLOSED` is not approval, not commit authorization, not push authorization, not integration authorization, not release authorization, and not lifecycle mutation.

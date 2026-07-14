@@ -10,6 +10,7 @@ DEFAULT_COMMANDS = Path("aos/config/simple-control-command-registry.yaml")
 DEFAULT_LOCALES = Path("aos/config/simple-control-locale-registry.yaml")
 DEFAULT_STATE_SCHEMA = Path("aos/schemas/simple-control-state.schema.json")
 DEFAULT_WITNESS_SCHEMA = Path("aos/schemas/human-decision-witness.schema.json")
+DEFAULT_TECHNICAL_CLOSURE_RESULT_SCHEMA = Path("aos/schemas/technical-closure-result.schema.json")
 
 COMMAND_IDS = {
     "HELP",
@@ -51,7 +52,6 @@ WRITE_RELATED_CLASSES = {
     "GIT_OBJECT_WRITE",
     "REMOTE_WRITE",
     "INTEGRATION_WRITE",
-    "CLOSURE_PREPARATION",
 }
 
 EFFECT_KEYS = {
@@ -64,6 +64,11 @@ EFFECT_KEYS = {
     "remote_ref_write",
     "external_system_write",
     "temp_write",
+}
+
+OPTIONAL_EFFECT_KEYS = {
+    "approval_write",
+    "lifecycle_write",
 }
 
 REQUIRED_COMMAND_FIELDS = {
@@ -111,10 +116,12 @@ CLAIM_CEILING_FLAGS = {
 }
 
 READ_ONLY_IMPLEMENTED_COMMANDS = {"HELP", "LANGUAGE"}
+TERMINAL_READ_ONLY_COMMANDS = {"STOP"}
 PLANNING_IMPLEMENTED_COMMANDS = {"ANALYZE", "PLAN", "REVISE_SCOPE"}
 DECISION_PREPARATION_COMMANDS = {"ACCEPT_SCOPE", "SELECT_RISK"}
 VALIDATION_IMPLEMENTED_COMMANDS = {"VALIDATE"}
 DERIVED_READ_ONLY_COMMANDS = {"STATUS", "NEXT", "SHOW_DETAILS"}
+CLOSURE_READ_ONLY_COMMANDS = {"PREPARE_CLOSURE"}
 EXECUTION_PREVIEW_COMMANDS = {"EXECUTE"}
 
 
@@ -240,7 +247,7 @@ def check_command_registry(data, failures, checks):
         if cmd.get("operation_class") not in OPERATION_CLASSES:
             failures.append(f"{command_id}: invalid operation_class")
         implementation_status = cmd.get("implementation_status")
-        if command_id in READ_ONLY_IMPLEMENTED_COMMANDS:
+        if command_id in READ_ONLY_IMPLEMENTED_COMMANDS or command_id in TERMINAL_READ_ONLY_COMMANDS:
             if implementation_status not in {"NOT_IMPLEMENTED", "IMPLEMENTED_READ_ONLY"}:
                 failures.append(f"{command_id}: implementation_status must be NOT_IMPLEMENTED or IMPLEMENTED_READ_ONLY")
             if implementation_status == "IMPLEMENTED_READ_ONLY":
@@ -269,6 +276,17 @@ def check_command_registry(data, failures, checks):
                     failures.append(f"{command_id}: IMPLEMENTED_DERIVED_READ_ONLY requires PURE_READ")
                 if any(cmd.get("effects", {}).values()):
                     failures.append(f"{command_id}: IMPLEMENTED_DERIVED_READ_ONLY requires no write effects")
+            elif command_id in CLOSURE_READ_ONLY_COMMANDS and implementation_status == "IMPLEMENTED_READ_ONLY_CLOSURE":
+                if cmd.get("operation_class") != "CLOSURE_PREPARATION":
+                    failures.append(f"{command_id}: IMPLEMENTED_READ_ONLY_CLOSURE requires CLOSURE_PREPARATION")
+                if any(cmd.get("effects", {}).values()):
+                    failures.append(f"{command_id}: IMPLEMENTED_READ_ONLY_CLOSURE requires no write effects")
+                if cmd.get("grants"):
+                    failures.append(f"{command_id}: closure commands cannot grant actions")
+                required_non_grants = {"approval", "execution", "commit", "push", "integration", "merge", "release", "lifecycle_mutation"}
+                missing_non_grants = required_non_grants - set(cmd.get("non_grants", []))
+                if missing_non_grants:
+                    failures.append(f"{command_id}: missing closure non-grants {sorted(missing_non_grants)}")
             elif command_id in EXECUTION_PREVIEW_COMMANDS and implementation_status == "IMPLEMENTED_ORCHESTRATION_PREVIEW_ONLY":
                 if cmd.get("operation_class") != "DECISION_RECORD_PREPARATION":
                     failures.append(f"{command_id}: IMPLEMENTED_ORCHESTRATION_PREVIEW_ONLY requires DECISION_RECORD_PREPARATION")
@@ -330,8 +348,17 @@ def check_command_registry(data, failures, checks):
                 failures.append(f"{command_id}: implementation_status must be NOT_IMPLEMENTED")
 
         effects = cmd.get("effects", {})
-        if set(effects.keys()) != EFFECT_KEYS:
+        effect_keys = set(effects.keys())
+        if not EFFECT_KEYS.issubset(effect_keys) or effect_keys - (EFFECT_KEYS | OPTIONAL_EFFECT_KEYS):
             failures.append(f"{command_id}: effects must declare exact required keys")
+        if command_id == "PREPARE_CLOSURE":
+            missing_optional = OPTIONAL_EFFECT_KEYS - effect_keys
+            if missing_optional:
+                failures.append("PREPARE_CLOSURE must declare approval and lifecycle write effects as false")
+            if any(effects.values()):
+                failures.append("PREPARE_CLOSURE must not declare write effects")
+        if command_id == "STOP" and any(effects.values()):
+            failures.append("STOP must not declare write effects")
         for key, value in effects.items():
             if not isinstance(value, bool):
                 failures.append(f"{command_id}: effect {key} must be boolean")
@@ -342,6 +369,8 @@ def check_command_registry(data, failures, checks):
             failures.append(f"write-related command {command_id} requires human decision")
 
         grants = set(cmd.get("grants", []))
+        if command_id == "NEXT" and grants:
+            failures.append("NEXT must not grant actions")
         if command_id == "COMMIT" and "push" in grants:
             failures.append("COMMIT must not grant push")
         if command_id == "PUSH" and "integration" in grants:
@@ -520,6 +549,38 @@ def check_witness_schema(data, failures, checks):
     add_check(checks, "Human Decision Witness Schema", "PASS" if not failures else "CHECKED", "human witness schema inspected")
 
 
+def check_technical_closure_result_schema(data, failures, checks):
+    if not isinstance(data, dict):
+        failures.append("technical closure result schema must be an object")
+        return
+    one_of = data.get("oneOf")
+    if not isinstance(one_of, list) or len(one_of) != 3:
+        failures.append("technical closure response schema reference is required")
+        return
+    kinds = set()
+    for entry in one_of:
+        if not isinstance(entry, dict):
+            continue
+        ref = entry.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/$defs/"):
+            entry = data.get("$defs", {}).get(ref.rsplit("/", 1)[-1], {})
+        entries = entry.get("allOf", [entry]) if isinstance(entry.get("allOf"), list) else [entry]
+        response_kind = None
+        command = None
+        for candidate in entries:
+            response_kind = response_kind or nested_get(candidate, ["properties", "response_kind", "const"])
+            command = command or nested_get(candidate, ["properties", "command", "const"])
+        if response_kind:
+            kinds.add(response_kind)
+        if command == "STOP":
+            kinds.add("STOP_TERMINAL")
+    required = {"TECHNICAL_CLOSURE_RESULT", "CONTRACT_ERROR", "TERMINAL_COMMAND_RESULT", "STOP_TERMINAL"}
+    missing = required - kinds
+    if missing:
+        failures.append("technical closure response schema reference is required")
+    add_check(checks, "Technical Closure Result Schema", "PASS" if not failures else "CHECKED", "technical closure result schema inspected")
+
+
 def run(args):
     failures = []
     checks = []
@@ -529,6 +590,7 @@ def run(args):
     locale_data = read_json_contract(args.locale_registry, failures)
     state_data = read_json_contract(args.state_schema, failures)
     witness_data = read_json_contract(args.human_witness_schema, failures)
+    closure_result_schema_data = read_json_contract(args.technical_closure_result_schema, failures)
 
     commands = {}
     if command_data is not None:
@@ -539,6 +601,8 @@ def run(args):
         check_state_schema(state_data, failures, checks)
     if witness_data is not None:
         check_witness_schema(witness_data, failures, checks)
+    if closure_result_schema_data is not None:
+        check_technical_closure_result_schema(closure_result_schema_data, failures, checks)
 
     final_status = "CONTRACT_INVALID" if failures else "CONTRACT_VALID"
     result = {
@@ -558,6 +622,7 @@ def build_parser():
     parser.add_argument("--locale-registry", default=str(DEFAULT_LOCALES))
     parser.add_argument("--state-schema", default=str(DEFAULT_STATE_SCHEMA))
     parser.add_argument("--human-witness-schema", default=str(DEFAULT_WITNESS_SCHEMA))
+    parser.add_argument("--technical-closure-result-schema", default=str(DEFAULT_TECHNICAL_CLOSURE_RESULT_SCHEMA))
     return parser
 
 
