@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "operation": {
+      "type": "string",
+      "const": "merge"
+    },
+    "repository_identity": {
+      "type": "string"
+    },
+    "pull_request": {
+      "type": "integer"
+    },
+    "normalized_intent": {
+      "type": "object"
+    },
+    "fixed_safety_policy": {
+      "type": "object"
+    },
+    "decision_state": {
+      "type": "object",
+      "properties": {
+        "technical_gate_passed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": ["technical_gate_passed", "reason"],
+      "additionalProperties": false
+    },
+    "exact_merge_parameters": {
+      "type": "object"
+    },
+    "forbidden_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tool_identity": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "operation",
+    "repository_identity",
+    "pull_request",
+    "normalized_intent",
+    "fixed_safety_policy",
+    "decision_state",
+    "exact_merge_parameters",
+    "forbidden_actions",
+    "tool_identity"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "description": "Stable key ordering",
+    "input": {"b": 1, "a": 2},
+    "expected_bytes_hex": "7b2261223a322c2262223a317d"
+  },
+  {
+    "description": "Unicode preservation",
+    "input": {"unicode": "Привет"},
+    "expected_bytes_hex": "7b22756e69636f6465223a22d09fd180d0b8d0b2d0b5d182227d"
+  },
+  {
+    "description": "Integer",
+    "input": {"int": 123},
+    "expected_bytes_hex": "7b22696e74223a3132337d"
+  },
+  {
+    "description": "Boolean",
+    "input": {"bool": true},
+    "expected_bytes_hex": "7b22626f6f6c223a747275657d"
+  },
+  {
+    "description": "Null",
+    "input": {"null": null},
+    "expected_bytes_hex": "7b226e756c6c223a6e756c6c7d"
+  },
+  {
+    "description": "Nested arrays and objects",
+    "input": {"obj": {"arr": [1, {"x": 2}]}},
+    "expected_bytes_hex": "7b226f626a223a7b22617272223a5b312c7b2278223a327d5d7d7d"
+  }
+]
